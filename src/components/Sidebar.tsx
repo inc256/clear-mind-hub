@@ -5,7 +5,6 @@ import { Logo } from "@/components/Logo";
 const items = [
   { to: "/", label: "Problem", icon: Brain, end: true },
   { to: "/research", label: "Research", icon: Search },
-  { to: "/profile", label: "Profile", icon: User },
 ];
 
 export function Sidebar() {
@@ -31,13 +30,13 @@ export function Sidebar() {
       </nav>
 
       <div className="m-3 rounded-2xl border border-primary/15 bg-accent/60 p-4">
-        <div className="flex items-center gap-2 text-primary-deep">
-          <Sparkles size={16} />
-          <span className="text-xs font-semibold uppercase tracking-wider">Powered by AI</span>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-          Think Better. Learn Smarter.
-        </p>
+        <NavLink
+          to="/profile"
+          className="flex items-center gap-2 text-primary-deep hover:text-primary transition-colors"
+        >
+          <User size={16} />
+          <span className="text-xs font-semibold uppercase tracking-wider">Profile</span>
+        </NavLink>
       </div>
     </aside>
   );

@@ -144,7 +144,7 @@ const Profile = () => {
       </section>
 
       <p className="text-center text-xs text-muted-foreground pt-4">
-        Organyze · Think Clearly. Solve Better.
+        Tyn Tutor · Think Better. Learn Smarter.
       </p>
     </div>
   );
