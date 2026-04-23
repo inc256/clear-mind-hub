@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tyn Tutor</string>
+    <string name="title_activity_main">Tyn Tutor</string>
+    <string name="package_name">com.tyntutor.app</string>
+    <string name="custom_url_scheme">com.tyntutor.app</string>
+</resources>

@@ -10,9 +10,15 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:android": "npm run build && npx cap copy android && npx cap open android",
+    "cap:ios": "npm run build && npx cap copy ios && npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/ios": "^8.3.1",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

@@ -170,28 +170,30 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
           ))}
         </div>
       ) : (
-        <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground">
-          <ReactMarkdown>{steps[currentStep]?.content.replace(/\[CORRECT\]/g, '') || ""}</ReactMarkdown>
-        </article>
+        <>
+          <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground">
+            <ReactMarkdown>{steps[currentStep]?.content.replace(/\[CORRECT\]/g, '') || ""}</ReactMarkdown>
+          </article>
 
-        {mode === "problem" && currentStep === steps.length - 1 && (
-          <div className="mt-6 space-y-4">
-            <p className="font-semibold">Select the correct answer:</p>
-            <div className="grid gap-2">
-              {parseMultipleChoice(steps[currentStep]?.content || '').map((option) => (
-                <Button
-                  key={option.letter}
-                  onClick={() => handleAnswerSelect(option.letter)}
-                  variant={selectedAnswer === option.letter ? "default" : "outline"}
-                  className="justify-start text-left"
-                  disabled={selectedAnswer !== null}
-                >
-                  {option.letter}) {option.text}
-                </Button>
-              ))}
+          {mode === "problem" && currentStep === steps.length - 1 && (
+            <div className="mt-6 space-y-4">
+              <p className="font-semibold">Select the correct answer:</p>
+              <div className="grid gap-2">
+                {parseMultipleChoice(steps[currentStep]?.content || '').map((option) => (
+                  <Button
+                    key={option.letter}
+                    onClick={() => handleAnswerSelect(option.letter)}
+                    variant={selectedAnswer === option.letter ? "default" : "outline"}
+                    className="justify-start text-left"
+                    disabled={selectedAnswer !== null}
+                  >
+                    {option.letter}) {option.text}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </>
       )}
 
       {!loading && currentStep < steps.length - 1 && (
