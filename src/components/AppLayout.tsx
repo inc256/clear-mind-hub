@@ -5,9 +5,9 @@ import { Logo } from "./Logo";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen w-full">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="lg:ml-64 flex-1 flex flex-col min-w-0">
         <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border/60 bg-background/80 backdrop-blur-xl">
           <Logo size={28} />
         </header>

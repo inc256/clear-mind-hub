@@ -89,7 +89,7 @@ const Profile = () => {
       {/* AI provider info */}
       <section className="glass-card rounded-2xl p-5 sm:p-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="grid place-items-center h-10 w-10 rounded-xl bg-gradient-primary text-primary-foreground">
+          <div className="grid place-items-center h-10 w-10 rounded-xl bg-primary text-primary-foreground">
             <Sparkles size={18} />
           </div>
           <div>
@@ -131,7 +131,7 @@ const Profile = () => {
                 placeholder="https://api.openai.com/v1"
               />
             </div>
-            <Button onClick={saveKeys} size="sm" className="bg-gradient-primary">
+            <Button onClick={saveKeys} size="sm" className="bg-primary">
               Save
             </Button>
             <p className="text-[11px] text-muted-foreground">

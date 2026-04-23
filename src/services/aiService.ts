@@ -118,7 +118,7 @@ function systemForMode(mode: AiMode, depth: string): string {
         ? "Go deep with nuance."
         : "Be balanced.";
   if (mode === "problem") {
-    return `You are Organyze. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution, ## Action Steps. ${depthHint}`;
+    return `You are Tyn Tutor. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution (include 4 multiple choice options with the correct answer marked as [CORRECT]), ## Action Steps. ${depthHint}`;
   }
-  return `You are Organyze research assistant. Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats. ${depthHint}`;
+  return `You are Tyn Tutor research assistant. Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats. ${depthHint}`;
 }

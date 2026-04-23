@@ -10,7 +10,7 @@ const items = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border/60 bg-sidebar/80 backdrop-blur-xl">
+    <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen flex-col border-r border-border/60 bg-sidebar/80 backdrop-blur-xl animate-slide-in-left">
       <div className="px-6 py-6 border-b border-border/60">
         <Logo />
       </div>
@@ -22,7 +22,7 @@ export function Sidebar() {
             to={to}
             end={end}
             className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-            activeClassName="!bg-gradient-primary !text-primary-foreground shadow-glow hover:!text-primary-foreground"
+            activeClassName="!bg-primary !text-primary-foreground shadow-glow hover:!text-primary-foreground"
           >
             <Icon className="h-4.5 w-4.5" size={18} />
             <span>{label}</span>
@@ -36,7 +36,7 @@ export function Sidebar() {
           <span className="text-xs font-semibold uppercase tracking-wider">Powered by AI</span>
         </div>
         <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-          Turn raw thinking into structured intelligence.
+          Think Better. Learn Smarter.
         </p>
       </div>
     </aside>

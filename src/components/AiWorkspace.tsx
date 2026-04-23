@@ -11,11 +11,10 @@ interface AiWorkspaceProps {
   title: string;
   subtitle: string;
   placeholder: string;
-  examples: string[];
   acceptFile?: boolean;
 }
 
-export function AiWorkspace({ mode, title, subtitle, placeholder, examples, acceptFile }: AiWorkspaceProps) {
+export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [steps, setSteps] = useState<Array<{title: string, content: string}>>([]);
@@ -57,9 +56,11 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, examples, acce
     setCurrentStep(0);
     setInput("");
   };
+
+  const parseSteps = (content: string, mode: AiMode) => {
     const sections = content.split(/^## /m).slice(1); // Skip the first empty part
     const parsedSteps: Array<{title: string, content: string}> = [];
-    
+
     for (const section of sections) {
       const lines = section.trim().split('\n');
       const title = lines[0].trim();
@@ -68,12 +69,12 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, examples, acce
         parsedSteps.push({ title, content });
       }
     }
-    
+
     // If no steps parsed, treat the whole content as one step
     if (parsedSteps.length === 0 && content.trim()) {
       parsedSteps.push({ title: "Response", content: content.trim() });
     }
-    
+
     return parsedSteps;
   };
 
@@ -94,16 +95,13 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, examples, acce
   return (
     <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
       <header className="space-y-2">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-          <Sparkles size={12} /> {mode === "problem" ? "Problem solver" : "Research engine"}
-        </div>
         <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
           <span className="text-gradient">{title}</span>
         </h1>
         <p className="text-muted-foreground text-sm sm:text-base max-w-xl">{subtitle}</p>
       </header>
 
-      {steps.length === 0 && (
+        {steps.length === 0 && !loading && (
         <>
           <div className="glass-card rounded-2xl p-3 sm:p-4">
             <Textarea
@@ -151,7 +149,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, examples, acce
                   onClick={() => run(input)}
                   disabled={!input.trim()}
                   size="sm"
-                  className="bg-gradient-primary hover:opacity-90 btn-glow"
+                   className="bg-primary hover:opacity-90 btn-glow"
                 >
                   <ArrowUp size={14} className="mr-1.5" /> Solve
                 </Button>
@@ -159,39 +157,27 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, examples, acce
             </div>
           </div>
 
-          {!output && !loading && examples.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
-                Try one of these
-              </p>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {examples.map((ex) => (
-                  <button
-                    key={ex}
-                    onClick={() => {
-                      setInput(ex);
-                      run(ex);
-                    }}
-                    className="text-left rounded-xl border border-border/60 bg-card/50 px-4 py-3 text-sm text-foreground/80 hover:border-primary/40 hover:bg-accent/40 transition-colors"
-                  >
-                    {ex}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+
         </>
       )}
 
+      {steps.length > 0 && lastInputRef.current && (
+        <div className="glass-card rounded-2xl p-4 mb-6 animate-slide-up">
+          <p className="text-sm font-medium text-muted-foreground">Question:</p>
+          <p className="text-foreground mt-1">{lastInputRef.current}</p>
+        </div>
+      )}
+
       <OutputCard
-        content={output}
-        steps={steps}
-        currentStep={currentStep}
-        onNext={() => setCurrentStep((prev) => prev + 1)}
-        loading={loading}
-        onRegenerate={lastInputRef.current ? () => run(lastInputRef.current) : undefined}
-        onNewQuery={reset}
-      />
+          content={output}
+          steps={steps}
+          currentStep={currentStep}
+          onNext={() => setCurrentStep((prev) => prev + 1)}
+          loading={loading}
+          onRegenerate={lastInputRef.current ? () => run(lastInputRef.current) : undefined}
+          onNewQuery={reset}
+          mode={mode}
+        />
     </div>
   );
 }
