@@ -1,8 +1,9 @@
 import { NavLink } from "@/components/NavLink";
-import { Brain, Search, User } from "lucide-react";
+import { Brain, Sparkles, Search, User } from "lucide-react";
 
 const items = [
   { to: "/", label: "Problem", icon: Brain, end: true },
+  { to: "/tutor", label: "Tutor", icon: Sparkles, end: true },
   { to: "/research", label: "Research", icon: Search },
   { to: "/profile", label: "Profile", icon: User },
 ];
@@ -10,7 +11,7 @@ const items = [
 export function BottomNav() {
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
-      <ul className="grid grid-cols-3">
+      <ul className="grid grid-cols-4">
         {items.map(({ to, label, icon: Icon, end }) => (
           <li key={to}>
             <NavLink

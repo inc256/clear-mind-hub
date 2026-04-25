@@ -2,11 +2,13 @@ import { useSettings } from "@/store/settings";
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-export type AiMode = "problem" | "research";
+export type AiMode = "problem" | "tutor" | "research";
+export type MindsetType = "general" | "medical" | "engineering" | "lecturer" | "scientific" | "creative";
 
 export interface StreamOptions {
   mode: AiMode;
   input: string;
+  mindset?: MindsetType;
   onDelta: (chunk: string) => void;
   onDone: () => void;
   onError: (msg: string) => void;
@@ -19,7 +21,7 @@ export interface StreamOptions {
  * we call that endpoint directly from the client (their choice).
  */
 export async function streamAi(opts: StreamOptions) {
-  const { mode, input, onDelta, onDone, onError, signal } = opts;
+  const { mode, input, mindset, onDelta, onDone, onError, signal } = opts;
   const { depth, customApiKey, customApiBase } = useSettings.getState();
 
   try {
@@ -38,7 +40,7 @@ export async function streamAi(opts: StreamOptions) {
           model: "gpt-4o-mini",
           stream: true,
           messages: [
-            { role: "system", content: systemForMode(mode, depth) },
+            { role: "system", content: systemForMode(mode, depth, mindset) },
             { role: "user", content: input },
           ],
         }),
@@ -51,7 +53,7 @@ export async function streamAi(opts: StreamOptions) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ mode, input, depth }),
+        body: JSON.stringify({ mode, input, depth, mindset }),
       });
     }
 
@@ -110,15 +112,33 @@ export async function streamAi(opts: StreamOptions) {
   }
 }
 
-function systemForMode(mode: AiMode, depth: string): string {
+function systemForMode(mode: AiMode, depth: string, mindset?: MindsetType): string {
   const depthHint =
     depth === "simple"
       ? "Keep it short."
       : depth === "deep"
         ? "Go deep with nuance."
         : "Be balanced.";
+
+  const mindsetGuide = getMindsetGuide(mindset);
+
   if (mode === "problem") {
-    return `You are Tyn Tutor. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution (include 4 multiple choice options with the correct answer marked as [CORRECT]), ## Action Steps. ${depthHint}`;
+    return `You are Tyn Tutor. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution (include 4 multiple choice options with the correct answer marked as [CORRECT]), ## Action Steps, ## Practice Questions (Provide 3 similar practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${depthHint} ${mindsetGuide}`;
+  }
+  if (mode === "tutor") {
+    return `You are Tyn Tutor, an expert educator. Respond in Markdown with sections: ## Introduction, ## Core Concepts (explain fundamental ideas), ## Detailed Explanation (comprehensive breakdown with examples), ## Key Takeaways, ## Practice Questions (Provide 3 practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${depthHint} ${mindsetGuide} Use terminology and examples relevant to the chosen mindset.`;
   }
   return `You are Tyn Tutor research assistant. Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats. ${depthHint}`;
+}
+
+function getMindsetGuide(mindset?: MindsetType): string {
+  const guides: Record<MindsetType, string> = {
+    general: "Use clear, everyday language suitable for a general audience.",
+    medical: "Use medical terminology, reference anatomy/physiology, and provide clinical context when relevant.",
+    engineering: "Use technical terminology, focus on systems, efficiency, and design principles. Include equations and technical specifications where applicable.",
+    lecturer: "Use pedagogical language, break down concepts progressively, and use teaching metaphors and analogies.",
+    scientific: "Use scientific terminology, cite principles and laws, and explain mechanisms from first principles.",
+    creative: "Use imaginative language, examples, and metaphors to make concepts engaging and memorable.",
+  };
+  return mindset ? `Mindset: ${guides[mindset]}` : "";
 }

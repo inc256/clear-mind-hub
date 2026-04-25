@@ -1,10 +1,17 @@
 import { useRef, useState } from "react";
-import { streamAi, AiMode } from "@/services/aiService";
+import { streamAi, AiMode, MindsetType } from "@/services/aiService";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AiWorkspaceProps {
   mode: AiMode;
@@ -14,12 +21,22 @@ interface AiWorkspaceProps {
   acceptFile?: boolean;
 }
 
+const mindsetOptions: { value: MindsetType; label: string }[] = [
+  { value: "general", label: "General" },
+  { value: "medical", label: "Medical" },
+  { value: "engineering", label: "Engineering" },
+  { value: "lecturer", label: "Lecturer" },
+  { value: "scientific", label: "Scientific" },
+  { value: "creative", label: "Creative" },
+];
+
 export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [steps, setSteps] = useState<Array<{title: string, content: string}>>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef("");
 
@@ -37,6 +54,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     await streamAi({
       mode,
       input: text,
+      mindset: mode === "tutor" ? selectedMindset : undefined,
       signal: ctrl.signal,
       onDelta: (chunk) => setOutput((p) => p + chunk),
       onDone: () => {
@@ -100,6 +118,29 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         </h1>
         <p className="text-muted-foreground text-sm sm:text-base max-w-xl">{subtitle}</p>
       </header>
+
+      {mode === "tutor" && steps.length === 0 && !loading && (
+        <div className="glass-card rounded-2xl p-3 sm:p-4">
+          <label className="text-sm font-medium text-foreground block mb-2">
+            Learning Mindset
+          </label>
+          <Select value={selectedMindset} onValueChange={(value) => setSelectedMindset(value as MindsetType)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {mindsetOptions.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-2">
+            The AI will tailor explanations based on your chosen mindset.
+          </p>
+        </div>
+      )}
 
         {steps.length === 0 && !loading && (
         <>
