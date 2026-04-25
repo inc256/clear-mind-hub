@@ -1,17 +1,11 @@
-import { useSettings, Depth } from "@/store/settings";
+import { useSettings } from "@/store/settings";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Shield, Sliders, Key, ChevronDown, Sparkles } from "lucide-react";
+import { Shield, Key, ChevronDown, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-const depthOptions: { value: Depth; label: string; desc: string }[] = [
-  { value: "simple", label: "Simple", desc: "Short and beginner-friendly" },
-  { value: "balanced", label: "Balanced", desc: "Clear, not exhaustive" },
-  { value: "deep", label: "Deep", desc: "Nuance, edge cases, depth" },
-];
 
 const Profile = () => {
   const s = useSettings();
@@ -54,35 +48,6 @@ const Profile = () => {
               </div>
             )}
           </div>
-        </div>
-      </section>
-
-      {/* Depth */}
-      <section className="glass-card rounded-2xl p-5 sm:p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="grid place-items-center h-10 w-10 rounded-xl bg-accent text-primary-deep">
-            <Sliders size={18} />
-          </div>
-          <div>
-            <h2 className="font-semibold">Response depth</h2>
-            <p className="text-sm text-muted-foreground">How thoroughly should Organyze reason?</p>
-          </div>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-2">
-          {depthOptions.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => s.setDepth(opt.value)}
-              className={`text-left rounded-xl border px-4 py-3 transition-all ${
-                s.depth === opt.value
-                  ? "border-primary bg-accent shadow-glow"
-                  : "border-border/60 bg-card/50 hover:border-primary/30"
-              }`}
-            >
-              <div className="font-semibold text-sm">{opt.label}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
-            </button>
-          ))}
         </div>
       </section>
 

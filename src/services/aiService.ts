@@ -22,7 +22,7 @@ export interface StreamOptions {
  */
 export async function streamAi(opts: StreamOptions) {
   const { mode, input, mindset, onDelta, onDone, onError, signal } = opts;
-  const { depth, customApiKey, customApiBase } = useSettings.getState();
+  const { customApiKey, customApiBase } = useSettings.getState();
 
   try {
     let resp: Response;
@@ -40,7 +40,7 @@ export async function streamAi(opts: StreamOptions) {
           model: "gpt-4o-mini",
           stream: true,
           messages: [
-            { role: "system", content: systemForMode(mode, depth, mindset) },
+            { role: "system", content: systemForMode(mode, mindset) },
             { role: "user", content: input },
           ],
         }),
@@ -53,7 +53,7 @@ export async function streamAi(opts: StreamOptions) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ mode, input, depth, mindset }),
+        body: JSON.stringify({ mode, input, mindset }),
       });
     }
 
@@ -112,23 +112,16 @@ export async function streamAi(opts: StreamOptions) {
   }
 }
 
-function systemForMode(mode: AiMode, depth: string, mindset?: MindsetType): string {
-  const depthHint =
-    depth === "simple"
-      ? "Keep it short."
-      : depth === "deep"
-        ? "Go deep with nuance."
-        : "Be balanced.";
-
+function systemForMode(mode: AiMode, mindset?: MindsetType): string {
   const mindsetGuide = getMindsetGuide(mindset);
 
   if (mode === "problem") {
-    return `You are Tyn Tutor. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution (include 4 multiple choice options with the correct answer marked as [CORRECT]), ## Action Steps, ## Practice Questions (Provide 3 similar practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${depthHint} ${mindsetGuide}`;
+    return `You are Tyn Tutor. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution (include 4 multiple choice options with the correct answer marked as [CORRECT]), ## Action Steps, ## Practice Questions (Provide 3 similar practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${mindsetGuide}`;
   }
   if (mode === "tutor") {
-    return `You are Tyn Tutor, an expert educator. Respond in Markdown with sections: ## Introduction, ## Core Concepts (explain fundamental ideas), ## Detailed Explanation (comprehensive breakdown with examples), ## Key Takeaways, ## Practice Questions (Provide 3 practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${depthHint} ${mindsetGuide} Use terminology and examples relevant to the chosen mindset.`;
+    return `You are Tyn Tutor, an expert educator. Respond in Markdown with sections: ## Introduction, ## Core Concepts (explain fundamental ideas), ## Detailed Explanation (comprehensive breakdown with examples), ## Key Takeaways, ## Practice Questions (Provide 3 practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${mindsetGuide} Use terminology and examples relevant to the chosen mindset.`;
   }
-  return `You are Tyn Tutor research assistant. Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats. ${depthHint}`;
+  return `You are Tyn Tutor research assistant. Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats.`;
 }
 
 function getMindsetGuide(mindset?: MindsetType): string {

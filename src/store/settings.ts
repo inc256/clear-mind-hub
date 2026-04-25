@@ -1,14 +1,10 @@
 import { create } from "zustand";
 
-export type Depth = "simple" | "balanced" | "deep";
-
 interface SettingsState {
   privacyMode: boolean;
-  depth: Depth;
   customApiKey: string;
   customApiBase: string;
   setPrivacyMode: (v: boolean) => void;
-  setDepth: (d: Depth) => void;
   setCustomApiKey: (k: string) => void;
   setCustomApiBase: (k: string) => void;
 }
@@ -29,7 +25,6 @@ const initial = load() ?? {};
 
 export const useSettings = create<SettingsState>((set, get) => ({
   privacyMode: initial.privacyMode ?? false,
-  depth: initial.depth ?? "balanced",
   customApiKey: initial.customApiKey ?? "",
   customApiBase: initial.customApiBase ?? "",
   setPrivacyMode: (v) => {
@@ -44,10 +39,6 @@ export const useSettings = create<SettingsState>((set, get) => ({
         /* noop */
       }
     }
-  },
-  setDepth: (d) => {
-    set({ depth: d });
-    persist(get());
   },
   setCustomApiKey: (k) => {
     set({ customApiKey: k });
@@ -66,7 +57,6 @@ function persist(state: SettingsState) {
       STORAGE_KEY,
       JSON.stringify({
         privacyMode: state.privacyMode,
-        depth: state.depth,
         customApiKey: state.customApiKey,
         customApiBase: state.customApiBase,
       }),
