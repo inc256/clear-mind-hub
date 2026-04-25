@@ -116,7 +116,7 @@ function systemForMode(mode: AiMode, mindset?: MindsetType): string {
   const mindsetGuide = getMindsetGuide(mindset);
 
   if (mode === "problem") {
-    return `You are Tyn Tutor. Respond in Markdown with sections: ## Problem Understanding, ## Breakdown, ## Reasoning Steps, ## Final Solution (include 4 multiple choice options with the correct answer marked as [CORRECT]), ## Action Steps, ## Practice Questions (Provide 3 similar practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${mindsetGuide}`;
+    return `You are Tyn Tutor. IMPORTANT: Be BRIEF and FOCUSED. Respond with: ## Solution (concise explanation and direct answer), ## Check Your Answer (provide exactly 4 multiple choice options on separate lines: A) option text, B) option text, C) option text, D) option text. Mark the correct answer with [CORRECT] at the end of that line only). Keep explanation SHORT - max 2-3 sentences.`;
   }
   if (mode === "tutor") {
     return `You are Tyn Tutor, an expert educator. Respond in Markdown with sections: ## Introduction, ## Core Concepts (explain fundamental ideas), ## Detailed Explanation (comprehensive breakdown with examples), ## Key Takeaways, ## Practice Questions (Provide 3 practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${mindsetGuide} Use terminology and examples relevant to the chosen mindset.`;

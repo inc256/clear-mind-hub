@@ -53,11 +53,13 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
     const lines = content.split('\n');
     const options: { letter: string; text: string; correct: boolean }[] = [];
     lines.forEach(line => {
-      const match = line.match(/^([A-D])\)\s*(.+?)(?:\s*\[CORRECT\])?$/);
+      const match = line.match(/^([A-D])\)\s*(.+?)(?:\s*\[CORRECT\])?$/i);
       if (match) {
         const [, letter, text] = match;
         const correct = line.includes('[CORRECT]');
-        options.push({ letter, text, correct });
+        // Clean up text - remove markdown formatting
+        const cleanText = text.trim().replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1');
+        options.push({ letter: letter.toUpperCase(), text: cleanText, correct });
       }
     });
     return options;
@@ -266,7 +268,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
                       <Button
                         key={option.letter}
                         onClick={() => handleAnswerSelect(option.letter)}
-                        variant={selectedAnswer === option.letter ? "default" : "outline"}
+                        variant={selectedAnswer === option.letter ? (option.correct ? "default" : "destructive") : "outline"}
                         className="justify-start text-left"
                         disabled={selectedAnswer !== null}
                       >
@@ -277,7 +279,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
                 </div>
               )}
 
-              {(mode === "problem" || mode === "tutor") && currentStep === steps.length - 1 && extractPracticeQuestions(content).length > 0 && (
+              {mode === "tutor" && currentStep === steps.length - 1 && extractPracticeQuestions(content).length > 0 && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <Button
                     onClick={() => setShowingPracticeQuestions(true)}
