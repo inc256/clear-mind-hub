@@ -4,6 +4,7 @@ import { Logo } from "@/components/Logo";
 
 const items = [
   { to: "/", label: "Problem", icon: Brain, end: true },
+  { to: "/tutor", label: "Tutor", icon: Sparkles, end: true },
   { to: "/research", label: "Research", icon: Search },
 ];
 
