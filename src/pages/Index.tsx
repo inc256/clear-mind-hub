@@ -1,12 +1,16 @@
 import { AiWorkspace } from "@/components/AiWorkspace";
+import { useTranslation } from "react-i18next";
 
-const Index = () => (
-  <AiWorkspace
-    mode="problem"
-    title="Problem solver"
-    subtitle="Describe what you're stuck on. Tyn Tutor breaks it down into understanding, reasoning, and a clear solution."
-    placeholder="e.g. How should I prioritize features for my SaaS launch with limited engineering time?"
-  />
-);
+const Index = () => {
+  const { t } = useTranslation();
+  return (
+    <AiWorkspace
+      mode="problem"
+      title={t('problem.title')}
+      subtitle={t('problem.subtitle')}
+      placeholder={t('problem.placeholder')}
+    />
+  );
+};
 
 export default Index;

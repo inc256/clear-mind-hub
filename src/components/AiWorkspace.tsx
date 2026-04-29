@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -21,16 +22,17 @@ interface AiWorkspaceProps {
   acceptFile?: boolean;
 }
 
-const mindsetOptions: { value: MindsetType; label: string }[] = [
-  { value: "general", label: "General" },
-  { value: "medical", label: "Medical" },
-  { value: "engineering", label: "Engineering" },
-  { value: "lecturer", label: "Lecturer" },
-  { value: "scientific", label: "Scientific" },
-  { value: "creative", label: "Creative" },
+const getMindsetOptions = (t: any) => [
+  { value: "general", label: t('workspace.general') },
+  { value: "medical", label: t('workspace.medical') },
+  { value: "engineering", label: t('workspace.engineering') },
+  { value: "lecturer", label: t('workspace.lecturer') },
+  { value: "scientific", label: t('workspace.scientific') },
+  { value: "creative", label: t('workspace.creative') },
 ];
 
 export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
+  const { t } = useTranslation();
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [steps, setSteps] = useState<Array<{title: string, content: string}>>([]);
@@ -122,14 +124,14 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
       {mode === "tutor" && steps.length === 0 && !loading && (
         <div className="glass-card rounded-2xl p-3 sm:p-4">
           <label className="text-sm font-medium text-foreground block mb-2">
-            Learning Mindset
+            {t('workspace.mindset')}
           </label>
           <Select value={selectedMindset} onValueChange={(value) => setSelectedMindset(value as MindsetType)}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {mindsetOptions.map(({ value, label }) => (
+              {getMindsetOptions(t).map(({ value, label }) => (
                 <SelectItem key={value} value={value}>
                   {label}
                 </SelectItem>
@@ -137,7 +139,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-2">
-            The AI will tailor explanations based on your chosen mindset.
+            {t('workspace.mindsetDescription')}
           </p>
         </div>
       )}
@@ -171,7 +173,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                   </label>
                 )}
                 <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                  ⌘ + Enter to send
+                  {t('workspace.sendShortcut')}
                 </span>
               </div>
               {loading ? (
@@ -183,7 +185,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                   variant="secondary"
                   size="sm"
                 >
-                  <Square size={14} className="mr-1.5" /> Stop
+                  <Square size={14} className="mr-1.5" /> {t('common.cancel')}
                 </Button>
               ) : (
                 <Button
@@ -192,7 +194,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                   size="sm"
                    className="bg-primary hover:opacity-90 btn-glow"
                 >
-                  <ArrowUp size={14} className="mr-1.5" /> Solve
+                  <ArrowUp size={14} className="mr-1.5" /> {t('workspace.solve')}
                 </Button>
               )}
             </div>
@@ -204,7 +206,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
 
       {steps.length > 0 && lastInputRef.current && (
         <div className="glass-card rounded-2xl p-4 mb-6 animate-slide-up">
-          <p className="text-sm font-medium text-muted-foreground">Question:</p>
+          <p className="text-sm font-medium text-muted-foreground">{t('workspace.question')}</p>
           <p className="text-foreground mt-1">{lastInputRef.current}</p>
         </div>
       )}

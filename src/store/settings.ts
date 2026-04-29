@@ -4,9 +4,11 @@ interface SettingsState {
   privacyMode: boolean;
   customApiKey: string;
   customApiBase: string;
+  language: string;
   setPrivacyMode: (v: boolean) => void;
   setCustomApiKey: (k: string) => void;
   setCustomApiBase: (k: string) => void;
+  setLanguage: (l: string) => void;
 }
 
 const STORAGE_KEY = "organyze.settings.v1";
@@ -27,6 +29,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
   privacyMode: initial.privacyMode ?? false,
   customApiKey: initial.customApiKey ?? "",
   customApiBase: initial.customApiBase ?? "",
+  language: initial.language ?? "English",
   setPrivacyMode: (v) => {
     set({ privacyMode: v });
     persist(get());
@@ -48,6 +51,10 @@ export const useSettings = create<SettingsState>((set, get) => ({
     set({ customApiBase: k });
     persist(get());
   },
+  setLanguage: (l) => {
+    set({ language: l });
+    persist(get());
+  },
 }));
 
 function persist(state: SettingsState) {
@@ -59,6 +66,7 @@ function persist(state: SettingsState) {
         privacyMode: state.privacyMode,
         customApiKey: state.customApiKey,
         customApiBase: state.customApiBase,
+        language: state.language,
       }),
     );
   } catch {

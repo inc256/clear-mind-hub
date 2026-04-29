@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./i18n";
 
 // PWA service worker registration — guarded against Lovable preview iframe
 const isInIframe = (() => {

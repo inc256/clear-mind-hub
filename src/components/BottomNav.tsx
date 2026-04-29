@@ -1,18 +1,20 @@
 import { NavLink } from "@/components/NavLink";
 import { Brain, Sparkles, Search, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-const items = [
-  { to: "/", label: "Problem", icon: Brain, end: true },
+const getItems = (t: any) => [
+  { to: "/", label: t('navigation.home'), icon: Brain, end: true },
   { to: "/tutor", label: "Tutor", icon: Sparkles, end: true },
   { to: "/research", label: "Research", icon: Search },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/profile", label: t('navigation.profile'), icon: User },
 ];
 
 export function BottomNav() {
+  const { t } = useTranslation();
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
       <ul className="grid grid-cols-4">
-        {items.map(({ to, label, icon: Icon, end }) => (
+        {getItems(t).map(({ to, label, icon: Icon, end }) => (
           <li key={to}>
             <NavLink
               to={to}

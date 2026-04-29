@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "Tyn Tutor",
+    "tagline": "Think Better. Learn Smarter.",
+    "description": "AI-powered learning tool. Turn questions, text, and documents into structured solutions, research, and notes."
+  },
+  "navigation": {
+    "home": "Problem",
+    "tutor": "Tutor",
+    "research": "Research",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "Profile & Settings",
+    "subtitle": "Configure how Tyn Tutor thinks and stores data.",
+    "privacy": {
+      "title": "Privacy mode",
+      "description": "Don't store anything locally. Everything is session-only.",
+      "active": "✓ Privacy mode active — settings, API keys, and history are kept in memory only."
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose your preferred language for the interface.",
+      "english": "English (Default)",
+      "arabic": "العربية (Arabic)",
+      "french": "Français (French)",
+      "chinese": "中文 (Chinese)"
+    },
+    "ai": {
+      "title": "AI engine",
+      "description": "Powered by Lovable AI by default — no API key needed.",
+      "advanced": "Advanced — use my own API key",
+      "apiKey": "OpenAI-compatible API key",
+      "apiBase": "API base URL (optional)",
+      "save": "Save",
+      "privacyNotice": "Privacy mode ON: kept in memory only.",
+      "normalNotice": "Stored in your browser's localStorage."
+    },
+    "footer": "Tyn Tutor · Think Better. Learn Smarter."
+  },
+  "workspace": {
+    "thinking": "Thinking…",
+    "response": "Response",
+    "question": "Question:",
+    "newQuery": "New Query",
+    "regenerate": "Regenerate",
+    "speak": "Speak",
+    "stop": "Stop",
+    "speakSpeed": "Speed",
+    "download": "Download",
+    "copy": "Copy",
+    "copied": "Copied",
+    "nextStep": "Next Step",
+    "backToLesson": "Back to Lesson",
+    "practiceQuestions": "Try Practice Questions",
+    "practiceQuestionsTitle": "Practice Questions",
+    "selectCorrectAnswer": "Select the correct answer:",
+    "correct": "Correct! Well done!",
+    "wrong": "Wrong. The correct answer is",
+    "fileAttach": "+ Attach .txt / .md",
+    "sendShortcut": "⌘ + Enter to send",
+    "solve": "Solve",
+    "mindset": "Learning Mindset",
+    "mindsetDescription": "The AI will tailor explanations based on your chosen mindset.",
+    "general": "General",
+    "medical": "Medical",
+    "engineering": "Engineering",
+    "lecturer": "Lecturer",
+    "scientific": "Scientific",
+    "creative": "Creative"
+  },
+  "tutor": {
+    "title": "AI Tutor",
+    "subtitle": "Get personalized tutoring with step-by-step explanations tailored to your learning style.",
+    "placeholder": "Ask me anything... What topic would you like help with?"
+  },
+  "research": {
+    "title": "Research Assistant",
+    "subtitle": "Deep dive into any topic with comprehensive research and structured insights.",
+    "placeholder": "What would you like to research? Enter a topic or question..."
+  },
+  "problem": {
+    "title": "Problem Solver",
+    "subtitle": "Solve complex problems with detailed, step-by-step solutions.",
+    "placeholder": "Describe your problem... I'll break it down and solve it step by step."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong. Please try again.",
+    "success": "Success!",
+    "cancel": "Cancel",
+    "ok": "OK"
+  }
+}

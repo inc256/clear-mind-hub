@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "Tyn Tutor",
+    "tagline": "思考更好。学习更聪明。",
+    "description": "AI 驱动的学习工具。将问题、文本和文档转化为结构化的解决方案、研究和笔记。"
+  },
+  "navigation": {
+    "home": "首页",
+    "tutor": "导师",
+    "research": "研究",
+    "profile": "个人资料"
+  },
+  "profile": {
+    "title": "个人资料和设置",
+    "subtitle": "配置 Tyn Tutor 如何思考和存储数据。",
+    "privacy": {
+      "title": "隐私模式",
+      "description": "不本地存储任何内容。一切都是会话专用。",
+      "active": "✓ 隐私模式激活 — 设置、API 密钥和历史记录仅保存在内存中。"
+    },
+    "language": {
+      "title": "语言",
+      "description": "选择您的界面首选语言。",
+      "english": "English (Default)",
+      "arabic": "العربية (Arabic)",
+      "french": "Français (French)",
+      "chinese": "中文 (Chinese)"
+    },
+    "ai": {
+      "title": "AI 引擎",
+      "description": "默认由 Lovable AI 驱动 — 无需 API 密钥。",
+      "advanced": "高级 — 使用我自己的 API 密钥",
+      "apiKey": "OpenAI 兼容 API 密钥",
+      "apiBase": "API 基础 URL（可选）",
+      "save": "保存",
+      "privacyNotice": "隐私模式开启：仅保存在内存中。",
+      "normalNotice": "存储在您的浏览器 localStorage 中。"
+    },
+    "footer": "Tyn Tutor · 思考更好。学习更聪明。"
+  },
+  "workspace": {
+    "thinking": "思考中…",
+    "response": "回复",
+    "question": "问题：",
+    "newQuery": "新查询",
+    "regenerate": "重新生成",
+    "speak": "朗读",
+    "stop": "停止",
+    "speakSpeed": "速度",
+    "download": "下载",
+    "copy": "复制",
+    "copied": "已复制",
+    "nextStep": "下一步",
+    "backToLesson": "返回课程",
+    "practiceQuestions": "尝试练习题",
+    "practiceQuestionsTitle": "练习题",
+    "selectCorrectAnswer": "选择正确答案：",
+    "correct": "正确！做得好！",
+    "wrong": "错误。正确答案是",
+    "fileAttach": "+ 附加 .txt / .md",
+    "sendShortcut": "⌘ + Enter 发送",
+    "solve": "解决",
+    "mindset": "学习心态",
+    "mindsetDescription": "AI 将根据您选择的思维方式定制解释。",
+    "general": "一般",
+    "medical": "医疗",
+    "engineering": "工程",
+    "lecturer": "讲师",
+    "scientific": "科学",
+    "creative": "创意"
+  },
+  "tutor": {
+    "title": "AI 导师",
+    "subtitle": "获得个性化辅导，包含根据您的学习风格定制的逐步解释。",
+    "placeholder": "问我任何事情... 您想在哪个主题上获得帮助？"
+  },
+  "research": {
+    "title": "研究助手",
+    "subtitle": "深入研究任何主题，包含全面研究和结构化见解。",
+    "placeholder": "您想研究什么？输入主题或问题..."
+  },
+  "problem": {
+    "title": "问题解决者",
+    "subtitle": "使用详细的逐步解决方案解决复杂问题。",
+    "placeholder": "描述您的问题... 我会逐步分解并解决它。"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "出错了。请重试。",
+    "success": "成功！",
+    "cancel": "取消",
+    "ok": "确定"
+  }
+}

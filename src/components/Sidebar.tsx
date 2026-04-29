@@ -1,14 +1,16 @@
 import { NavLink } from "@/components/NavLink";
 import { Brain, Search, User, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { useTranslation } from "react-i18next";
 
-const items = [
-  { to: "/", label: "Problem", icon: Brain, end: true },
-  { to: "/tutor", label: "Tutor", icon: Sparkles, end: true },
-  { to: "/research", label: "Research", icon: Search },
+const getItems = (t: any) => [
+  { to: "/", label: t('navigation.home'), icon: Brain, end: true },
+  { to: "/tutor", label: t('navigation.tutor'), icon: Sparkles, end: true },
+  { to: "/research", label: t('navigation.research'), icon: Search },
 ];
 
 export function Sidebar() {
+  const { t } = useTranslation();
   return (
     <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen flex-col border-r border-border/60 bg-sidebar/80 backdrop-blur-xl animate-slide-in-left">
       <div className="px-6 py-6 border-b border-border/60">
@@ -16,7 +18,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-6 space-y-1">
-        {items.map(({ to, label, icon: Icon, end }) => (
+        {getItems(t).map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -36,7 +38,7 @@ export function Sidebar() {
           className="flex items-center gap-2 text-primary-deep hover:text-primary transition-colors"
         >
           <User size={16} />
-          <span className="text-xs font-semibold uppercase tracking-wider">Profile</span>
+          <span className="text-xs font-semibold uppercase tracking-wider">{t('navigation.profile')}</span>
         </NavLink>
       </div>
     </aside>

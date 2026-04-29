@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "Tyn Tutor",
+    "tagline": "Pensez mieux. Apprenez plus intelligemment.",
+    "description": "Outil d'apprentissage alimenté par IA. Transformez les questions, textes et documents en solutions structurées, recherches et notes."
+  },
+  "navigation": {
+    "home": "Accueil",
+    "tutor": "Tuteur",
+    "research": "Recherche",
+    "profile": "Profil"
+  },
+  "profile": {
+    "title": "Profil et Paramètres",
+    "subtitle": "Configurez comment Tyn Tutor pense et stocke les données.",
+    "privacy": {
+      "title": "Mode confidentialité",
+      "description": "Ne stockez rien localement. Tout est en session uniquement.",
+      "active": "✓ Mode confidentialité actif — les paramètres, clés API et historique sont conservés en mémoire uniquement."
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Choisissez votre langue préférée pour l'interface.",
+      "english": "English (Default)",
+      "arabic": "العربية (Arabic)",
+      "french": "Français (French)",
+      "chinese": "中文 (Chinese)"
+    },
+    "ai": {
+      "title": "Moteur IA",
+      "description": "Alimenté par Lovable AI par défaut — aucune clé API nécessaire.",
+      "advanced": "Avancé — utilisez ma propre clé API",
+      "apiKey": "Clé API compatible OpenAI",
+      "apiBase": "URL de base API (optionnel)",
+      "save": "Sauvegarder",
+      "privacyNotice": "Mode confidentialité activé : conservé en mémoire uniquement.",
+      "normalNotice": "Stocké dans le localStorage de votre navigateur."
+    },
+    "footer": "Tyn Tutor · Pensez mieux. Apprenez plus intelligemment."
+  },
+  "workspace": {
+    "thinking": "Réflexion…",
+    "response": "Réponse",
+    "question": "Question :",
+    "newQuery": "Nouvelle requête",
+    "regenerate": "Régénérer",
+    "speak": "Parler",
+    "stop": "Arrêter",
+    "speakSpeed": "Vitesse",
+    "download": "Télécharger",
+    "copy": "Copier",
+    "copied": "Copié",
+    "nextStep": "Étape suivante",
+    "backToLesson": "Retour au cours",
+    "practiceQuestions": "Essayer les questions de pratique",
+    "practiceQuestionsTitle": "Questions de pratique",
+    "selectCorrectAnswer": "Sélectionnez la bonne réponse :",
+    "correct": "Correct ! Bien joué !",
+    "wrong": "Faux. La bonne réponse est",
+    "fileAttach": "+ Joindre .txt / .md",
+    "sendShortcut": "⌘ + Entrée pour envoyer",
+    "solve": "Résoudre",
+    "mindset": "Style d'apprentissage",
+    "mindsetDescription": "L'IA adaptera les explications en fonction de votre style d'apprentissage choisi.",
+    "general": "Général",
+    "medical": "Médical",
+    "engineering": "Ingénierie",
+    "lecturer": "Conférencier",
+    "scientific": "Scientifique",
+    "creative": "Créatif"
+  },
+  "tutor": {
+    "title": "Tuteur IA",
+    "subtitle": "Obtenez un tutorat personnalisé avec des explications étape par étape adaptées à votre style d'apprentissage.",
+    "placeholder": "Demandez-moi n'importe quoi... Quel sujet aimeriez-vous que je vous aide ?"
+  },
+  "research": {
+    "title": "Assistant de recherche",
+    "subtitle": "Plongez profondément dans n'importe quel sujet avec une recherche complète et des insights structurés.",
+    "placeholder": "Que souhaitez-vous rechercher ? Entrez un sujet ou une question..."
+  },
+  "problem": {
+    "title": "Résolveur de problèmes",
+    "subtitle": "Résolvez des problèmes complexes avec des solutions détaillées étape par étape.",
+    "placeholder": "Décrivez votre problème... Je le décomposerai et le résoudrai étape par étape."
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Quelque chose s'est mal passé. Veuillez réessayer.",
+    "success": "Succès !",
+    "cancel": "Annuler",
+    "ok": "OK"
+  }
+}

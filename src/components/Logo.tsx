@@ -1,4 +1,4 @@
-import { Brain } from "lucide-react";
+import logo from "@/images/Tyn-Tutor-Logo-1080px.png";
 
 interface LogoProps {
   size?: number;
@@ -9,10 +9,14 @@ export function Logo({ size = 32, showText = true }: LogoProps) {
   return (
     <div className="flex items-center gap-2.5">
       <div
-        className="grid place-items-center rounded-xl bg-primary text-primary-foreground shadow-glow animate-pop"
+        className="grid place-items-center rounded-xl bg-primary text-primary-foreground shadow-glow animate-pop overflow-hidden"
         style={{ width: size, height: size }}
       >
-        <Brain size={size * 0.55} strokeWidth={2.2} />
+        <img
+          src={logo}
+          alt="Tyn Tutor Logo"
+          className="w-full h-full object-cover"
+        />
       </div>
       {showText && (
         <div className="leading-none">

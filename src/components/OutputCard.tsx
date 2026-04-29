@@ -3,6 +3,7 @@ import { Copy, RefreshCw, Check, ChevronRight, Plus, Volume2, VolumeX, Download 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { AiMode } from "@/services/aiService";
 import {
   Select,
@@ -30,6 +31,7 @@ interface PracticeQuestion {
 }
 
 export function OutputCard({ content, steps, currentStep, onNext, loading, onRegenerate, onNewQuery, mode }: OutputCardProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
@@ -196,7 +198,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {loading ? "Thinking…" : steps[currentStep]?.title || "Response"}
+              {loading ? t('workspace.thinking') : steps[currentStep]?.title || t('workspace.response')}
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -216,24 +218,24 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
             )}
           {onNewQuery && (
             <Button size="sm" variant="ghost" onClick={onNewQuery}>
-              <Plus size={14} className="mr-1.5" /> New Query
+              <Plus size={14} className="mr-1.5" /> {t('workspace.newQuery')}
             </Button>
           )}
           {onRegenerate && (
             <Button size="sm" variant="ghost" onClick={onRegenerate} disabled={loading}>
-              <RefreshCw size={14} className="mr-1.5" /> Regenerate
+              <RefreshCw size={14} className="mr-1.5" /> {t('workspace.regenerate')}
             </Button>
           )}
             <Button size="sm" variant="ghost" onClick={handleSpeak} disabled={!content || showingPracticeQuestions}>
               {speaking ? <VolumeX size={14} className="mr-1.5" /> : <Volume2 size={14} className="mr-1.5" />}
-              {speaking ? "Stop" : "Speak"}
+              {speaking ? t('workspace.stop') : t('workspace.speak')}
             </Button>
             <Button size="sm" variant="ghost" onClick={downloadDocument} disabled={!content || loading}>
-              <Download size={14} className="mr-1.5" /> Download
+              <Download size={14} className="mr-1.5" /> {t('workspace.download')}
             </Button>
             <Button size="sm" variant="ghost" onClick={handleCopy} disabled={!content}>
               {copied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
-              {copied ? "Copied" : "Copy"}
+              {copied ? t('workspace.copied') : t('workspace.copy')}
             </Button>
         </div>
       </div>
@@ -262,7 +264,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
 
               {mode === "problem" && currentStep === steps.length - 1 && (
                 <div className="mt-6 space-y-4">
-                  <p className="font-semibold">Select the correct answer:</p>
+                  <p className="font-semibold">{t('workspace.selectCorrectAnswer')}</p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {parseMultipleChoice(steps[currentStep]?.content || '').map((option) => (
                       <Button
@@ -286,7 +288,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
                     variant="outline"
                     className="w-full"
                   >
-                    Try Practice Questions ({extractPracticeQuestions(content).length})
+                    {t('workspace.practiceQuestions')} ({extractPracticeQuestions(content).length})
                   </Button>
                 </div>
               )}
@@ -294,7 +296,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
           ) : (
             <>
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Practice Questions</h3>
+                <h3 className="font-semibold text-lg">{t('workspace.practiceQuestionsTitle')}</h3>
                 {extractPracticeQuestions(content).map((question, qIndex) => (
                   <div key={qIndex} className="border border-border rounded-lg p-4 space-y-3">
                     <p className="font-medium">{qIndex + 1}. {question.question}</p>
@@ -326,7 +328,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
                   variant="outline"
                   className="w-full"
                 >
-                  Back to Lesson
+                  {t('workspace.backToLesson')}
                 </Button>
               </div>
             </>

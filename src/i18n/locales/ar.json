@@ -1,0 +1,94 @@
+{
+  "app": {
+    "name": "Tyn Tutor",
+    "tagline": "فكر بشكل أفضل. تعلم بشكل أذكى.",
+    "description": "أداة تعلم مدعومة بالذكاء الاصطناعي. حوّل الأسئلة والنصوص والوثائق إلى حلول منظمة وبحوث وملاحظات."
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "tutor": "المدرس",
+    "research": "البحث",
+    "profile": "الملف الشخصي"
+  },
+  "profile": {
+    "title": "الملف الشخصي والإعدادات",
+    "subtitle": "قم بتكوين كيفية تفكير Tyn Tutor وتخزين البيانات.",
+    "privacy": {
+      "title": "وضع الخصوصية",
+      "description": "لا تخزن أي شيء محلياً. كل شيء في الجلسة فقط.",
+      "active": "✓ وضع الخصوصية نشط — الإعدادات ومفاتيح API والتاريخ محفوظة في الذاكرة فقط."
+    },
+    "language": {
+      "title": "اللغة",
+      "description": "اختر لغتك المفضلة للواجهة.",
+      "english": "English (Default)",
+      "arabic": "العربية (Arabic)",
+      "french": "Français (French)",
+      "chinese": "中文 (Chinese)"
+    },
+    "ai": {
+      "title": "محرك الذكاء الاصطناعي",
+      "description": "مدعوم بـ Lovable AI افتراضياً — لا حاجة لمفتاح API.",
+      "advanced": "متقدم — استخدم مفتاح API الخاص بي",
+      "apiKey": "مفتاح API متوافق مع OpenAI",
+      "apiBase": "عنوان URL الأساسي للـ API (اختياري)",
+      "save": "حفظ",
+      "privacyNotice": "وضع الخصوصية مفعل: محفوظ في الذاكرة فقط.",
+      "normalNotice": "محفوظ في localStorage للمتصفح."
+    },
+    "footer": "Tyn Tutor · فكر بشكل أفضل. تعلم بشكل أذكى."
+  },
+  "workspace": {
+    "thinking": "يفكر…",
+    "response": "الرد",
+    "question": "السؤال:",
+    "newQuery": "استعلام جديد",
+    "regenerate": "إعادة توليد",
+    "speak": "تكلم",
+    "stop": "توقف",
+    "speakSpeed": "السرعة",
+    "download": "تحميل",
+    "copy": "نسخ",
+    "copied": "تم النسخ",
+    "nextStep": "الخطوة التالية",
+    "backToLesson": "العودة إلى الدرس",
+    "practiceQuestions": "جرب أسئلة الممارسة",
+    "practiceQuestionsTitle": "أسئلة الممارسة",
+    "selectCorrectAnswer": "اختر الإجابة الصحيحة:",
+    "correct": "صحيح! أحسنت!",
+    "wrong": "خطأ. الإجابة الصحيحة هي",
+    "fileAttach": "+ إرفاق .txt / .md",
+    "sendShortcut": "⌘ + Enter للإرسال",
+    "solve": "حل",
+    "mindset": "نمط التعلم",
+    "mindsetDescription": "سوف يتكيف الذكاء الاصطناعي مع الشرح بناءً على نمط التعلم المختار.",
+    "general": "عام",
+    "medical": "طبي",
+    "engineering": "هندسي",
+    "lecturer": "محاضر",
+    "scientific": "علمي",
+    "creative": "إبداعي"
+  },
+  "tutor": {
+    "title": "المدرس الذكي",
+    "subtitle": "احصل على تدريس مخصص مع شرح خطوة بخطوة مخصص لأسلوب التعلم الخاص بك.",
+    "placeholder": "اسألني أي شيء... ما الموضوع الذي تريد المساعدة فيه؟"
+  },
+  "research": {
+    "title": "مساعد البحث",
+    "subtitle": "غوص عميق في أي موضوع مع بحث شامل ورؤى منظمة.",
+    "placeholder": "ماذا تريد البحث عنه؟ أدخل موضوعاً أو سؤالاً..."
+  },
+  "problem": {
+    "title": "حل المشكلات",
+    "subtitle": "حل المشكلات المعقدة بحلول مفصلة خطوة بخطوة.",
+    "placeholder": "صف مشكلتك... سأقوم بتحليلها وحلها خطوة بخطوة."
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "success": "نجح!",
+    "cancel": "إلغاء",
+    "ok": "موافق"
+  }
+}
