@@ -1,12 +1,12 @@
 import { NavLink } from "@/components/NavLink";
-import { Brain, Search, User, Sparkles } from "lucide-react";
+import { Brain, History, Search, User, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
 
 const getItems = (t: any) => [
   { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
   { to: "/research", label: t('navigation.research'), icon: Search },
-  { to: "/history", label: t('navigation.history'), icon: Sparkles },
+  { to: "/history", label: t('navigation.history'), icon: History },
 ];
 
 export function Sidebar() {
@@ -24,7 +24,7 @@ export function Sidebar() {
             to={to}
             end={end}
             className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-            activeClassName="!bg-primary !text-primary-foreground shadow-glow hover:!text-primary-foreground"
+            activeClassName="!bg-blue-500 !text-white shadow-glow hover:!text-white"
           >
             <Icon className="h-4.5 w-4.5" size={18} />
             <span>{label}</span>

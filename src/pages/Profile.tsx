@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/select";
 
 const languageOptions = [
-  { value: "en", label: "English (Default)" },
+  { value: "en", label: "English" },
   { value: "ar", label: "العربية (Arabic)" },
   { value: "fr", label: "Français (French)" },
   { value: "zh", label: "中文 (Chinese)" },
+  { value: "sw", label: "Swahili" },
 ];
 
 const Profile = () => {
@@ -51,7 +52,7 @@ const Profile = () => {
       {/* Privacy */}
       <section className="glass-card rounded-2xl p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <div className="grid place-items-center h-10 w-10 rounded-xl bg-accent text-primary-deep">
+          <div className="grid place-items-center h-10 w-10 rounded-xl bg-accent text-primary">
             <Shield size={18} />
           </div>
           <div className="flex-1 min-w-0">
@@ -76,7 +77,7 @@ const Profile = () => {
       {/* Language */}
       <section className="glass-card rounded-2xl p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <div className="grid place-items-center h-10 w-10 rounded-xl bg-accent text-primary-deep">
+          <div className="grid place-items-center h-10 w-10 rounded-xl bg-accent text-primary">
             <Globe size={18} />
           </div>
           <div className="flex-1 min-w-0">
@@ -89,12 +90,12 @@ const Profile = () => {
               </div>
             </div>
             <div className="mt-3">
-              <Select value={i18n.language} onValueChange={(value) => {
+              <Select value={i18n.language} placeholder="" onValueChange={(value) => {
                 i18n.changeLanguage(value);
                 s.setLanguage(value);
               }}>
                 <SelectTrigger className="w-full max-w-xs">
-                  <SelectValue />
+                  <SelectValue placeholder="" />
                 </SelectTrigger>
                 <SelectContent>
                   {languageOptions.map(({ value, label }) => (

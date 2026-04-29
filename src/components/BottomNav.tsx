@@ -1,11 +1,11 @@
 import { NavLink } from "@/components/NavLink";
-import { Brain, Sparkles, Search, User } from "lucide-react";
+import { Brain, History, Search, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const getItems = (t: any) => [
   { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
   { to: "/research", label: t('navigation.research'), icon: Search },
-  { to: "/history", label: t('navigation.history'), icon: Sparkles },
+  { to: "/history", label: t('navigation.history'), icon: History },
   { to: "/profile", label: t('navigation.profile'), icon: User },
 ];
 
@@ -20,7 +20,7 @@ export function BottomNav() {
               to={to}
               end={end}
               className="flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium text-muted-foreground transition-colors"
-              activeClassName="!text-primary"
+              activeClassName="!text-blue-500"
             >
               <Icon size={20} />
               <span>{label}</span>
