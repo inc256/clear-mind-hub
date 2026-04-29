@@ -20,7 +20,7 @@ const languageOptions = [
   { value: "ar", label: "العربية (Arabic)" },
   { value: "fr", label: "Français (French)" },
   { value: "zh", label: "中文 (Chinese)" },
-  { value: "sw", label: "Swahili" },
+  { value: "sw", label: "Kiswahili (Swahili)" },
 ];
 
 const Profile = () => {
