@@ -5,10 +5,11 @@ const Index = () => {
   const { t } = useTranslation();
   return (
     <AiWorkspace
-      mode="problem"
-      title={t('problem.title')}
-      subtitle={t('problem.subtitle')}
-      placeholder={t('problem.placeholder')}
+      mode="tutor"
+      title={t('tutor.title')}
+      subtitle={t('tutor.subtitle')}
+      placeholder={t('tutor.placeholder')}
+      acceptFile
     />
   );
 };

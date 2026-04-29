@@ -5,9 +5,9 @@
     "description": "AI 驱动的学习工具。将问题、文本和文档转化为结构化的解决方案、研究和笔记。"
   },
   "navigation": {
-    "home": "首页",
     "tutor": "导师",
     "research": "研究",
+    "history": "历史",
     "profile": "个人资料"
   },
   "profile": {
@@ -51,13 +51,17 @@
     "copy": "复制",
     "copied": "已复制",
     "nextStep": "下一步",
+    "generateQuiz": "生成测验",
     "backToLesson": "返回课程",
     "practiceQuestions": "尝试练习题",
     "practiceQuestionsTitle": "练习题",
     "selectCorrectAnswer": "选择正确答案：",
     "correct": "正确！做得好！",
     "wrong": "错误。正确答案是",
-    "fileAttach": "+ 附加 .txt / .md",
+    "attachFiles": "附加文件",
+    "camera": "相机",
+    "document": "文档",
+    "image": "图像",
     "sendShortcut": "⌘ + Enter 发送",
     "solve": "解决",
     "mindset": "学习心态",

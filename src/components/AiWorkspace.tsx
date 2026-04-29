@@ -3,9 +3,10 @@ import { streamAi, AiMode, MindsetType } from "@/services/aiService";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Sparkles } from "lucide-react";
+import { ArrowUp, Square, Sparkles, Camera, FileText, Image as ImageIcon, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -41,6 +42,9 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
   const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef("");
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const run = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -112,6 +116,11 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     }
   };
 
+  const handleGenerateQuiz = () => {
+    const quizPrompt = `Generate a multiple-choice quiz with 5 questions from the following content. Make sure questions are objective and have 4 options each with one correct answer clearly marked: ${output}`;
+    run(quizPrompt);
+  };
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
       <header className="space-y-2">
@@ -162,16 +171,52 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
             <div className="flex items-center justify-between gap-2 pt-2 px-1">
               <div className="flex items-center gap-2">
                 {acceptFile && (
-                  <label className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
-                    <input
-                      type="file"
-                      accept=".txt,.md,.csv,.json"
-                      className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-                    />
-                    + Attach .txt / .md
-                  </label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
+                        <Paperclip size={14} />
+                        {t('workspace.attachFiles')}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" side="top">
+                      <DropdownMenuItem onClick={() => cameraInputRef.current?.click()}>
+                        <Camera size={14} className="mr-2" />
+                        {t('workspace.camera')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => documentInputRef.current?.click()}>
+                        <FileText size={14} className="mr-2" />
+                        {t('workspace.document')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+                        <ImageIcon size={14} className="mr-2" />
+                        {t('workspace.image')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
+
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                />
+                <input
+                  ref={documentInputRef}
+                  type="file"
+                  accept=".txt,.md,.csv,.json"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                />
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                />
                 <span className="text-[11px] text-muted-foreground hidden sm:inline">
                   {t('workspace.sendShortcut')}
                 </span>
@@ -191,10 +236,9 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                 <Button
                   onClick={() => run(input)}
                   disabled={!input.trim()}
-                  size="sm"
-                   className="bg-primary hover:opacity-90 btn-glow"
+                  className="bg-primary hover:opacity-90 btn-glow rounded-full w-10 h-10 p-0"
                 >
-                  <ArrowUp size={14} className="mr-1.5" /> {t('workspace.solve')}
+                  <ArrowUp size={16} />
                 </Button>
               )}
             </div>
@@ -219,6 +263,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
           loading={loading}
           onRegenerate={lastInputRef.current ? () => run(lastInputRef.current) : undefined}
           onNewQuery={reset}
+          onGenerateQuiz={mode === "tutor" ? handleGenerateQuiz : undefined}
           mode={mode}
         />
     </div>

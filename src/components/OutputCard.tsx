@@ -21,6 +21,7 @@ interface OutputCardProps {
   loading?: boolean;
   onRegenerate?: () => void;
   onNewQuery?: () => void;
+  onGenerateQuiz?: () => void;
   mode?: AiMode;
 }
 
@@ -30,7 +31,7 @@ interface PracticeQuestion {
   correct_answer: string;
 }
 
-export function OutputCard({ content, steps, currentStep, onNext, loading, onRegenerate, onNewQuery, mode }: OutputCardProps) {
+export function OutputCard({ content, steps, currentStep, onNext, loading, onRegenerate, onNewQuery, onGenerateQuiz, mode }: OutputCardProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -198,7 +199,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {loading ? t('workspace.thinking') : steps[currentStep]?.title || t('workspace.response')}
+              {loading ? t('workspace.thinking') : (steps[currentStep]?.title || t('workspace.response')).replace(/[\^\$]/g, '')}
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -257,8 +258,8 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
               <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground">
                 <ReactMarkdown>
                   {mode === "research" && currentStep === steps.length - 1
-                    ? steps.map(s => `## ${s.title}\n${s.content}`).join('\n\n')
-                    : steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '') || ""}
+                    ? steps.map(s => `## ${s.title.replace(/[\^\$]/g, '')}\n${s.content.replace(/[\^\$]/g, '')}`).join('\n\n')
+                    : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$]/g, '') || "")}
                 </ReactMarkdown>
               </article>
 
@@ -339,7 +340,15 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
       {!loading && currentStep < steps.length - 1 && !showingPracticeQuestions && (
         <div className="flex justify-center mt-6">
           <Button onClick={onNext} className="bg-primary hover:opacity-90 btn-glow">
-            Next Step <ChevronRight size={16} className="ml-2" />
+            {t('workspace.nextStep')} <ChevronRight size={16} className="ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {!loading && mode === "tutor" && steps.length > 0 && currentStep === steps.length - 1 && onGenerateQuiz && (
+        <div className="flex justify-center mt-4">
+          <Button onClick={onGenerateQuiz} variant="outline">
+            {t('workspace.generateQuiz')}
           </Button>
         </div>
       )}

@@ -5,9 +5,9 @@
     "description": "أداة تعلم مدعومة بالذكاء الاصطناعي. حوّل الأسئلة والنصوص والوثائق إلى حلول منظمة وبحوث وملاحظات."
   },
   "navigation": {
-    "home": "الرئيسية",
     "tutor": "المدرس",
     "research": "البحث",
+    "history": "التاريخ",
     "profile": "الملف الشخصي"
   },
   "profile": {
@@ -51,13 +51,17 @@
     "copy": "نسخ",
     "copied": "تم النسخ",
     "nextStep": "الخطوة التالية",
+    "generateQuiz": "إنشاء اختبار",
     "backToLesson": "العودة إلى الدرس",
     "practiceQuestions": "جرب أسئلة الممارسة",
     "practiceQuestionsTitle": "أسئلة الممارسة",
     "selectCorrectAnswer": "اختر الإجابة الصحيحة:",
     "correct": "صحيح! أحسنت!",
     "wrong": "خطأ. الإجابة الصحيحة هي",
-    "fileAttach": "+ إرفاق .txt / .md",
+    "attachFiles": "إرفاق ملفات",
+    "camera": "كاميرا",
+    "document": "وثيقة",
+    "image": "صورة",
     "sendShortcut": "⌘ + Enter للإرسال",
     "solve": "حل",
     "mindset": "نمط التعلم",

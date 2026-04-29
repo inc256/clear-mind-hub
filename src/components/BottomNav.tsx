@@ -3,9 +3,9 @@ import { Brain, Sparkles, Search, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const getItems = (t: any) => [
-  { to: "/", label: t('navigation.home'), icon: Brain, end: true },
-  { to: "/tutor", label: "Tutor", icon: Sparkles, end: true },
-  { to: "/research", label: "Research", icon: Search },
+  { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
+  { to: "/research", label: t('navigation.research'), icon: Search },
+  { to: "/history", label: t('navigation.history'), icon: Sparkles },
   { to: "/profile", label: t('navigation.profile'), icon: User },
 ];
 

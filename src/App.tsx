@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index.tsx";
-import Tutor from "./pages/Tutor.tsx";
 import Research from "./pages/Research.tsx";
+import History from "./pages/History.tsx";
 import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -21,8 +21,8 @@ const App = () => (
         <AppLayout>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/tutor" element={<Tutor />} />
             <Route path="/research" element={<Research />} />
+            <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -4,9 +4,9 @@ import { Logo } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
 
 const getItems = (t: any) => [
-  { to: "/", label: t('navigation.home'), icon: Brain, end: true },
-  { to: "/tutor", label: t('navigation.tutor'), icon: Sparkles, end: true },
+  { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
   { to: "/research", label: t('navigation.research'), icon: Search },
+  { to: "/history", label: t('navigation.history'), icon: Sparkles },
 ];
 
 export function Sidebar() {

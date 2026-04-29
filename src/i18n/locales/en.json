@@ -5,9 +5,9 @@
     "description": "AI-powered learning tool. Turn questions, text, and documents into structured solutions, research, and notes."
   },
   "navigation": {
-    "home": "Problem",
     "tutor": "Tutor",
     "research": "Research",
+    "history": "History",
     "profile": "Profile"
   },
   "profile": {
@@ -51,13 +51,17 @@
     "copy": "Copy",
     "copied": "Copied",
     "nextStep": "Next Step",
+    "generateQuiz": "Generate Quiz",
     "backToLesson": "Back to Lesson",
     "practiceQuestions": "Try Practice Questions",
     "practiceQuestionsTitle": "Practice Questions",
     "selectCorrectAnswer": "Select the correct answer:",
     "correct": "Correct! Well done!",
     "wrong": "Wrong. The correct answer is",
-    "fileAttach": "+ Attach .txt / .md",
+    "attachFiles": "Attach Files",
+    "camera": "Camera",
+    "document": "Document",
+    "image": "Image",
     "sendShortcut": "⌘ + Enter to send",
     "solve": "Solve",
     "mindset": "Learning Mindset",

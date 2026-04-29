@@ -5,9 +5,9 @@
     "description": "Outil d'apprentissage alimenté par IA. Transformez les questions, textes et documents en solutions structurées, recherches et notes."
   },
   "navigation": {
-    "home": "Accueil",
     "tutor": "Tuteur",
     "research": "Recherche",
+    "history": "Historique",
     "profile": "Profil"
   },
   "profile": {
@@ -51,13 +51,17 @@
     "copy": "Copier",
     "copied": "Copié",
     "nextStep": "Étape suivante",
+    "generateQuiz": "Générer quiz",
     "backToLesson": "Retour au cours",
     "practiceQuestions": "Essayer les questions de pratique",
     "practiceQuestionsTitle": "Questions de pratique",
     "selectCorrectAnswer": "Sélectionnez la bonne réponse :",
     "correct": "Correct ! Bien joué !",
     "wrong": "Faux. La bonne réponse est",
-    "fileAttach": "+ Joindre .txt / .md",
+    "attachFiles": "Joindre fichiers",
+    "camera": "Caméra",
+    "document": "Document",
+    "image": "Image",
     "sendShortcut": "⌘ + Entrée pour envoyer",
     "solve": "Résoudre",
     "mindset": "Style d'apprentissage",
