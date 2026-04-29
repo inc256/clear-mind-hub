@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
-import { Copy, RefreshCw, Check, ChevronRight, Plus, Volume2, VolumeX, Download } from "lucide-react";
+import { Copy, RefreshCw, Check, ChevronRight, Plus, Volume2, VolumeX, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -44,132 +44,45 @@ const MarkdownTableCell = ({ children, isHeader }: { children?: React.ReactNode;
   );
 };
 
-// Function to detect and format pipe-delimited tables from mixed content
-const formatTableContent = (text: string): string => {
-  let processedText = text;
+// Optimized function to clean and format table content - removes separator rows and fixes malformed tables
+const cleanTableContent = (text: string): string => {
+  let result = text;
   
-  // Step 1: Handle tables that might be on a single long line
-  // Look for patterns of "| ... | ... | | :--- |" and split them
-  const singleLineTableRegex = /(\|\s*[^|]+){3,}\s*\|\s*\|\s*:\s*-+/g;
-  processedText = processedText.replace(singleLineTableRegex, (match) => {
-    // Split this by individual "| cell |" patterns and add newlines
-    const cells = match.split('|').filter(c => c.trim());
-    if (cells.length > 3) {
-      return '\n' + match + '\n';
+  // Detect malformed tables: rows joined by " | | " instead of newlines
+  // Pattern: | cell | cell | | cell | cell |
+  if (result.includes(' | | ')) {
+    // This is likely a mangled table - try to fix it
+    const rows = result.split(' | | ');
+    if (rows.length >= 2) {
+      // Reconstruct with proper line breaks
+      result = rows.map(r => r.trim()).filter(r => r && r.includes('|')).join('\n');
     }
-    return match;
-  });
+  }
   
-  // Step 2: Look for lines with separator patterns and add newlines before them
-  processedText = processedText.replace(/(\S+)\s*(\|\s*:\s*-+\s*)+/g, (match) => {
-    if (match.includes('|') && match.includes('-')) {
-      return '\n' + match + '\n';
-    }
-    return match;
-  });
-  
-  const lines = processedText.split('\n');
-  let result: string[] = [];
-  let i = 0;
+  // Also handle case where rows are separated by just repeated pipes
+  const lines = result.split('\n');
+  const cleanedLines: string[] = [];
+  let skipNext = false;
 
-  while (i < lines.length) {
-    let line = lines[i];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
     
-    // Skip empty lines outside of tables
-    if (!line.trim()) {
-      result.push(line);
-      i++;
+    // Skip markdown table separator rows (e.g., ":---" or "| :--- | :--- |")
+    if (/^(\|\s*)?:\s*-+\s*(\|\s*:\s*-+\s*)*(\|)?$/.test(trimmed)) {
+      skipNext = false;
       continue;
     }
     
-    // Check if line contains pipes and is not a code block
-    if (line.includes('|') && !line.trim().startsWith('```')) {
-      // Count pipes to determine if this might be a table
-      const pipeCount = (line.match(/\|/g) || []).length;
-      
-      // If there are at least 3 pipes, might be a table
-      if (pipeCount >= 3) {
-        // Look for separator row within next 10 lines
-        let tableStart = i;
-        let separatorIndex = -1;
-        let columnCount = -1;
-        let tableEnd = i;
-        
-        for (let j = i; j < Math.min(i + 10, lines.length); j++) {
-          const currentLine = lines[j].trim();
-          if (!currentLine.includes('|')) break;
-          
-          // Parse cells from this line
-          let cellContent = currentLine;
-          if (cellContent.startsWith('|')) cellContent = cellContent.slice(1);
-          if (cellContent.endsWith('|')) cellContent = cellContent.slice(0, -1);
-          
-          const cells = cellContent.split('|').map(c => c.trim());
-          
-          if (columnCount === -1) {
-            columnCount = cells.length;
-          }
-          
-          // Check if separator: all cells are dashes/colons or empty
-          const isSeparator = cells.every(cell => 
-            /^:?-+:?$/.test(cell) || cell === '' || !cell
-          );
-          
-          if (isSeparator) {
-            separatorIndex = j;
-            break;
-          }
-        }
-        
-        // Found a valid table structure
-        if (separatorIndex !== -1 && columnCount) {
-          // Find table end
-          tableEnd = separatorIndex;
-          for (let j = separatorIndex + 1; j < lines.length; j++) {
-            const currentLine = lines[j].trim();
-            if (currentLine.includes('|') && currentLine.split('|').length >= 2) {
-              tableEnd = j;
-            } else if (currentLine === '') {
-              continue;
-            } else {
-              break;
-            }
-          }
-          
-          // Parse and reconstruct table
-          const tableLines = lines.slice(tableStart, tableEnd + 1);
-          const cleanedRows: string[] = [];
-          
-          tableLines.forEach(tableLine => {
-            let cleaned = tableLine.trim();
-            if (!cleaned.includes('|')) return;
-            
-            // Remove leading/trailing pipes
-            if (cleaned.startsWith('|')) cleaned = cleaned.slice(1);
-            if (cleaned.endsWith('|')) cleaned = cleaned.slice(0, -1);
-            
-            // Split by pipe
-            let cells = cleaned.split('|').map(c => c.trim());
-            
-            // Ensure correct column count
-            while (cells.length < columnCount) cells.push('');
-            cells = cells.slice(0, columnCount);
-            
-            cleanedRows.push('| ' + cells.join(' | ') + ' |');
-          });
-          
-          result.push(...cleanedRows);
-          i = tableEnd + 1;
-          continue;
-        }
-      }
+    // Skip completely empty pipes line (which sometimes appears as a separator)
+    if (/^\|\s*\|\s*\|\s*\|$/.test(trimmed) || /^(\|\s*)+$/.test(trimmed)) {
+      continue;
     }
     
-    result.push(line);
-    i++;
+    cleanedLines.push(line);
   }
 
-  return result.join('\n');
+  return cleanedLines.join('\n');
 };
 
 import { AiMode } from "@/services/aiService";
@@ -206,6 +119,32 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
   const [practiceAnswers, setPracticeAnswers] = useState<Record<number, string>>({});
   const [showingPracticeQuestions, setShowingPracticeQuestions] = useState(false);
   const [speechRate, setSpeechRate] = useState<number>(1);
+  const [isRenderingTable, setIsRenderingTable] = useState(false);
+
+  // Memoize the cleaned content to avoid re-processing on every render
+  const cleanedContent = useMemo(() => {
+    if (!content) return '';
+    try {
+      return cleanTableContent(
+        mode === "research" && currentStep === steps.length - 1
+          ? steps.map(s => `## ${s.title.replace(/[\^\$]/g, '')}\n${s.content.replace(/[\^\$]/g, '')}`).join('\n\n')
+          : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$]/g, '') || "")
+      );
+    } catch (e) {
+      return content;
+    }
+  }, [content, steps, currentStep, mode]);
+
+  // Track when content changes to show loading state
+  useEffect(() => {
+    if (!loading && cleanedContent && cleanedContent.trim()) {
+      setIsRenderingTable(true);
+      const timer = setTimeout(() => setIsRenderingTable(false), 50);
+      return () => clearTimeout(timer);
+    } else if (loading) {
+      setIsRenderingTable(false);
+    }
+  }, [cleanedContent, loading]);
 
   const parsePackageContent = (content: string) => {
     const lines = content.split('\n');
@@ -338,14 +277,14 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
     }
   };
 
-  const getCopyText = () => {
+  const getCopyText = useCallback(() => {
     if (mode === "research" && currentStep === steps.length - 1) {
       return steps.map(s => `## ${s.title}\n${s.content}`).join('\n\n');
     }
     return content;
-  };
+  }, [content, steps, currentStep, mode]);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(getCopyText());
       setCopied(true);
@@ -354,7 +293,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
     } catch {
       toast.error("Couldn't copy");
     }
-  };
+  }, [getCopyText]);
 
   if (!loading && steps.length === 0) return null;
 
@@ -416,6 +355,13 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
             />
           ))}
         </div>
+      ) : isRenderingTable ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 size={32} className="animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">{t('workspace.renderingContent') || 'Rendering content...'}</p>
+          </div>
+        </div>
       ) : (
         <>
           {!showingPracticeQuestions ? (
@@ -434,41 +380,56 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
                       const textContent = node?.children?.map((c: any) => c.value || c.raw || '').join('') || '';
                       if (textContent.includes('|') && (textContent.match(/\|/g) || []).length > 4) {
                         // Try to parse as table
-                        const rows = textContent.split('\n').filter(r => r.trim().includes('|'));
+                        const lines = textContent.split('\n');
+                        const rows = lines.filter(r => r.trim().includes('|'));
+                        
                         if (rows.length >= 2) {
-                          const separatorIdx = rows.findIndex(r => {
+                          // Find separator row or assume first row is header
+                          let separatorIdx = rows.findIndex(r => {
                             const cells = r.split('|').slice(1, -1);
                             return cells.every(c => /^:?-+:?$/.test(c.trim()) || c.trim() === '');
                           });
                           
+                          // If no separator found, assume first row is header
+                          if (separatorIdx < 0) {
+                            separatorIdx = 0;
+                          }
+                          
                           if (separatorIdx >= 0) {
                             try {
-                              const headerRow = rows[Math.max(0, separatorIdx - 1)];
-                              const headerCells = headerRow.split('|').slice(1, -1).map((c: string) => c.trim());
-                              const bodyRows = rows.slice(separatorIdx + 1).map((row: string) =>
-                                row.split('|').slice(1, -1).map((c: string) => c.trim())
-                              );
+                              const headerRowIdx = Math.max(0, separatorIdx);
+                              const headerRow = rows[headerRowIdx];
+                              const headerCells = headerRow.split('|').slice(1, -1).map((c: string) => c.trim()).filter(c => c);
                               
-                              return (
-                                <MarkdownTable>
-                                  <MarkdownTableHead>
-                                    <MarkdownTableRow>
-                                      {headerCells.map((cell: string, idx: number) => (
-                                        <MarkdownTableCell key={idx} isHeader>{cell}</MarkdownTableCell>
-                                      ))}
-                                    </MarkdownTableRow>
-                                  </MarkdownTableHead>
-                                  <MarkdownTableBody>
-                                    {bodyRows.map((row: string[], rowIdx: number) => (
-                                      <MarkdownTableRow key={rowIdx}>
-                                        {row.map((cell: string, cellIdx: number) => (
-                                          <MarkdownTableCell key={cellIdx}>{cell}</MarkdownTableCell>
+                              // Get body rows - either after separator or all rows if no separator
+                              let bodyRowIndices = separatorIdx >= 0 ? rows.slice(separatorIdx + 1) : rows.slice(1);
+                              
+                              const bodyRows = bodyRowIndices.map((row: string) =>
+                                row.split('|').slice(1, -1).map((c: string) => c.trim())
+                              ).filter(row => row.some(cell => cell));
+                              
+                              if (headerCells.length > 0 && bodyRows.length > 0) {
+                                return (
+                                  <MarkdownTable>
+                                    <MarkdownTableHead>
+                                      <MarkdownTableRow>
+                                        {headerCells.map((cell: string, idx: number) => (
+                                          <MarkdownTableCell key={idx} isHeader>{cell}</MarkdownTableCell>
                                         ))}
                                       </MarkdownTableRow>
-                                    ))}
-                                  </MarkdownTableBody>
-                                </MarkdownTable>
-                              );
+                                    </MarkdownTableHead>
+                                    <MarkdownTableBody>
+                                      {bodyRows.map((row: string[], rowIdx: number) => (
+                                        <MarkdownTableRow key={rowIdx}>
+                                          {headerCells.map((_, cellIdx: number) => (
+                                            <MarkdownTableCell key={cellIdx}>{row[cellIdx] || ''}</MarkdownTableCell>
+                                          ))}
+                                        </MarkdownTableRow>
+                                      ))}
+                                    </MarkdownTableBody>
+                                  </MarkdownTable>
+                                );
+                              }
                             } catch (e) {
                               // Fallback to normal paragraph
                             }
@@ -479,11 +440,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
                     },
                   }}
                 >
-                  {formatTableContent(
-                    mode === "research" && currentStep === steps.length - 1
-                      ? steps.map(s => `## ${s.title.replace(/[\^\$]/g, '')}\n${s.content.replace(/[\^\$]/g, '')}`).join('\n\n')
-                      : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$]/g, '') || "")
-                  )}
+                  {cleanedContent}
                 </ReactMarkdown>
               </article>
 

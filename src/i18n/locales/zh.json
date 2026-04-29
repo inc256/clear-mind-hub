@@ -71,7 +71,8 @@
     "engineering": "工程",
     "lecturer": "讲师",
     "scientific": "科学",
-    "creative": "创意"
+    "creative": "创意",
+    "renderingContent": "正在渲染内容..."
   },
   "tutor": {
     "title": "AI 导师",

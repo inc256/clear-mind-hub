@@ -71,7 +71,8 @@
     "engineering": "Engineering",
     "lecturer": "Lecturer",
     "scientific": "Scientific",
-    "creative": "Creative"
+    "creative": "Creative",
+    "renderingContent": "Rendering content..."
   },
   "tutor": {
     "title": "AI Tutor",

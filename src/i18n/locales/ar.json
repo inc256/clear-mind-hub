@@ -71,7 +71,8 @@
     "engineering": "هندسي",
     "lecturer": "محاضر",
     "scientific": "علمي",
-    "creative": "إبداعي"
+    "creative": "إبداعي",
+    "renderingContent": "جاري معالجة المحتوى..."
   },
   "tutor": {
     "title": "المدرس الذكي",

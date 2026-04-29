@@ -5,6 +5,7 @@ import en from './locales/en.json';
 import ar from './locales/ar.json';
 import fr from './locales/fr.json';
 import zh from './locales/zh.json';
+import sw from './locales/sw.json';
 
 const STORAGE_KEY = "organyze.settings.v1";
 
@@ -20,6 +21,7 @@ const loadSettings = () => {
         'Arabic': 'ar',
         'French': 'fr',
         'Chinese': 'zh',
+        'Swahili': 'sw',
       };
       return langMap[lang] || lang;
     }
@@ -41,6 +43,9 @@ const resources = {
   },
   zh: {
     translation: zh,
+  },
+  sw: {
+    translation: sw,
   },
 };
 

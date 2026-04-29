@@ -71,7 +71,8 @@
     "engineering": "Ingénierie",
     "lecturer": "Conférencier",
     "scientific": "Scientifique",
-    "creative": "Créatif"
+    "creative": "Créatif",
+    "renderingContent": "Rendu du contenu en cours..."
   },
   "tutor": {
     "title": "Tuteur IA",
