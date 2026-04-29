@@ -4,6 +4,174 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+
+// Force reload: 2024-04-29-v2
+
+// Custom table components with Tailwind styling for the app theme
+const MarkdownTable = ({ children }: { children?: React.ReactNode }) => (
+  <div className="overflow-x-auto my-6 rounded-lg border border-border/50 bg-muted/30">
+    <table className="w-full border-collapse text-sm">
+      {children}
+    </table>
+  </div>
+);
+
+const MarkdownTableHead = ({ children }: { children?: React.ReactNode }) => (
+  <thead className="bg-primary/10 border-b border-border/50">
+    {children}
+  </thead>
+);
+
+const MarkdownTableBody = ({ children }: { children?: React.ReactNode }) => (
+  <tbody>{children}</tbody>
+);
+
+const MarkdownTableRow = ({ children, isHeader }: { children?: React.ReactNode; isHeader?: boolean }) => (
+  <tr className="hover:bg-muted/50 transition-colors border-b border-border/30 last:border-b-0">
+    {children}
+  </tr>
+);
+
+const MarkdownTableCell = ({ children, isHeader }: { children?: React.ReactNode; isHeader?: boolean }) => {
+  const baseClasses = "px-4 py-3 text-left align-top";
+  const headerClasses = "font-semibold text-foreground/90 bg-primary/5";
+  const bodyClasses = "text-foreground/75";
+  
+  return isHeader ? (
+    <th className={`${baseClasses} ${headerClasses}`}>{children}</th>
+  ) : (
+    <td className={`${baseClasses} ${bodyClasses}`}>{children}</td>
+  );
+};
+
+// Function to detect and format pipe-delimited tables from mixed content
+const formatTableContent = (text: string): string => {
+  let processedText = text;
+  
+  // Step 1: Handle tables that might be on a single long line
+  // Look for patterns of "| ... | ... | | :--- |" and split them
+  const singleLineTableRegex = /(\|\s*[^|]+){3,}\s*\|\s*\|\s*:\s*-+/g;
+  processedText = processedText.replace(singleLineTableRegex, (match) => {
+    // Split this by individual "| cell |" patterns and add newlines
+    const cells = match.split('|').filter(c => c.trim());
+    if (cells.length > 3) {
+      return '\n' + match + '\n';
+    }
+    return match;
+  });
+  
+  // Step 2: Look for lines with separator patterns and add newlines before them
+  processedText = processedText.replace(/(\S+)\s*(\|\s*:\s*-+\s*)+/g, (match) => {
+    if (match.includes('|') && match.includes('-')) {
+      return '\n' + match + '\n';
+    }
+    return match;
+  });
+  
+  const lines = processedText.split('\n');
+  let result: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    let line = lines[i];
+    
+    // Skip empty lines outside of tables
+    if (!line.trim()) {
+      result.push(line);
+      i++;
+      continue;
+    }
+    
+    // Check if line contains pipes and is not a code block
+    if (line.includes('|') && !line.trim().startsWith('```')) {
+      // Count pipes to determine if this might be a table
+      const pipeCount = (line.match(/\|/g) || []).length;
+      
+      // If there are at least 3 pipes, might be a table
+      if (pipeCount >= 3) {
+        // Look for separator row within next 10 lines
+        let tableStart = i;
+        let separatorIndex = -1;
+        let columnCount = -1;
+        let tableEnd = i;
+        
+        for (let j = i; j < Math.min(i + 10, lines.length); j++) {
+          const currentLine = lines[j].trim();
+          if (!currentLine.includes('|')) break;
+          
+          // Parse cells from this line
+          let cellContent = currentLine;
+          if (cellContent.startsWith('|')) cellContent = cellContent.slice(1);
+          if (cellContent.endsWith('|')) cellContent = cellContent.slice(0, -1);
+          
+          const cells = cellContent.split('|').map(c => c.trim());
+          
+          if (columnCount === -1) {
+            columnCount = cells.length;
+          }
+          
+          // Check if separator: all cells are dashes/colons or empty
+          const isSeparator = cells.every(cell => 
+            /^:?-+:?$/.test(cell) || cell === '' || !cell
+          );
+          
+          if (isSeparator) {
+            separatorIndex = j;
+            break;
+          }
+        }
+        
+        // Found a valid table structure
+        if (separatorIndex !== -1 && columnCount) {
+          // Find table end
+          tableEnd = separatorIndex;
+          for (let j = separatorIndex + 1; j < lines.length; j++) {
+            const currentLine = lines[j].trim();
+            if (currentLine.includes('|') && currentLine.split('|').length >= 2) {
+              tableEnd = j;
+            } else if (currentLine === '') {
+              continue;
+            } else {
+              break;
+            }
+          }
+          
+          // Parse and reconstruct table
+          const tableLines = lines.slice(tableStart, tableEnd + 1);
+          const cleanedRows: string[] = [];
+          
+          tableLines.forEach(tableLine => {
+            let cleaned = tableLine.trim();
+            if (!cleaned.includes('|')) return;
+            
+            // Remove leading/trailing pipes
+            if (cleaned.startsWith('|')) cleaned = cleaned.slice(1);
+            if (cleaned.endsWith('|')) cleaned = cleaned.slice(0, -1);
+            
+            // Split by pipe
+            let cells = cleaned.split('|').map(c => c.trim());
+            
+            // Ensure correct column count
+            while (cells.length < columnCount) cells.push('');
+            cells = cells.slice(0, columnCount);
+            
+            cleanedRows.push('| ' + cells.join(' | ') + ' |');
+          });
+          
+          result.push(...cleanedRows);
+          i = tableEnd + 1;
+          continue;
+        }
+      }
+    }
+    
+    result.push(line);
+    i++;
+  }
+
+  return result.join('\n');
+};
+
 import { AiMode } from "@/services/aiService";
 import {
   Select,
@@ -21,7 +189,6 @@ interface OutputCardProps {
   loading?: boolean;
   onRegenerate?: () => void;
   onNewQuery?: () => void;
-  onGenerateQuiz?: () => void;
   mode?: AiMode;
 }
 
@@ -31,7 +198,7 @@ interface PracticeQuestion {
   correct_answer: string;
 }
 
-export function OutputCard({ content, steps, currentStep, onNext, loading, onRegenerate, onNewQuery, onGenerateQuiz, mode }: OutputCardProps) {
+export function OutputCard({ content, steps, currentStep, onNext, loading, onRegenerate, onNewQuery, mode }: OutputCardProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -191,8 +358,6 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
 
   if (!loading && steps.length === 0) return null;
 
-
-
   return (
     <div className="glass-card rounded-2xl p-4 sm:p-6 lg:p-7 animate-slide-up">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
@@ -256,10 +421,69 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
           {!showingPracticeQuestions ? (
             <>
               <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground">
-                <ReactMarkdown>
-                  {mode === "research" && currentStep === steps.length - 1
-                    ? steps.map(s => `## ${s.title.replace(/[\^\$]/g, '')}\n${s.content.replace(/[\^\$]/g, '')}`).join('\n\n')
-                    : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$]/g, '') || "")}
+                <ReactMarkdown
+                  components={{
+                    table: ({ node, ...props }) => <MarkdownTable {...props} />,
+                    thead: ({ node, ...props }) => <MarkdownTableHead {...props} />,
+                    tbody: ({ node, ...props }) => <MarkdownTableBody {...props} />,
+                    tr: ({ node, ...props }) => <MarkdownTableRow {...props} />,
+                    th: ({ node, ...props }) => <MarkdownTableCell isHeader {...props} />,
+                    td: ({ node, ...props }) => <MarkdownTableCell {...props} />,
+                    p: ({ children, node }) => {
+                      // Check if paragraph contains pipe syntax (potential table)
+                      const textContent = node?.children?.map((c: any) => c.value || c.raw || '').join('') || '';
+                      if (textContent.includes('|') && (textContent.match(/\|/g) || []).length > 4) {
+                        // Try to parse as table
+                        const rows = textContent.split('\n').filter(r => r.trim().includes('|'));
+                        if (rows.length >= 2) {
+                          const separatorIdx = rows.findIndex(r => {
+                            const cells = r.split('|').slice(1, -1);
+                            return cells.every(c => /^:?-+:?$/.test(c.trim()) || c.trim() === '');
+                          });
+                          
+                          if (separatorIdx >= 0) {
+                            try {
+                              const headerRow = rows[Math.max(0, separatorIdx - 1)];
+                              const headerCells = headerRow.split('|').slice(1, -1).map((c: string) => c.trim());
+                              const bodyRows = rows.slice(separatorIdx + 1).map((row: string) =>
+                                row.split('|').slice(1, -1).map((c: string) => c.trim())
+                              );
+                              
+                              return (
+                                <MarkdownTable>
+                                  <MarkdownTableHead>
+                                    <MarkdownTableRow>
+                                      {headerCells.map((cell: string, idx: number) => (
+                                        <MarkdownTableCell key={idx} isHeader>{cell}</MarkdownTableCell>
+                                      ))}
+                                    </MarkdownTableRow>
+                                  </MarkdownTableHead>
+                                  <MarkdownTableBody>
+                                    {bodyRows.map((row: string[], rowIdx: number) => (
+                                      <MarkdownTableRow key={rowIdx}>
+                                        {row.map((cell: string, cellIdx: number) => (
+                                          <MarkdownTableCell key={cellIdx}>{cell}</MarkdownTableCell>
+                                        ))}
+                                      </MarkdownTableRow>
+                                    ))}
+                                  </MarkdownTableBody>
+                                </MarkdownTable>
+                              );
+                            } catch (e) {
+                              // Fallback to normal paragraph
+                            }
+                          }
+                        }
+                      }
+                      return <p>{children}</p>;
+                    },
+                  }}
+                >
+                  {formatTableContent(
+                    mode === "research" && currentStep === steps.length - 1
+                      ? steps.map(s => `## ${s.title.replace(/[\^\$]/g, '')}\n${s.content.replace(/[\^\$]/g, '')}`).join('\n\n')
+                      : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$]/g, '') || "")
+                  )}
                 </ReactMarkdown>
               </article>
 
@@ -345,13 +569,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
         </div>
       )}
 
-      {!loading && mode === "tutor" && steps.length > 0 && currentStep === steps.length - 1 && onGenerateQuiz && (
-        <div className="flex justify-center mt-4">
-          <Button onClick={onGenerateQuiz} variant="outline">
-            {t('workspace.generateQuiz')}
-          </Button>
-        </div>
-      )}
+
     </div>
   );
 }

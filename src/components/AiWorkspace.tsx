@@ -116,10 +116,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     }
   };
 
-  const handleGenerateQuiz = () => {
-    const quizPrompt = `Generate a multiple-choice quiz with 5 questions from the following content. Make sure questions are objective and have 4 options each with one correct answer clearly marked: ${output}`;
-    run(quizPrompt);
-  };
+
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
@@ -263,7 +260,6 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
           loading={loading}
           onRegenerate={lastInputRef.current ? () => run(lastInputRef.current) : undefined}
           onNewQuery={reset}
-          onGenerateQuiz={mode === "tutor" ? handleGenerateQuiz : undefined}
           mode={mode}
         />
     </div>
