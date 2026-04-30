@@ -29,7 +29,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
   privacyMode: initial.privacyMode ?? false,
   customApiKey: initial.customApiKey ?? "",
   customApiBase: initial.customApiBase ?? "",
-  language: initial.language ?? "English",
+  language: initial.language ?? "en",
   setPrivacyMode: (v) => {
     set({ privacyMode: v });
     persist(get());

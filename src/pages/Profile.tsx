@@ -1,11 +1,9 @@
 import { useSettings } from "@/store/settings";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Shield, Key, ChevronDown, Sparkles, Globe } from "lucide-react";
+
+import { Shield, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+
 import { useTranslation } from "react-i18next";
 import {
   Select,
@@ -26,9 +24,7 @@ const languageOptions = [
 const Profile = () => {
   const s = useSettings();
   const { t, i18n } = useTranslation();
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [tmpKey, setTmpKey] = useState(s.customApiKey);
-  const [tmpBase, setTmpBase] = useState(s.customApiBase);
+
 
   useEffect(() => {
     if (s.language && s.language !== i18n.language) {
@@ -36,11 +32,7 @@ const Profile = () => {
     }
   }, [s.language, i18n]);
 
-  const saveKeys = () => {
-    s.setCustomApiKey(tmpKey.trim());
-    s.setCustomApiBase(tmpBase.trim());
-    toast.success("API settings saved");
-  };
+
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
@@ -90,7 +82,7 @@ const Profile = () => {
               </div>
             </div>
             <div className="mt-3">
-              <Select value={i18n.language} placeholder="" onValueChange={(value) => {
+              <Select value={i18n.language || "en"} placeholder="" onValueChange={(value) => {
                 i18n.changeLanguage(value);
                 s.setLanguage(value);
               }}>
@@ -110,62 +102,7 @@ const Profile = () => {
         </div>
       </section>
 
-      {/* AI provider info */}
-      <section className="glass-card rounded-2xl p-5 sm:p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="grid place-items-center h-10 w-10 rounded-xl bg-primary text-primary-foreground">
-            <Sparkles size={18} />
-          </div>
-          <div>
-            <h2 className="font-semibold">{t('profile.ai.title')}</h2>
-            <p className="text-sm text-muted-foreground">
-              {t('profile.ai.description')}
-            </p>
-          </div>
-        </div>
 
-          <button
-            onClick={() => setShowAdvanced((v) => !v)}
-            className="mt-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Key size={12} />
-            {t('profile.ai.advanced')}
-            <ChevronDown size={14} className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
-          </button>
-
-        {showAdvanced && (
-          <div className="mt-4 space-y-3 animate-fade-in">
-            <div>
-              <Label htmlFor="apikey" className="text-xs">{t('profile.ai.apiKey')}</Label>
-              <Input
-                id="apikey"
-                type="password"
-                value={tmpKey}
-                onChange={(e) => setTmpKey(e.target.value)}
-                placeholder="sk-…"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <Label htmlFor="apibase" className="text-xs">{t('profile.ai.apiBase')}</Label>
-              <Input
-                id="apibase"
-                value={tmpBase}
-                onChange={(e) => setTmpBase(e.target.value)}
-                placeholder="https://api.openai.com/v1"
-              />
-            </div>
-            <Button onClick={saveKeys} size="sm" className="bg-primary">
-              {t('profile.ai.save')}
-            </Button>
-            <p className="text-[11px] text-muted-foreground">
-              {s.privacyMode
-                ? t('profile.ai.privacyNotice')
-                : t('profile.ai.normalNotice')}
-            </p>
-          </div>
-        )}
-      </section>
 
       <p className="text-center text-xs text-muted-foreground pt-4">
         {t('profile.footer')}

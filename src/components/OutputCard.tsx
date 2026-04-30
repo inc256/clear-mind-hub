@@ -1,9 +1,10 @@
 import ReactMarkdown from "react-markdown";
-import { Copy, RefreshCw, Check, ChevronRight, Plus, Volume2, VolumeX, Download, Loader2 } from "lucide-react";
+import { Copy, RefreshCw, Check, ChevronRight, ChevronLeft, Plus, Volume2, VolumeX, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { generatePDF } from "@/lib/pdfGenerator";
 
 // Force reload: 2024-04-29-v2
 
@@ -99,6 +100,7 @@ interface OutputCardProps {
   steps: Array<{title: string, content: string}>;
   currentStep: number;
   onNext: () => void;
+  onPrevious: () => void;
   loading?: boolean;
   onRegenerate?: () => void;
   onNewQuery?: () => void;
@@ -111,7 +113,7 @@ interface PracticeQuestion {
   correct_answer: string;
 }
 
-export function OutputCard({ content, steps, currentStep, onNext, loading, onRegenerate, onNewQuery, mode }: OutputCardProps) {
+export function OutputCard({ content, steps, currentStep, onNext, onPrevious, loading, onRegenerate, onNewQuery, mode }: OutputCardProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -120,6 +122,7 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
   const [showingPracticeQuestions, setShowingPracticeQuestions] = useState(false);
   const [speechRate, setSpeechRate] = useState<number>(1);
   const [isRenderingTable, setIsRenderingTable] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Memoize the cleaned content to avoid re-processing on every render
   const cleanedContent = useMemo(() => {
@@ -258,24 +261,32 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
     return cleaned.trim();
   };
 
-  const downloadDocument = () => {
+  const downloadDocument = useCallback(async () => {
     try {
-      const fileName = `${mode}-${new Date().toISOString().slice(0, 10)}.txt`;
-      const fullText = steps.map(s => `${s.title}\n${'='.repeat(s.title.length)}\n${cleanTextForSpeech(s.content)}`).join('\n\n---\n\n');
+      setIsDownloading(true);
       
-      const element = document.createElement('a');
-      element.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(fullText)}`);
-      element.setAttribute('download', fileName);
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
+      // Create title from mode
+      const titles: Record<string, string> = {
+        tutor: "Tutorial",
+        research: "Research Report",
+        problem: "Problem Solution",
+      };
       
-      toast.success("Document downloaded");
+      const title = titles[mode as string] || "Document";
+      
+      const success = await generatePDF(title, steps, mode as string);
+      if (success) {
+        toast.success("PDF downloaded successfully");
+      } else {
+        toast.error("Failed to generate PDF");
+      }
     } catch (e) {
+      console.error("Download error:", e);
       toast.error("Failed to download document");
+    } finally {
+      setIsDownloading(false);
     }
-  };
+  }, [steps, mode]);
 
   const getCopyText = useCallback(() => {
     if (mode === "research" && currentStep === steps.length - 1) {
@@ -335,8 +346,13 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
               {speaking ? <VolumeX size={14} className="mr-1.5" /> : <Volume2 size={14} className="mr-1.5" />}
               {speaking ? t('workspace.stop') : t('workspace.speak')}
             </Button>
-            <Button size="sm" variant="ghost" onClick={downloadDocument} disabled={!content || loading}>
-              <Download size={14} className="mr-1.5" /> {t('workspace.download')}
+            <Button size="sm" variant="ghost" onClick={downloadDocument} disabled={!content || loading || isDownloading}>
+              {isDownloading ? (
+                <Loader2 size={14} className="mr-1.5 animate-spin" />
+              ) : (
+                <Download size={14} className="mr-1.5" />
+              )}
+              {isDownloading ? t('workspace.downloading') || 'Downloading...' : t('workspace.download')}
             </Button>
             <Button size="sm" variant="ghost" onClick={handleCopy} disabled={!content}>
               {copied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
@@ -518,9 +534,21 @@ export function OutputCard({ content, steps, currentStep, onNext, loading, onReg
         </>
       )}
 
-      {!loading && currentStep < steps.length - 1 && !showingPracticeQuestions && (
-        <div className="flex justify-center mt-6">
-          <Button onClick={onNext} className="bg-primary hover:opacity-90 btn-glow">
+      {!loading && steps.length > 1 && !showingPracticeQuestions && (
+        <div className="flex justify-center gap-3 mt-6">
+          <Button
+            onClick={onPrevious}
+            disabled={currentStep === 0}
+            variant="outline"
+            className="bg-background hover:bg-muted"
+          >
+            <ChevronLeft size={16} className="mr-2" /> Previous
+          </Button>
+          <Button
+            onClick={onNext}
+            disabled={currentStep === steps.length - 1}
+            className="bg-primary hover:opacity-90 btn-glow"
+          >
             {t('workspace.nextStep')} <ChevronRight size={16} className="ml-2" />
           </Button>
         </div>

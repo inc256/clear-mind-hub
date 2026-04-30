@@ -252,11 +252,12 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         </div>
       )}
 
-      <OutputCard
+        <OutputCard
           content={output}
           steps={steps}
           currentStep={currentStep}
           onNext={() => setCurrentStep((prev) => prev + 1)}
+          onPrevious={() => setCurrentStep((prev) => prev - 1)}
           loading={loading}
           onRegenerate={lastInputRef.current ? () => run(lastInputRef.current) : undefined}
           onNewQuery={reset}

@@ -1,59 +1,59 @@
 {
   "app": {
     "name": "Tyn Tutor",
-    "tagline": "Fikiria Vyema. Jifunze Kwa Akili.",
-    "description": "Zana ya kujifunzia inayotumia AI. Geuza maswali, maandishi, na hati kuwa suluhisho zilizopangwa, utafiti, na maelezo."
+    "tagline": "Fikiri Bora. Jifunze Kwa Akili.",
+    "description": "Zana ya kujifunza inayotegemea AI. Badilisha maswali, maandishi, na hati kuwa suluhisho za kimuundo, utafiti, na maelezo."
   },
   "navigation": {
-    "tutor": "Mkufunzi",
+    "tutor": "Mwalimu",
     "research": "Utafiti",
     "history": "Historia",
     "profile": "Wasifu"
   },
   "profile": {
-    "title": "Wasifu na Mipangilio",
-    "subtitle": "Sanidi jinsi Tyn Tutor anavyofikiria na kuhifadhi data.",
+    "title": "Wasifu & Mipangilio",
+    "subtitle": "Sanidi jinsi Tyn Tutor anavyofikiri na kuhifadhi data.",
     "privacy": {
-      "title": "Hali ya faragha",
-      "description": "Usihifadhi chochote mahali. Kila kitu ni kwa kipindi hiki tu.",
-      "active": "✓ Hali ya faragha imeamilishwa — mipangilio, funguo za API, na historia zinahifadhiwa katika kumbukumbu tu."
+      "title": "Modi ya faragha",
+      "description": "Usihifadhi kitu chochote mahali. Kila kitu ni kipindi tu.",
+      "active": "✓ Modi ya faragha imeamilishwa — mipangilio, ufunguo wa API, na historia huhifadhiwa kwenye kumbukumbu pekee."
     },
     "language": {
       "title": "Lugha",
       "description": "Chagua lugha unayopendelea kwa kiolesura.",
-      "english": "English",
+      "english": "English (Chaguomsingi)",
       "arabic": "العربية (Arabic)",
       "french": "Français (French)",
-      "chinese": "中文 (Chinese)",
-      "swahili": "Kiswahili"
+      "chinese": "中文 (Chinese)"
     },
     "ai": {
       "title": "Injini ya AI",
-      "description": "Inaendeshwa na Lovable AI kwa chaguo-msingi — hakuna ufunguo wa API unahitajika.",
-      "advanced": "Iliyoboreshwa — tumia ufunguo wangu wa API",
-      "apiKey": "Ufunguo wa API unaofanana na OpenAI",
-      "apiBase": "URL ya msingi wa API (hiari)",
+      "description": "Inaendeshwa na Lovable AI kwa chaguomsingi — hakuna ufunguo wa API unaohitajika.",
+      "advanced": "Ya juu — tumia ufunguo wangu wa API",
+      "apiKey": "Ufunguo wa API unaolingana na OpenAI",
+      "apiBase": "URL ya msingi ya API (si lazima)",
       "save": "Hifadhi",
-      "privacyNotice": "Hali ya faragha IMEWASHWA: inahifadhiwa katika kumbukumbu tu.",
-      "normalNotice": "Imefifadhiwa katika localStorage ya kivinjari chako."
+      "privacyNotice": "Modi ya faragha IMEWASHWA: huhifadhiwa kwenye kumbukumbu pekee.",
+      "normalNotice": "Hifadhiwa kwenye localStorage ya kivinjari chako."
     },
-    "footer": "Tyn Tutor · Fikiria Vyema. Jifunze Kwa Akili."
+    "footer": "Tyn Tutor · Fikiri Bora. Jifunze Kwa Akili."
   },
   "workspace": {
-    "thinking": "Inafikiria…",
+    "thinking": "Fikiria…",
     "response": "Jibu",
     "question": "Swali:",
     "newQuery": "Swali Jipya",
-    "regenerate": "Tengeneza Upya",
+    "regenerate": "Tengeneza upya",
     "speak": "Sema",
     "stop": "Simamisha",
     "speakSpeed": "Kasi",
     "download": "Pakua",
+    "downloading": "Inapakua...",
     "copy": "Nakala",
-    "copied": "Imanakiliwa",
-    "nextStep": "Hatua Ifuatayo",
-    "generateQuiz": "Tengeneza Jaribio",
-    "backToLesson": "Rudi kwenye Somo",
+    "copied": "Imenakiliwa",
+    "nextStep": "Hatua Inayofuata",
+    "generateQuiz": "Tengeneza Mtihani",
+    "backToLesson": "Rudi kwa Somo",
     "practiceQuestions": "Jaribu Maswali ya Mazoezi",
     "practiceQuestionsTitle": "Maswali ya Mazoezi",
     "selectCorrectAnswer": "Chagua jibu sahihi:",
@@ -67,34 +67,34 @@
     "solve": "Suluhisha",
     "mindset": "Mtazamo wa Kujifunza",
     "mindsetDescription": "AI itaboresha maelezo kulingana na mtazamo uliochagua.",
-    "general": "Kwa Ujumla",
+    "general": "Kwa ujumla",
     "medical": "Matibabu",
     "engineering": "Uhandisi",
     "lecturer": "Mhadhiri",
     "scientific": "Kisayansi",
     "creative": "Ubunifu",
-    "renderingContent": "Inaonyesha maudhui..."
+    "renderingContent": "Inatoa maudhui..."
   },
   "tutor": {
-    "title": "Mkufunzi wa AI",
-    "subtitle": "Pata mafunzo ya kibinafsi na maelezo ya hatua kwa hatua yaliyoboreshwa kwa mtindo wako wa kujifunza.",
-    "placeholder": "Niulize chochote... Ni mada gani ungependa msaada?"
+    "title": "Mwalimu wa AI",
+    "subtitle": "Pata mafunzo ya kibinafsi na maelezo ya hatua kwa hatua yanayolingana na mtindo wako wa kujifunza.",
+    "placeholder": "Niulize chochote... Unataka msaada katika mada gani?"
   },
   "research": {
     "title": "Msaidizi wa Utafiti",
-    "subtitle": "Chunguza mada yoyote kwa kina na maarifa yaliyopangwa.",
-    "placeholder": "Ungependa kutafiti nini? Ingiza mada au swali..."
+    "subtitle": "Ingia ndani katika mada yoyote kwa utafiti kamili na ufahamu uliostraktura.",
+    "placeholder": "Unataka kutafiti nini? Ingiza mada au swali..."
   },
   "problem": {
     "title": "Msuluhishi wa Matatizo",
-    "subtitle": "Suluhisha matatizo magumu na suluhisho za hatua kwa hatua.",
-    "placeholder": "Elezea tatizo lako... Nitagawanya na kulisuluhisha hatua kwa hatua."
+    "subtitle": "Suluhisha matatizo magumu kwa suluhisho za kina za hatua kwa hatua.",
+    "placeholder": "Eleza tatizo lako... Nitagawanya na kulisuluhisha hatua kwa hatua."
   },
   "common": {
     "loading": "Inapakia...",
-    "error": "Kitu kimeenda vibaya. Tafadhali jaribu tena.",
-    "success": "Imefaulu!",
+    "error": "Kuna kitu kimekwenda vibaya. Jaribu tena.",
+    "success": "Mafanikio!",
     "cancel": "Ghairi",
-    "ok": "SAWA"
+    "ok": "Sawa"
   }
 }
