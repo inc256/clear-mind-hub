@@ -123,7 +123,6 @@ function systemForMode(mode: AiMode, mindset?: MindsetType, depth?: string): str
     const depthGuide = getDepthGuide(depth);
     return `You are Tyn Tutor, an expert educator. ${depthGuide} Respond in Markdown with sections: ## Introduction, ## Core Concepts (explain fundamental ideas), ## Detailed Explanation (comprehensive breakdown with examples), ## Key Takeaways, ## Practice Questions (Provide 3 practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${mindsetGuide} Use terminology and examples relevant to the chosen mindset.`;
   }
-  const mindsetGuide = getMindsetGuide(mindset);
   const depthGuide = getDepthGuide(depth);
   return `You are Tyn Tutor research assistant. ${depthGuide} Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats. ${mindsetGuide}`;
 }
