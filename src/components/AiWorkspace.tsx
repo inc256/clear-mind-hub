@@ -32,6 +32,12 @@ const getMindsetOptions = (t: any) => [
   { value: "creative", label: t('workspace.creative') },
 ];
 
+const getDepthOptions = (t: any) => [
+  { value: "beginner", label: t('workspace.beginner') },
+  { value: "intermediate", label: t('workspace.intermediate') },
+  { value: "advanced", label: t('workspace.advanced') },
+];
+
 export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
   const { t } = useTranslation();
   const [input, setInput] = useState("");
@@ -40,6 +46,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
+  const [selectedDepth, setSelectedDepth] = useState<string>("beginner");
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef("");
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +67,8 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     await streamAi({
       mode,
       input: text,
-      mindset: mode === "tutor" ? selectedMindset : undefined,
+      mindset: (mode === "tutor" || mode === "research") ? selectedMindset : undefined,
+      depth: (mode === "tutor" || mode === "research") ? selectedDepth : undefined,
       signal: ctrl.signal,
       onDelta: (chunk) => setOutput((p) => p + chunk),
       onDone: () => {
@@ -127,26 +135,50 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         <p className="text-muted-foreground text-sm sm:text-base max-w-xl">{subtitle}</p>
       </header>
 
-      {mode === "tutor" && steps.length === 0 && !loading && (
+      {(mode === "tutor" || mode === "research") && steps.length === 0 && !loading && (
         <div className="glass-card rounded-2xl p-3 sm:p-4">
-          <label className="text-sm font-medium text-foreground block mb-2">
-            {t('workspace.mindset')}
-          </label>
-          <Select value={selectedMindset} onValueChange={(value) => setSelectedMindset(value as MindsetType)}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {getMindsetOptions(t).map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground mt-2">
-            {t('workspace.mindsetDescription')}
-          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">
+                {mode === "research" ? t('workspace.researchMindset') : t('workspace.mindset')}
+              </label>
+              <Select value={selectedMindset} onValueChange={(value) => setSelectedMindset(value as MindsetType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {getMindsetOptions(t).map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-2">
+                {mode === "research" ? t('workspace.researchMindsetDescription') : t('workspace.mindsetDescription')}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">
+                {t('workspace.depth')}
+              </label>
+              <Select value={selectedDepth} onValueChange={setSelectedDepth}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {getDepthOptions(t).map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-2">
+                {t('workspace.depthDescription')}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
