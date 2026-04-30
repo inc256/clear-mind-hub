@@ -130,8 +130,8 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
     try {
       return cleanTableContent(
         mode === "research" && currentStep === steps.length - 1
-          ? steps.map(s => `## ${s.title.replace(/[\^\$]/g, '')}\n${s.content.replace(/[\^\$]/g, '')}`).join('\n\n')
-          : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$]/g, '') || "")
+          ? steps.map(s => `## ${s.title.replace(/[\^\$\\*]/g, '')}\n${s.content.replace(/[\^\$\\*]/g, '')}`).join('\n\n')
+          : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$\\*]/g, '') || "")
       );
     } catch (e) {
       return content;

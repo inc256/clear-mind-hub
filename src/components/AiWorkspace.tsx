@@ -187,9 +187,15 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
           <div className="glass-card rounded-2xl p-3 sm:p-4">
             <Textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-resize
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, 140) + 'px';
+              }}
               placeholder={placeholder}
-              className="min-h-[140px] resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0 px-2"
+              className="min-h-[60px] max-h-[140px] resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0 px-2"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault();

@@ -141,9 +141,30 @@ function getMindsetGuide(mindset?: MindsetType): string {
 
 function getDepthGuide(depth?: string): string {
   const guides: Record<string, string> = {
-    beginner: "Provide basic, introductory explanations. Avoid complex jargon. Focus on simplicity and fundamental concepts.",
-    intermediate: "Provide balanced explanations with moderate detail. Include some technical terms but explain them. Cover core ideas with examples.",
-    advanced: "Provide in-depth, comprehensive explanations. Use advanced terminology. Include detailed analysis, derivations, and complex examples.",
+    beginner: `
+- Use VERY simple language (like explaining to a 12-year-old).
+- Limit explanation to 5-7 sentences TOTAL.
+- Use 1 simple real-life analogy.
+- Avoid technical terms unless absolutely necessary.
+- DO NOT include equations or complex details.
+`,
+
+    intermediate: `
+- Use clear explanations with some technical terms (but explain them).
+- Provide 1–2 examples.
+- Keep explanation medium length (10–15 sentences).
+- You MAY include simple formulas if helpful.
+`,
+
+    advanced: `
+- Provide deep, technical explanation.
+- Include detailed reasoning and multiple examples.
+- Use domain-specific terminology freely.
+- Include equations, formulas, or derivations where applicable.
+- Do NOT simplify concepts unless necessary.
+- Response should be long and comprehensive.
+`,
   };
-  return depth ? `Explanation depth: ${guides[depth] || guides.intermediate}` : "";
+
+  return depth ? `Explanation depth rules:\n${guides[depth] || guides.intermediate}` : "";
 }
