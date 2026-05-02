@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { generatePDF } from "@/lib/pdfGenerator";
+import { generatePDF, cleanLaTeXContent } from "@/lib/pdfGenerator";
 
 // Force reload: 2024-04-29-v2
 
@@ -87,13 +87,7 @@ const cleanTableContent = (text: string): string => {
 };
 
 import { AiMode } from "@/services/aiService";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 
 interface OutputCardProps {
   content: string;
@@ -120,7 +114,6 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
   const [speaking, setSpeaking] = useState(false);
   const [practiceAnswers, setPracticeAnswers] = useState<Record<number, string>>({});
   const [showingPracticeQuestions, setShowingPracticeQuestions] = useState(false);
-  const [speechRate, setSpeechRate] = useState<number>(1);
   const [isRenderingTable, setIsRenderingTable] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -128,11 +121,12 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
   const cleanedContent = useMemo(() => {
     if (!content) return '';
     try {
-      return cleanTableContent(
-        mode === "research" && currentStep === steps.length - 1
-          ? steps.map(s => `## ${s.title.replace(/[\^\$\\*]/g, '')}\n${s.content.replace(/[\^\$\\*]/g, '')}`).join('\n\n')
-          : (steps[currentStep]?.content.replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '').replace(/[\^\$\\*]/g, '') || "")
-      );
+      // First clean LaTeX symbols, then apply existing cleaning
+      const latexCleaned = mode === "research" && currentStep === steps.length - 1
+        ? steps.map(s => `## ${cleanLaTeXContent(s.title)}\n${cleanLaTeXContent(s.content)}`).join('\n\n')
+        : (cleanLaTeXContent(steps[currentStep]?.content || '').replace(/\[CORRECT\]/g, '').replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '') || "");
+
+      return cleanTableContent(latexCleaned.replace(/[\^$\\*]/g, ''));
     } catch (e) {
       return content;
     }
@@ -231,14 +225,13 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
       return;
     }
 
-    // Get clean text from current section only (remove markdown and JSON)
-    const currentContent = steps[currentStep]?.content || '';
-    const cleanText = cleanTextForSpeech(currentContent);
-    
+    // Use the same cleaned content that's displayed in the UI
+    const cleanText = cleanedContent;
+
     if (!cleanText.trim()) return;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = speechRate;
+    utterance.rate = 1; // Default speed
     utterance.onstart = () => setSpeaking(true);
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => {
@@ -249,17 +242,7 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
     speechSynthesis.speak(utterance);
   };
 
-  const cleanTextForSpeech = (text: string): string => {
-    // Remove [CORRECT] markers
-    let cleaned = text.replace(/\[CORRECT\]/g, '');
-    // Remove practice questions JSON
-    cleaned = cleaned.replace(/\{"practice_questions"[\s\S]*?\}\s*$/, '');
-    // Remove markdown headers but keep the content
-    cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
-    // Clean up extra whitespace
-    cleaned = cleaned.replace(/\n\n+/g, '\n\n');
-    return cleaned.trim();
-  };
+
 
   const downloadDocument = useCallback(async () => {
     try {
@@ -288,6 +271,8 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
     }
   }, [steps, mode]);
 
+
+
   const getCopyText = useCallback(() => {
     if (mode === "research" && currentStep === steps.length - 1) {
       return steps.map(s => `## ${s.title}\n${s.content}`).join('\n\n');
@@ -314,24 +299,10 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {loading ? t('workspace.thinking') : (steps[currentStep]?.title || t('workspace.response')).replace(/[\^\$]/g, '')}
+              {loading ? t('workspace.thinking') : (steps[currentStep]?.title || t('workspace.response')).replace(/[\^$]/g, '')}
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {!loading && !showingPracticeQuestions && (
-              <Select value={speechRate.toString()} onValueChange={(val) => setSpeechRate(parseFloat(val))}>
-                <SelectTrigger className="w-[120px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0.75">0.75x</SelectItem>
-                  <SelectItem value="1">1x (Normal)</SelectItem>
-                  <SelectItem value="1.25">1.25x</SelectItem>
-                  <SelectItem value="1.5">1.5x</SelectItem>
-                  <SelectItem value="2">2x (Fast)</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
           {onNewQuery && (
             <Button size="sm" variant="ghost" onClick={onNewQuery}>
               <Plus size={14} className="mr-1.5" /> {t('workspace.newQuery')}
@@ -346,6 +317,7 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
               {speaking ? <VolumeX size={14} className="mr-1.5" /> : <Volume2 size={14} className="mr-1.5" />}
               {speaking ? t('workspace.stop') : t('workspace.speak')}
             </Button>
+
             <Button size="sm" variant="ghost" onClick={downloadDocument} disabled={!content || loading || isDownloading}>
               {isDownloading ? (
                 <Loader2 size={14} className="mr-1.5 animate-spin" />
@@ -418,7 +390,7 @@ export function OutputCard({ content, steps, currentStep, onNext, onPrevious, lo
                               const headerCells = headerRow.split('|').slice(1, -1).map((c: string) => c.trim()).filter(c => c);
                               
                               // Get body rows - either after separator or all rows if no separator
-                              let bodyRowIndices = separatorIdx >= 0 ? rows.slice(separatorIdx + 1) : rows.slice(1);
+                              const bodyRowIndices = separatorIdx >= 0 ? rows.slice(separatorIdx + 1) : rows.slice(1);
                               
                               const bodyRows = bodyRowIndices.map((row: string) =>
                                 row.split('|').slice(1, -1).map((c: string) => c.trim())

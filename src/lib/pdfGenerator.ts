@@ -1,6 +1,23 @@
 import { jsPDF } from 'jspdf';
 
+// Clean LaTeX-like symbols from content
+export const cleanLaTeXContent = (content: string): string => {
+  let cleaned = content;
 
+  // Convert fractions from \frac{a}{b} to a/b
+  cleaned = cleaned.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');
+
+  // Handle other LaTeX commands like \text{...} by keeping only the content inside braces
+  cleaned = cleaned.replace(/\\text\{([^}]+)\}/g, '$1');
+
+  // Remove backslashes before common symbols
+  cleaned = cleaned.replace(/\\([a-zA-Z])/g, '$1');
+
+  // Remove all dollar signs
+  cleaned = cleaned.replace(/\$/g, '');
+
+  return cleaned;
+};
 
 interface TableData {
   headers: string[];
@@ -97,7 +114,7 @@ const parseTable = (lines: string[]): TableData | null => {
   if (rows.length < 2) return null;
 
   // Find separator row
-  let headerIdx = 0;
+  const headerIdx = 0;
   let separatorIdx = -1;
 
   for (let i = 0; i < rows.length; i++) {
@@ -146,15 +163,18 @@ export const generatePDF = async (
     // Add title
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, margins.left, currentY);
+    const displayTitle = mode === 'tutor' ? 'Tutor Summary' : title;
+    doc.text(displayTitle, margins.left, currentY);
     currentY += 15;
 
     // Add metadata
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    const date = new Date().toLocaleDateString();
-    doc.text(`Generated on ${date}`, margins.left, currentY);
+    const now = new Date();
+    const date = now.toLocaleDateString();
+    const time = now.toLocaleTimeString();
+    doc.text(`Generated on ${date} at ${time}`, margins.left, currentY);
     currentY += 10;
 
     // Add content
@@ -173,7 +193,8 @@ export const generatePDF = async (
       currentY += 8;
 
       // Parse and add content
-      const blocks = parseContent(step.content);
+      const cleanedContent = cleanLaTeXContent(step.content);
+      const blocks = parseContent(cleanedContent);
 
       for (const block of blocks) {
         // Check if we need a new page
