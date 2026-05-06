@@ -1,4 +1,4 @@
-project_id = "cwkzcooadhtjqgpgcrsg"
+project_id = "ddaseubvtlyvvejbkdch"
 
 [functions.prompt-edge-function]
 verify_jwt = false
