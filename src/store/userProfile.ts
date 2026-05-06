@@ -81,8 +81,6 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
           `)
           .eq('user_id', user.id);
 
-        if (subsError) throw subsError;
-
         // Fetch recent credit transactions
         const { data: creditTransactions, error: creditsError } = await supabase
           .from('credit_transactions')
@@ -91,12 +89,10 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
           .order('created_at', { ascending: false })
           .limit(10);
 
-        if (creditsError) throw creditsError;
-
         set({
           profile,
-          subscriptions: subscriptions || [],
-          creditTransactions: creditTransactions || [],
+          subscriptions: subsError ? [] : (subscriptions || []),
+          creditTransactions: creditsError ? [] : (creditTransactions || []),
           loading: false
         });
       }

@@ -79,15 +79,21 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (!fullName.trim()) {
+      toast.error("Full name cannot be empty.");
+      return;
+    }
+
     try {
       await profile.updateProfile({
-        full_name: fullName,
-        avatar_url: avatarUrl,
+        full_name: fullName.trim(),
+        avatar_url: avatarUrl.trim() || null,
       });
       setEditing(false);
       toast.success("Profile updated successfully.");
-    } catch (error) {
-      toast.error("Failed to update profile.");
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      toast.error(error?.message || "Failed to update profile. Please try again.");
     }
   };
 
@@ -133,44 +139,93 @@ const Profile = () => {
                     <p className="text-sm text-muted-foreground">Loading profile...</p>
                   </div>
                 ) : profile.profile ? (
-                  <div className="rounded-2xl border border-border p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium">Profile Information</h3>
-                      <Button size="sm" variant="outline" onClick={() => setEditing(!editing)}>
-                        {editing ? "Cancel" : "Edit"}
+                  <div className="rounded-2xl border border-border p-6 space-y-4">
+                    {/* Profile Header */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
+                          {profile.profile.avatar_url ? (
+                            <img
+                              src={profile.profile.avatar_url}
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full flex items-center justify-center text-primary text-xl font-semibold ${profile.profile.avatar_url ? 'hidden' : ''}`}>
+                            {(profile.profile.full_name || auth.user?.email || 'U')[0].toUpperCase()}
+                          </div>
+                        </div>
+                        {editing && (
+                          <button
+                            onClick={() => document.getElementById('avatarUrl')?.focus()}
+                            className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs hover:bg-primary/90 transition-colors"
+                          >
+                            ✏️
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {profile.profile.full_name || "No name set"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {auth.user?.email}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {profile.profile.credits} credits available
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditing(!editing)}
+                      >
+                        {editing ? "Cancel" : "Edit Profile"}
                       </Button>
                     </div>
-                    {editing ? (
-                      <div className="space-y-3">
-                        <div className="grid gap-1">
-                          <Label htmlFor="fullName">Full Name</Label>
-                          <Input
-                            id="fullName"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            placeholder="Enter your full name"
-                          />
+
+                    {/* Edit Form */}
+                    {editing && (
+                      <div className="border-t border-border pt-4 space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <Input
+                              id="fullName"
+                              value={fullName}
+                              onChange={(e) => setFullName(e.target.value)}
+                              placeholder="Enter your full name"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="avatarUrl">Avatar URL</Label>
+                            <Input
+                              id="avatarUrl"
+                              value={avatarUrl}
+                              onChange={(e) => setAvatarUrl(e.target.value)}
+                              placeholder="https://example.com/avatar.jpg"
+                            />
+                          </div>
                         </div>
-                        <div className="grid gap-1">
-                          <Label htmlFor="avatarUrl">Avatar URL</Label>
-                          <Input
-                            id="avatarUrl"
-                            value={avatarUrl}
-                            onChange={(e) => setAvatarUrl(e.target.value)}
-                            placeholder="Enter avatar URL"
-                          />
+                        <div className="flex gap-2">
+                          <Button onClick={handleSaveProfile} disabled={profile.loading}>
+                            {profile.loading ? "Saving..." : "Save Changes"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setFullName(profile.profile?.full_name || "");
+                              setAvatarUrl(profile.profile?.avatar_url || "");
+                              setEditing(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
                         </div>
-                        <Button size="sm" onClick={handleSaveProfile} disabled={profile.loading}>
-                          {profile.loading ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <p><strong>Full Name:</strong> {profile.profile.full_name || "Not set"}</p>
-                        <p><strong>Credits:</strong> {profile.profile.credits}</p>
-                        {profile.profile.avatar_url && (
-                          <img src={profile.profile.avatar_url} alt="Avatar" className="w-16 h-16 rounded-full" />
-                        )}
                       </div>
                     )}
                   </div>
