@@ -39,63 +39,74 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        if (profileError.code === 'PGRST116') { // No rows returned
-          // Create profile if it doesn't exist
-          const { data: newProfile, error: insertError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: user.id,
-              email: user.email,
-              full_name: user.user_metadata?.full_name || null,
-              avatar_url: user.user_metadata?.avatar_url || null,
-              credits: 10 // Default credits
-            })
-            .select()
-            .single();
-
-          if (insertError) throw insertError;
-          set({
-            profile: newProfile,
-            subscriptions: [],
-            creditTransactions: [],
-            loading: false
-          });
-        } else {
-          throw profileError;
-        }
-      } else {
-        // Fetch subscriptions
-        const { data: subscriptions, error: subsError } = await supabase
-          .from('subscriptions')
-          .select(`
-            *,
-            plans (*)
-          `)
-          .eq('user_id', user.id);
-
-        // Fetch recent credit transactions
-        const { data: creditTransactions, error: creditsError } = await supabase
-          .from('credit_transactions')
+      // Fetch profile and transactions in parallel
+      const [profileResult, transactionsResult] = await Promise.allSettled([
+        supabase
+          .from('user_profiles')
           .select('*')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('credit_transactions')
+          .select('amount')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(10);
+      ]);
 
-        set({
-          profile,
-          subscriptions: subsError ? [] : (subscriptions || []),
-          creditTransactions: creditsError ? [] : (creditTransactions || []),
-          loading: false
-        });
+      const profileData = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
+      const profileError = profileResult.status === 'fulfilled' ? profileResult.value.error : { message: 'Failed to fetch profile' };
+
+      const transactions = transactionsResult.status === 'fulfilled' && !transactionsResult.value.error ? transactionsResult.value.data || [] : [];
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
       }
+
+      let profile = profileData;
+
+      if (!profile) {
+        // Create profile if it doesn't exist
+        const { data: newProfile, error: insertError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || null,
+            avatar_url: user.user_metadata?.avatar_url || null,
+            credits: 10 // Default credits
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        profile = newProfile;
+      }
+
+      // Calculate total credits from transactions
+      const totalCredits = transactions.reduce((sum, t) => sum + t.amount, 0);
+      profile.credits = totalCredits;
+
+      // Set profile first
+      set({
+        profile,
+        subscriptions: [],
+        creditTransactions: transactions,
+        loading: false
+      });
+
+      // Fetch subscriptions in background
+      supabase
+        .from('subscriptions')
+        .select(`
+          *,
+          plans (*)
+        `)
+        .eq('user_id', user.id)
+        .then(({ data, error }) => {
+          if (!error && data) {
+            set({ subscriptions: data });
+          }
+        });
+
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }

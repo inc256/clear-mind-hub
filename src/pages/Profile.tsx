@@ -40,6 +40,8 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarError, setAvatarError] = useState(false);
 
   const handleProviderSignIn = async (provider: "google" | "apple") => {
     setLoadingAuth(true);
@@ -78,6 +80,24 @@ const Profile = () => {
     toast.success("Signed out successfully.");
   };
 
+  const uploadAvatar = async () => {
+    if (!avatarFile || !auth.user) return avatarUrl;
+
+    const fileExt = avatarFile.name.split('.').pop();
+    const fileName = `${auth.user.id}_${Date.now()}.${fileExt}`;
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, avatarFile);
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
       toast.error("Full name cannot be empty.");
@@ -85,10 +105,16 @@ const Profile = () => {
     }
 
     try {
+      let newAvatarUrl = avatarUrl.trim() || null;
+      if (avatarFile) {
+        newAvatarUrl = await uploadAvatar();
+      }
+
       await profile.updateProfile({
         full_name: fullName.trim(),
-        avatar_url: avatarUrl.trim() || null,
+        avatar_url: newAvatarUrl,
       });
+      setAvatarFile(null);
       setEditing(false);
       toast.success("Profile updated successfully.");
     } catch (error: any) {
@@ -113,6 +139,7 @@ const Profile = () => {
     if (profile.profile) {
       setFullName(profile.profile.full_name || "");
       setAvatarUrl(profile.profile.avatar_url || "");
+      setAvatarError(false); // Reset error state when profile loads
     }
   }, [profile.profile]);
 
@@ -144,20 +171,20 @@ const Profile = () => {
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
-                          {profile.profile.avatar_url ? (
+                          {profile.profile.avatar_url && !avatarError ? (
                             <img
                               src={profile.profile.avatar_url}
                               alt="Profile"
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
+                              onError={() => setAvatarError(true)}
+                              onLoad={() => setAvatarError(false)}
                             />
                           ) : null}
-                          <div className={`w-full h-full flex items-center justify-center text-primary text-xl font-semibold ${profile.profile.avatar_url ? 'hidden' : ''}`}>
-                            {(profile.profile.full_name || auth.user?.email || 'U')[0].toUpperCase()}
-                          </div>
+                          {(!profile.profile.avatar_url || avatarError) && (
+                            <div className="w-full h-full flex items-center justify-center text-primary text-xl font-semibold">
+                              {(profile.profile.full_name || auth.user?.email || 'U')[0].toUpperCase()}
+                            </div>
+                          )}
                         </div>
                         {editing && (
                           <button
@@ -179,13 +206,23 @@ const Profile = () => {
                           {profile.profile.credits} credits available
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditing(!editing)}
-                      >
-                        {editing ? "Cancel" : "Edit Profile"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => profile.refreshCredits()}
+                          disabled={profile.loading}
+                        >
+                          {profile.loading ? "Refreshing..." : "Refresh"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditing(!editing)}
+                        >
+                          {editing ? "Cancel" : "Edit Profile"}
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Edit Form */}
@@ -210,6 +247,15 @@ const Profile = () => {
                               placeholder="https://example.com/avatar.jpg"
                             />
                           </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="avatarFile">Upload New Avatar</Label>
+                            <Input
+                              id="avatarFile"
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+                            />
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Button onClick={handleSaveProfile} disabled={profile.loading}>
@@ -220,6 +266,7 @@ const Profile = () => {
                             onClick={() => {
                               setFullName(profile.profile?.full_name || "");
                               setAvatarUrl(profile.profile?.avatar_url || "");
+                              setAvatarFile(null);
                               setEditing(false);
                             }}
                           >
