@@ -1,18 +1,19 @@
 {
   "app": {
-    "name": "Tyn Tutor",
-    "tagline": "Fikiri Bora. Jifunze Kwa Akili.",
+    "name": "Xplainfy",
+    "tagline": "Kitu chochote kimeelezwa",
     "description": "Zana ya kujifunza inayotegemea AI. Badilisha maswali, maandishi, na hati kuwa suluhisho za kimuundo, utafiti, na maelezo."
   },
   "navigation": {
     "tutor": "Mwalimu",
     "research": "Utafiti",
     "history": "Historia",
+    "subscription": "Usajili",
     "profile": "Wasifu"
   },
   "profile": {
     "title": "Wasifu & Mipangilio",
-    "subtitle": "Sanidi jinsi Tyn Tutor anavyofikiri na kuhifadhi data.",
+    "subtitle": "Sanidi jinsi Xplainfy anavyofikiri na kuhifadhi data.",
     "privacy": {
       "title": "Modi ya faragha",
       "description": "Usihifadhi kitu chochote mahali. Kila kitu ni kipindi tu.",
@@ -36,7 +37,84 @@
       "privacyNotice": "Modi ya faragha IMEWASHWA: huhifadhiwa kwenye kumbukumbu pekee.",
       "normalNotice": "Hifadhiwa kwenye localStorage ya kivinjari chako."
     },
-    "footer": "Tyn Tutor · Fikiri Bora. Jifunze Kwa Akili."
+    "signedInAs": "Umeingia kama",
+    "user": "Mtumiaji",
+    "signOut": "Toka",
+    "credits": {
+      "title": "Mikopo",
+      "description": "Mikopo yako inayopatikana kwa mwingiliano na AI",
+      "available": "mikopo inayopatikana",
+      "usage": "Kila jibu la AI linagharimu mkopo 1"
+    },
+    "subscription": {
+      "title": "Mipango ya Usajili",
+      "subtitle": "Chagua mpango kamili kwa safari yako ya kujifunza AI",
+      "billing": {
+        "monthly": "Kila mwezi",
+        "yearly": "Kila mwaka",
+        "save": "Okoa 17%"
+      },
+      "credits": "mikopo",
+      "plans": {
+        "popular": "Maarufu zaidi",
+        "free": {
+          "name": "Bure",
+          "description": "Kamili kwa kuanza",
+          "period": "milele",
+          "features": {
+            "1": "Mikopo 10 ya AI",
+            "2": "Usuluhishi wa matatizo ya msingi",
+            "3": "Msaada wa jamii"
+          },
+          "button": "Mpango wa Sasa"
+        },
+        "premium": {
+          "name": "Premium",
+          "description": "Kwa wanafunzi wa kawaida",
+          "periodMonthly": "mwezi",
+          "periodYearly": "mwaka",
+          "features": {
+            "1": "Mikopo 500+ ya AI kila mwezi",
+            "2": "Njia zote za AI zimefunguliwa",
+            "3": "Msaada wa kipaumbele",
+            "4": "Vipengele vya hali ya juu"
+          }
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "Kwa watumiaji mahiri na timu",
+          "periodMonthly": "mwezi",
+          "periodYearly": "mwaka",
+          "features": {
+            "1": "Mikopo 1500+ ya AI kila mwezi",
+            "2": "Vipengele vyote vya premium",
+            "3": "Ufikiaji wa API",
+            "4": "Ushirikiano wa timu",
+            "5": "Chaguo za alama nyeupe"
+          }
+        },
+        "subscribe": "Jisajili kwa {{plan}}"
+      },
+      "description": "Dhibiti mpango wako wa usajili na malipo",
+      "expires": "Unaisha",
+      "upgrade": "Boresha",
+      "upgradeComingSoon": "Chaguo za kuboresha zinakuja hivi karibuni!",
+      "viewPlans": "Tazama Mipango",
+      "footer": "Mipango yote inajumuisha ufikiaji usio na kikomo wa jukwaa letu la kujifunza. Ghairi wakati wowote."
+    },
+    "payment": {
+      "title": "Kamilisha Malipo",
+      "description": "Jisajili kwa {{plan}} kwa {{price}}/{{period}}",
+      "cardName": "Jina la Mmiliki wa Kadi",
+      "cardNamePlaceholder": "Jina Kamili",
+      "cardNumber": "Nambari ya Kadi",
+      "expiry": "Tarehe ya Mwisho",
+      "cvc": "CVC",
+      "secure": "Taarifa zako za malipo ziko salama na zimefichwa",
+      "processing": "Inachakata...",
+      "pay": "Lipa {{amount}}"
+    },
+    "footer": "Xplainfy · Kitu chochote kimeelezwa"
   },
   "workspace": {
     "thinking": "Fikiria…",
@@ -89,6 +167,38 @@
     "title": "Msuluhishi wa Matatizo",
     "subtitle": "Suluhisha matatizo magumu kwa suluhisho za kina za hatua kwa hatua.",
     "placeholder": "Eleza tatizo lako... Nitagawanya na kulisuluhisha hatua kwa hatua."
+  },
+  "auth": {
+    "welcome": {
+      "title": "Karibu kwenye Xplainfy",
+      "subtitle": "Kujifunza kwa AI kwa urahisi",
+      "description": "Ingia ili kupata mafunzo ya kibinafsi ya AI, usaidizi wa utafiti, na utatuzi wa matatizo."
+    },
+    "signIn": {
+      "title": "Ingia",
+      "google": "Endelea na Google",
+      "apple": "Endelea na Apple"
+    },
+    "signUp": {
+      "title": "Jisajili"
+    },
+    "email": "Barua pepe",
+    "password": "Nenosiri",
+    "emailPlaceholder": "Ingiza barua pepe yako",
+    "passwordPlaceholder": "Ingiza nenosiri lako",
+    "divider": "au endelea na",
+    "terms": "Kwa kuingia, unakubali Sheria zetu za Huduma na Sera ya Faragha.",
+    "success": {
+      "signIn": "Umeingia kwa mafanikio!",
+      "signUp": "Akaunti imeundwa kwa mafanikio! Tafadhali angalia barua pepe yako ili kuthibitisha akaunti yako."
+    },
+    "errors": {
+      "oauthFailed": "Kuingia kwa {{provider}} kumeshindwa. Jaribu tena.",
+      "providerNotConfigured": "Kuingia kwa {{provider}} hakujasimbwa. Tafadhali tumia barua pepe/nenosiri badala yake.",
+      "missingFields": "Tafadhali ingiza barua pepe na nenosiri.",
+      "passwordTooShort": "Nenosiri lazima liwe angalau vibambo 6.",
+      "generic": "Uthibitishaji umeshindwa. Jaribu tena."
+    }
   },
   "common": {
     "loading": "Inapakia...",

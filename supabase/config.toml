@@ -1,4 +1,4 @@
 project_id = "cwkzcooadhtjqgpgcrsg"
 
-[functions.chat]
+[functions.prompt-edge-function]
 verify_jwt = false

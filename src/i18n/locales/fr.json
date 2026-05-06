@@ -1,18 +1,19 @@
 {
   "app": {
-    "name": "Tyn Tutor",
-    "tagline": "Pensez mieux. Apprenez plus intelligemment.",
+    "name": "Xplainfy",
+    "tagline": "N'importe quoi expliqué",
     "description": "Outil d'apprentissage alimenté par IA. Transformez les questions, textes et documents en solutions structurées, recherches et notes."
   },
   "navigation": {
     "tutor": "Tuteur",
     "research": "Recherche",
     "history": "Historique",
+    "subscription": "Abonnement",
     "profile": "Profil"
   },
   "profile": {
     "title": "Profil et Paramètres",
-    "subtitle": "Configurez comment Tyn Tutor pense et stocke les données.",
+    "subtitle": "Configurez comment Xplainfy pense et stocke les données.",
     "privacy": {
       "title": "Mode confidentialité",
       "description": "Ne stockez rien localement. Tout est en session uniquement.",
@@ -36,7 +37,84 @@
       "privacyNotice": "Mode confidentialité activé : conservé en mémoire uniquement.",
       "normalNotice": "Stocké dans le localStorage de votre navigateur."
     },
-    "footer": "Tyn Tutor · Pensez mieux. Apprenez plus intelligemment."
+    "signedInAs": "Connecté en tant que",
+    "user": "Utilisateur",
+    "signOut": "Se déconnecter",
+    "credits": {
+      "title": "Crédits",
+      "description": "Vos crédits disponibles pour les interactions IA",
+      "available": "crédits disponibles",
+      "usage": "Chaque réponse IA coûte 1 crédit"
+    },
+    "subscription": {
+      "title": "Plans d'abonnement",
+      "subtitle": "Choisissez le plan parfait pour votre parcours d'apprentissage IA",
+      "billing": {
+        "monthly": "Mensuel",
+        "yearly": "Annuel",
+        "save": "Économisez 17%"
+      },
+      "credits": "crédits",
+      "plans": {
+        "popular": "Le plus populaire",
+        "free": {
+          "name": "Gratuit",
+          "description": "Parfait pour commencer",
+          "period": "pour toujours",
+          "features": {
+            "1": "10 crédits IA",
+            "2": "Résolution de problèmes basique",
+            "3": "Support communautaire"
+          },
+          "button": "Plan actuel"
+        },
+        "premium": {
+          "name": "Premium",
+          "description": "Pour les apprenants réguliers",
+          "periodMonthly": "mois",
+          "periodYearly": "an",
+          "features": {
+            "1": "500+ crédits IA mensuels",
+            "2": "Tous les modes IA débloqués",
+            "3": "Support prioritaire",
+            "4": "Fonctionnalités avancées"
+          }
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "Pour les utilisateurs expérimentés et les équipes",
+          "periodMonthly": "mois",
+          "periodYearly": "an",
+          "features": {
+            "1": "1500+ crédits IA mensuels",
+            "2": "Toutes les fonctionnalités premium",
+            "3": "Accès API",
+            "4": "Collaboration d'équipe",
+            "5": "Options de marque blanche"
+          }
+        },
+        "subscribe": "S'abonner à {{plan}}"
+      },
+      "description": "Gérer votre plan d'abonnement et facturation",
+      "expires": "Expire",
+      "upgrade": "Mettre à niveau",
+      "upgradeComingSoon": "Options de mise à niveau bientôt disponibles !",
+      "viewPlans": "Voir les plans",
+      "footer": "Tous les plans incluent un accès illimité à notre plateforme d'apprentissage. Annulez à tout moment."
+    },
+    "payment": {
+      "title": "Finaliser le paiement",
+      "description": "S'abonner à {{plan}} pour {{price}}/{{period}}",
+      "cardName": "Nom du titulaire",
+      "cardNamePlaceholder": "Jean Dupont",
+      "cardNumber": "Numéro de carte",
+      "expiry": "Date d'expiration",
+      "cvc": "CVC",
+      "secure": "Vos informations de paiement sont sécurisées et chiffrées",
+      "processing": "Traitement en cours...",
+      "pay": "Payer {{amount}}"
+    },
+    "footer": "Xplainfy · N'importe quoi expliqué"
   },
   "workspace": {
     "thinking": "Réflexion…",
@@ -89,6 +167,38 @@
     "title": "Résolveur de problèmes",
     "subtitle": "Résolvez des problèmes complexes avec des solutions détaillées étape par étape.",
     "placeholder": "Décrivez votre problème... Je le décomposerai et le résoudrai étape par étape."
+  },
+  "auth": {
+    "welcome": {
+      "title": "Bienvenue sur Xplainfy",
+      "subtitle": "Apprentissage alimenté par IA simplifié",
+      "description": "Connectez-vous pour accéder au tutorat IA personnalisé, à l'assistance de recherche et à la résolution de problèmes."
+    },
+    "signIn": {
+      "title": "Se connecter",
+      "google": "Continuer avec Google",
+      "apple": "Continuer avec Apple"
+    },
+    "signUp": {
+      "title": "S'inscrire"
+    },
+    "email": "Email",
+    "password": "Mot de passe",
+    "emailPlaceholder": "Entrez votre email",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "divider": "ou continuer avec",
+    "terms": "En vous connectant, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité.",
+    "success": {
+      "signIn": "Connexion réussie !",
+      "signUp": "Compte créé avec succès ! Veuillez vérifier votre email pour vérifier votre compte."
+    },
+    "errors": {
+      "oauthFailed": "La connexion {{provider}} a échoué. Veuillez réessayer.",
+      "providerNotConfigured": "La connexion {{provider}} n'est pas configurée. Veuillez utiliser email/mot de passe à la place.",
+      "missingFields": "Veuillez saisir l'email et le mot de passe.",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+      "generic": "Authentification échouée. Veuillez réessayer."
+    }
   },
   "common": {
     "loading": "Chargement...",

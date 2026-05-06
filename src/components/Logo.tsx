@@ -1,4 +1,4 @@
-import logo from "@/images/Tyn-Tutor-Logo-1080px.png";
+import logo from "@/images/Xplainfy-Icon-Rounded-1080px.png";
 
 interface LogoProps {
   size?: number;
@@ -14,15 +14,15 @@ export function Logo({ size = 32, showText = true }: LogoProps) {
       >
         <img
           src={logo}
-          alt="Tyn Tutor Logo"
+          alt="Xplainfy Logo"
           className="w-full h-full object-cover"
         />
       </div>
       {showText && (
         <div className="leading-none">
-          <div className="font-display text-lg font-bold tracking-tight">Tyn Tutor</div>
+          <div className="font-display text-lg font-bold tracking-tight">Xplainfy</div>
           <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Think Better. Learn Smarter.
+            Anything explained
           </div>
         </div>
       )}

@@ -1,18 +1,19 @@
 {
   "app": {
-    "name": "Tyn Tutor",
-    "tagline": "思考更好。学习更聪明。",
+    "name": "Xplainfy",
+    "tagline": "任何事物都解释",
     "description": "AI 驱动的学习工具。将问题、文本和文档转化为结构化的解决方案、研究和笔记。"
   },
   "navigation": {
     "tutor": "导师",
     "research": "研究",
     "history": "历史",
+    "subscription": "订阅",
     "profile": "个人资料"
   },
   "profile": {
     "title": "个人资料和设置",
-    "subtitle": "配置 Tyn Tutor 如何思考和存储数据。",
+    "subtitle": "配置 Xplainfy 如何思考和存储数据。",
     "privacy": {
       "title": "隐私模式",
       "description": "不本地存储任何内容。一切都是会话专用。",
@@ -36,7 +37,84 @@
       "privacyNotice": "隐私模式开启：仅保存在内存中。",
       "normalNotice": "存储在您的浏览器 localStorage 中。"
     },
-    "footer": "Tyn Tutor · 思考更好。学习更聪明。"
+    "signedInAs": "登录为",
+    "user": "用户",
+    "signOut": "退出登录",
+    "credits": {
+      "title": "积分",
+      "description": "您可用于AI交互的可用积分",
+      "available": "积分可用",
+      "usage": "每次AI回复消耗1积分"
+    },
+    "subscription": {
+      "title": "订阅计划",
+      "subtitle": "为您的AI学习之旅选择完美的计划",
+      "billing": {
+        "monthly": "每月",
+        "yearly": "每年",
+        "save": "节省17%"
+      },
+      "credits": "积分",
+      "plans": {
+        "popular": "最受欢迎",
+        "free": {
+          "name": "免费",
+          "description": "适合入门",
+          "period": "永久",
+          "features": {
+            "1": "10个AI积分",
+            "2": "基本问题解决",
+            "3": "社区支持"
+          },
+          "button": "当前计划"
+        },
+        "premium": {
+          "name": "高级",
+          "description": "适合定期学习者",
+          "periodMonthly": "月",
+          "periodYearly": "年",
+          "features": {
+            "1": "每月500+个AI积分",
+            "2": "解锁所有AI模式",
+            "3": "优先支持",
+            "4": "高级功能"
+          }
+        },
+        "pro": {
+          "name": "专业",
+          "description": "适合高级用户和团队",
+          "periodMonthly": "月",
+          "periodYearly": "年",
+          "features": {
+            "1": "每月1500+个AI积分",
+            "2": "所有高级功能",
+            "3": "API访问",
+            "4": "团队协作",
+            "5": "白标选项"
+          }
+        },
+        "subscribe": "订阅{{plan}}"
+      },
+      "description": "管理您的订阅计划和账单",
+      "expires": "到期",
+      "upgrade": "升级",
+      "upgradeComingSoon": "升级选项即将推出！",
+      "viewPlans": "查看计划",
+      "footer": "所有计划均包含对我们学习平台的无限访问权。可随时取消。"
+    },
+    "payment": {
+      "title": "完成付款",
+      "description": "以{{price}}/{{period}}订阅{{plan}}",
+      "cardName": "持卡人姓名",
+      "cardNamePlaceholder": "张三",
+      "cardNumber": "卡号",
+      "expiry": "到期日期",
+      "cvc": "CVC",
+      "secure": "您的付款信息是安全和加密的",
+      "processing": "处理中...",
+      "pay": "支付{{amount}}"
+    },
+    "footer": "Xplainfy · 任何事物都解释"
   },
   "workspace": {
     "thinking": "思考中…",
@@ -96,6 +174,38 @@
     "title": "问题解决者",
     "subtitle": "使用详细的逐步解决方案解决复杂问题。",
     "placeholder": "描述您的问题... 我会逐步分解并解决它。"
+  },
+  "auth": {
+    "welcome": {
+      "title": "欢迎来到 Xplainfy",
+      "subtitle": "AI 驱动的学习变得简单",
+      "description": "登录以访问个性化的 AI 辅导、研究协助和问题解决。"
+    },
+    "signIn": {
+      "title": "登录",
+      "google": "继续使用 Google",
+      "apple": "继续使用 Apple"
+    },
+    "signUp": {
+      "title": "注册"
+    },
+    "email": "邮箱",
+    "password": "密码",
+    "emailPlaceholder": "输入您的邮箱",
+    "passwordPlaceholder": "输入您的密码",
+    "divider": "或继续使用",
+    "terms": "登录即表示您同意我们的服务条款和隐私政策。",
+    "success": {
+      "signIn": "登录成功！",
+      "signUp": "账户创建成功！请检查您的邮箱以验证账户。"
+    },
+    "errors": {
+      "oauthFailed": "{{provider}} 登录失败。请重试。",
+      "providerNotConfigured": "{{provider}} 登录未配置。请改用邮箱/密码。",
+      "missingFields": "请输入邮箱和密码。",
+      "passwordTooShort": "密码必须至少6个字符。",
+      "generic": "身份验证失败。请重试。"
+    }
   },
   "common": {
     "loading": "加载中...",

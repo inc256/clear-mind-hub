@@ -1,18 +1,52 @@
 {
   "app": {
-    "name": "Tyn Tutor",
-    "tagline": "Think Better. Learn Smarter.",
+    "name": "Xplainfy",
+    "tagline": "Anything explained",
     "description": "AI-powered learning tool. Turn questions, text, and documents into structured solutions, research, and notes."
   },
   "navigation": {
     "tutor": "Tutor",
     "research": "Research",
     "history": "History",
+    "subscription": "Subscription",
     "profile": "Profile"
+  },
+  "subscription": {
+    "title": "Choose Your Plan",
+    "subtitle": "Select the perfect subscription plan for your AI learning journey",
+    "plans": {
+      "popular": "Most Popular"
+    },
+    "credits": "credits",
+    "billing": {
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    }
+  },
+  "payment": {
+    "title": "Complete Payment",
+    "description": "Subscribe to {{plan}} for {{price}}/{{period}}",
+    "cardName": "Cardholder Name",
+    "cardNamePlaceholder": "John Doe",
+    "cardNumber": "Card Number",
+    "expiry": "Expiry Date",
+    "cvc": "CVC",
+    "secure": "Your payment information is secure and encrypted",
+    "processing": "Processing...",
+    "pay": "Pay {{amount}}",
+    "success": {
+      "subscription": "Successfully subscribed to {{plan}}!",
+      "credits": "Successfully purchased {{credits}} credits!",
+      "trial": "Successfully started {{plan}}!"
+    },
+    "errors": {
+      "missingFields": "Please fill in all payment fields",
+      "failed": "Payment failed. Please try again."
+    }
   },
   "profile": {
     "title": "Profile & Settings",
-    "subtitle": "Configure how Tyn Tutor thinks and stores data.",
+    "subtitle": "Configure how Xplainfy thinks and stores data.",
     "privacy": {
       "title": "Privacy mode",
       "description": "Don't store anything locally. Everything is session-only.",
@@ -36,7 +70,93 @@
       "privacyNotice": "Privacy mode ON: kept in memory only.",
       "normalNotice": "Stored in your browser's localStorage."
     },
-    "footer": "Tyn Tutor · Think Better. Learn Smarter."
+    "signedInAs": "Signed in as",
+    "user": "User",
+    "signOut": "Sign out",
+    "credits": {
+      "title": "Credits",
+      "description": "Your available credits for AI interactions",
+      "available": "credits available",
+      "usage": "Each AI response costs 1 credit"
+    },
+    "subscription": {
+      "title": "Subscription Plans",
+      "subtitle": "Choose the perfect plan for your AI learning journey",
+      "billing": {
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "save": "Save 17%"
+      },
+      "credits": "credits",
+      "plans": {
+        "popular": "Most Popular",
+        "free": {
+          "name": "Free",
+          "description": "Perfect for getting started",
+          "period": "forever",
+          "features": {
+            "1": "10 AI credits",
+            "2": "Basic problem solving",
+            "3": "Community support"
+          },
+          "button": "Current Plan"
+        },
+        "premium": {
+          "name": "Premium",
+          "description": "For regular learners",
+          "periodMonthly": "month",
+          "periodYearly": "year",
+          "features": {
+            "1": "500+ AI credits monthly",
+            "2": "All AI modes unlocked",
+            "3": "Priority support",
+            "4": "Advanced features"
+          }
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "For power users and teams",
+          "periodMonthly": "month",
+          "periodYearly": "year",
+          "features": {
+            "1": "1500+ AI credits monthly",
+            "2": "All premium features",
+            "3": "API access",
+            "4": "Team collaboration",
+            "5": "White-label options"
+          }
+        },
+        "subscribe": "Subscribe to {{plan}}"
+      },
+      "description": "Manage your subscription plan and billing",
+      "expires": "Expires",
+      "upgrade": "Upgrade",
+      "upgradeComingSoon": "Upgrade options coming soon!",
+      "viewPlans": "View Plans",
+      "footer": "All plans include unlimited access to our learning platform. Cancel anytime."
+    },
+    "payment": {
+      "title": "Complete Payment",
+      "description": "Subscribe to {{plan}} for {{price}}/{{period}}",
+      "cardName": "Cardholder Name",
+      "cardNamePlaceholder": "John Doe",
+      "cardNumber": "Card Number",
+      "expiry": "Expiry Date",
+      "cvc": "CVC",
+      "secure": "Your payment information is secure and encrypted",
+      "processing": "Processing...",
+      "pay": "Pay {{amount}}",
+      "success": {
+        "subscription": "Successfully subscribed to {{plan}}!",
+        "credits": "Successfully purchased {{credits}} credits!",
+        "trial": "Successfully started {{plan}}!"
+      },
+      "errors": {
+        "missingFields": "Please fill in all payment fields",
+        "failed": "Payment failed. Please try again."
+      }
+    },
+    "footer": "Xplainfy · Anything explained"
   },
   "workspace": {
     "thinking": "Thinking…",
@@ -96,6 +216,38 @@
     "title": "Problem Solver",
     "subtitle": "Solve complex problems with detailed, step-by-step solutions.",
     "placeholder": "Describe your problem... I'll break it down and solve it step by step."
+  },
+  "auth": {
+    "welcome": {
+      "title": "Welcome to Xplainfy",
+      "subtitle": "AI-powered learning made simple",
+      "description": "Sign in to access personalized AI tutoring, research assistance, and problem solving."
+    },
+    "signIn": {
+      "title": "Sign In",
+      "google": "Continue with Google",
+      "apple": "Continue with Apple"
+    },
+    "signUp": {
+      "title": "Sign Up"
+    },
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "divider": "or continue with",
+    "terms": "By signing in, you agree to our Terms of Service and Privacy Policy.",
+    "success": {
+      "signIn": "Signed in successfully!",
+      "signUp": "Account created successfully! Please check your email to verify your account."
+    },
+    "errors": {
+      "oauthFailed": "{{provider}} sign-in failed. Please try again.",
+      "providerNotConfigured": "{{provider}} sign-in is not configured. Please use email/password instead.",
+      "missingFields": "Please enter both email and password.",
+      "passwordTooShort": "Password must be at least 6 characters long.",
+      "generic": "Authentication failed. Please try again."
+    }
   },
   "common": {
     "loading": "Loading...",

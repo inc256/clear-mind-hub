@@ -21,8 +21,8 @@ export default defineConfig(({ mode }) => ({
       devOptions: { enabled: false },
       includeAssets: ["favicon.ico", "icons/icon-192.png", "icons/icon-512.png"],
       manifest: {
-        name: "Tyn Tutor — Think Clearly. Solve Better.",
-        short_name: "Tyn Tutor",
+        name: "Xplainfy — Anything explained",
+        short_name: "Xplainfy",
         description: "AI-powered thinking, research, and structured notes.",
         theme_color: "#3b82f6",
         background_color: "#fafbfc",

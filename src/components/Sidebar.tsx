@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { Brain, History, Search, User, Sparkles } from "lucide-react";
+import { Brain, History, Search, User, Sparkles, CreditCard } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ const getItems = (t: any) => [
   { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
   { to: "/research", label: t('navigation.research'), icon: Search },
   { to: "/history", label: t('navigation.history'), icon: History },
+  { to: "/subscription", label: t('navigation.subscription'), icon: CreditCard },
 ];
 
 export function Sidebar() {

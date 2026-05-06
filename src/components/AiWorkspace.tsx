@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { streamAi, AiMode, MindsetType } from "@/services/aiService";
+import { streamAi, AiMode, MindsetType, DepthLevel } from "@/services/aiService";
+import { useHistory } from "../store/history";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogClose,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AiWorkspaceProps {
   mode: AiMode;
@@ -22,6 +31,96 @@ interface AiWorkspaceProps {
   placeholder: string;
   acceptFile?: boolean;
 }
+
+interface CitationStyle {
+  name: string;
+  full_name: string;
+  use: {
+    primary_fields: string[];
+    purpose: string;
+    common_scenarios: string[];
+  };
+  users: {
+    main_users: string[];
+    disciplines: string[];
+    level: string[];
+  };
+}
+
+const citationStyles: CitationStyle[] = [
+  {
+    "name": "APA",
+    "full_name": "American Psychological Association Style",
+    "use": {
+      "primary_fields": ["Psychology", "Education", "Social Sciences"],
+      "purpose": "Used for scientific writing where date of research is important.",
+      "common_scenarios": [
+        "Research papers",
+        "Case studies",
+        "Scientific reports"
+      ]
+    },
+    "users": {
+      "main_users": ["Researchers", "Students", "Academics"],
+      "disciplines": ["Psychology", "Sociology", "Education"],
+      "level": ["University", "Professional"]
+    }
+  },
+  {
+    "name": "MLA",
+    "full_name": "Modern Language Association Style",
+    "use": {
+      "primary_fields": ["Literature", "Languages", "Arts", "Humanities"],
+      "purpose": "Used for writing and analyzing texts, focusing on authorship and page references.",
+      "common_scenarios": [
+        "Essay writing",
+        "Literary analysis",
+        "Language studies"
+      ]
+    },
+    "users": {
+      "main_users": ["Students", "Teachers", "Researchers"],
+      "disciplines": ["English", "Philosophy", "Cultural Studies"],
+      "level": ["High School", "University"]
+    }
+  },
+  {
+    "name": "IEEE",
+    "full_name": "Institute of Electrical and Electronics Engineers Style",
+    "use": {
+      "primary_fields": ["Engineering", "Computer Science", "Technology"],
+      "purpose": "Used for technical writing with numbered references for efficiency.",
+      "common_scenarios": [
+        "Technical reports",
+        "Engineering papers",
+        "Software documentation"
+      ]
+    },
+    "users": {
+      "main_users": ["Engineers", "Developers", "Researchers"],
+      "disciplines": ["Electrical Engineering", "Computer Science", "IT"],
+      "level": ["University", "Professional"]
+    }
+  },
+  {
+    "name": "AMA",
+    "full_name": "American Medical Association Style",
+    "use": {
+      "primary_fields": ["Medicine", "Health Sciences"],
+      "purpose": "Used in medical and clinical research with concise numeric citations.",
+      "common_scenarios": [
+        "Clinical research papers",
+        "Medical journals",
+        "Case reports"
+      ]
+    },
+    "users": {
+      "main_users": ["Doctors", "Medical Students", "Researchers"],
+      "disciplines": ["Medicine", "Nursing", "Pharmacy"],
+      "level": ["University", "Professional"]
+    }
+  }
+];
 
 const getMindsetOptions = (t: any) => [
   { value: "general", label: t('workspace.general') },
@@ -40,6 +139,7 @@ const getDepthOptions = (t: any) => [
 
 export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
   const { t } = useTranslation();
+  const history = useHistory();
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [steps, setSteps] = useState<Array<{title: string, content: string}>>([]);
@@ -47,6 +147,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
   const [loading, setLoading] = useState(false);
   const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
   const [selectedDepth, setSelectedDepth] = useState<string>("beginner");
+  const [selectedCitationStyle, setSelectedCitationStyle] = useState<string>("APA");
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef("");
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -63,17 +164,28 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
+    let finalOutput = "";
 
     await streamAi({
       mode,
       input: text,
-      mindset: (mode === "tutor" || mode === "research") ? selectedMindset : undefined,
-      depth: (mode === "tutor" || mode === "research") ? selectedDepth : undefined,
+      mindset: mode === "tutor" ? selectedMindset : undefined,
+      depth: mode === "tutor" ? (selectedDepth as DepthLevel) : undefined,
+      citationStyle: mode === "research" ? selectedCitationStyle : undefined,
       signal: ctrl.signal,
-      onDelta: (chunk) => setOutput((p) => p + chunk),
-      onDone: () => {
+      onDelta: (chunk) => {
+        finalOutput += chunk;
+        setOutput((p) => p + chunk);
+      },
+      onDone: (finalResponse) => {
+        const response = finalResponse || finalOutput;
         setLoading(false);
-        setSteps(parseSteps(output, mode));
+        setSteps(parseSteps(response, mode));
+        history.addEntry({
+          mode,
+          input: text,
+          output: response,
+        });
       },
       onError: (msg) => {
         setLoading(false);
@@ -135,12 +247,12 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         <p className="text-muted-foreground text-sm sm:text-base max-w-xl">{subtitle}</p>
       </header>
 
-      {(mode === "tutor" || mode === "research") && steps.length === 0 && !loading && (
+      {mode === "tutor" && steps.length === 0 && !loading && (
         <div className="glass-card rounded-2xl p-3 sm:p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-foreground block mb-2">
-                {mode === "research" ? t('workspace.researchMindset') : t('workspace.mindset')}
+                {t('workspace.mindset')}
               </label>
               <Select value={selectedMindset} onValueChange={(value) => setSelectedMindset(value as MindsetType)}>
                 <SelectTrigger className="w-full">
@@ -155,7 +267,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-2">
-                {mode === "research" ? t('workspace.researchMindsetDescription') : t('workspace.mindsetDescription')}
+                {t('workspace.mindsetDescription')}
               </p>
             </div>
             <div>
@@ -178,6 +290,109 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                 {t('workspace.depthDescription')}
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {mode === "research" && steps.length === 0 && !loading && (
+        <div className="glass-card rounded-2xl p-3 sm:p-4">
+          <div className="mb-4">
+            <label className="text-sm font-medium text-foreground block mb-3">
+              Citation Style
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {citationStyles.map((style) => (
+                <Dialog key={style.name}>
+                  <DialogTrigger asChild>
+                    <button
+                      onClick={() => setSelectedCitationStyle(style.name)}
+                      className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                        selectedCitationStyle === style.name
+                          ? 'border-primary bg-primary/5 shadow-sm'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-sm text-center w-full">
+                          {style.name}
+                        </h3>
+                        {selectedCitationStyle === style.name && (
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        )}
+                      </div>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{style.full_name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">{style.use.purpose}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2">Primary Fields:</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {style.use.primary_fields.map((field) => (
+                            <span key={field} className="text-xs bg-muted px-2 py-1 rounded">
+                              {field}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2">Common Scenarios:</h4>
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          {style.use.common_scenarios.map((scenario) => (
+                            <li key={scenario} className="flex items-center">
+                              <span className="w-1.5 h-1.5 bg-current rounded-full mr-2 flex-shrink-0"></span>
+                              {scenario}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium text-sm mb-2">Users & Disciplines:</h4>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1">
+                            {style.users.main_users.map((user) => (
+                              <span key={user} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {user}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {style.users.disciplines.map((discipline) => (
+                              <span key={discipline} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                {discipline}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-muted-foreground text-center">
+                          <strong>Level:</strong> {style.users.level.join(", ")}
+                        </p>
+                      </div>
+
+                      <div className="flex justify-center pt-4 border-t">
+                        <DialogClose asChild>
+                          <Button className="px-8 bg-primary hover:bg-primary/90">Use {style.name}</Button>
+                        </DialogClose>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Choose a citation style for your research report. Click any style to learn more about its use and requirements.
+            </p>
           </div>
         </div>
       )}

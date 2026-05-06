@@ -1,170 +1,311 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// src/services/aiService.ts
+// Main entry point for all AI streaming requests.
+// Re-exports shared types for consumers, then handles transport logic.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useSettings } from "@/store/settings";
+import { useUserProfile } from "@/store/userProfile";
+import { buildSystemPrompt } from "./ai/prompts";
+import { consumeSseStream } from "./ai/sseParser";
+import type { StreamOptions } from "./ai/types";
+import OpenAI from "openai";
+import { supabase } from "@/integrations/supabase/client";
 
-const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+// Re-export types so consumers only need to import from this one file
+export type { AiMode, MindsetType, DepthLevel, StreamOptions } from "./ai/types";
 
-export type AiMode = "problem" | "tutor" | "research";
-export type MindsetType = "general" | "medical" | "engineering" | "lecturer" | "scientific" | "creative";
+// ─────────────────────────────────────────────────────────────────────────────
+// Environment constants
+// ─────────────────────────────────────────────────────────────────────────────
 
-export interface StreamOptions {
-  mode: AiMode;
-  input: string;
-  mindset?: MindsetType;
-  depth?: string;
-  onDelta: (chunk: string) => void;
-  onDone: () => void;
-  onError: (msg: string) => void;
-  signal?: AbortSignal;
+const SUPABASE_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prompt-edge-function`;
+const SUPABASE_KEY    = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+const DEFAULT_OPENAI_BASE = "https://api.openai.com/v1";
+const DEFAULT_CUSTOM_MODEL = "gpt-4o-mini";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Model selection logic
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getModelForMode(mode: AiMode): string {
+  // Use gpt-5.4-mini for Problem breakdown, Explanation, and Research steps
+  if (mode === "problem" || mode === "tutor" || mode === "research") {
+    return "gpt-5.4-mini";
+  }
+  // Use gpt-5.4-nano for other modes (Simplify problem, Short hints, Rewrites)
+  return "gpt-5.4-nano";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public API — streamAi
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Stream an AI response for the given mode and input.
+ *
+ * Routing logic:
+ * 1. If the user has configured a custom API key in Settings, route to their
+ *    OpenAI-compatible endpoint directly from the client.
+ * 2. Otherwise, route to the Supabase edge function (default, server-side key).
+ *
+ * Streaming is handled via consumeSseStream which parses the SSE response and
+ * calls onDelta for each content chunk, onDone when complete, onError on failure.
+ */
+export async function streamAi(opts: StreamOptions): Promise<void> {
+  const {
+    mode,
+    input,
+    mindset,
+    depth,
+    citationStyle,
+    onDelta,
+    onDone,
+    onError,
+    signal,
+  } = opts;
+
+  const { customApiKey, customApiBase } = useSettings.getState();
+  const profileStore = useUserProfile.getState();
+
+  // Check credits before proceeding
+  if (!customApiKey && !profileStore.deductCredits(1)) {
+    onError("Insufficient credits. Please upgrade your plan or add custom API key.");
+    return;
+  }
+
+  let finalOutput = "";
+
+  try {
+    const resp = customApiKey
+      ? await fetchFromCustomApi({
+          customApiKey,
+          customApiBase,
+          mode,
+          input,
+          mindset,
+          depth,
+          citationStyle,
+          signal,
+        })
+      : await fetchFromSupabase({
+          mode,
+          input,
+          mindset,
+          depth,
+          citationStyle,
+          signal,
+        });
+
+    // ── HTTP-level error ───────────────────────────────────────────────────
+    if (!resp.ok) {
+      onError(await extractErrorMessage(resp));
+      return;
+    }
+
+    // ── No body guard ──────────────────────────────────────────────────────
+    if (!resp.body) {
+      onError("The server returned an empty response. Please try again.");
+      return;
+    }
+
+    // ── Consume the SSE stream ─────────────────────────────────────────────
+    await consumeSseStream(resp.body, (chunk) => {
+      finalOutput += chunk;
+      onDelta(chunk);
+    });
+
+    // ── Log chat history (only for authenticated users) ────────────────────
+    if (!customApiKey) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await logChatHistory(user.id, opts, finalOutput);
+        }
+      } catch (error) {
+        console.warn('Failed to log chat history:', error);
+      }
+    }
+
+    onDone(finalOutput);
+  } catch (error: unknown) {
+    // AbortError is intentional (user cancelled) — swallow silently
+    if (error instanceof Error && error.name === "AbortError") return;
+    onError(error instanceof Error ? error.message : "An unexpected network error occurred.");
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Private fetch helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface BaseFetchArgs {
+  mode:          StreamOptions["mode"];
+  input:         string;
+  mindset?:      StreamOptions["mindset"];
+  depth?:        StreamOptions["depth"];
+  citationStyle?: string;
+  signal?:       AbortSignal;
 }
 
 /**
- * Stream an AI response. Uses Lovable Cloud edge function by default.
- * If user has provided a custom OpenAI-compatible API key in Settings,
- * we call that endpoint directly from the client (their choice).
+ * Route to the Supabase edge function.
+ * The API key is kept server-side; the client only sends the publishable key.
  */
-export async function streamAi(opts: StreamOptions) {
-  const { mode, input, mindset, depth, onDelta, onDone, onError, signal } = opts;
-  const { customApiKey, customApiBase } = useSettings.getState();
+function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
+  const { mode, input, mindset, depth, citationStyle, signal } = args;
+  return fetch(SUPABASE_FN_URL, {
+    method: "POST",
+    signal,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      apikey: SUPABASE_KEY,
+    },
+    body: JSON.stringify({ mode, input, mindset, depth, citationStyle }),
+  });
+}
 
-  try {
-    let resp: Response;
+/**
+ * Route directly to a user-supplied OpenAI-compatible endpoint.
+ * Uses OpenAI SDK for Nvidia API, falls back to fetch for others.
+ * The system prompt is built client-side and injected into the messages array.
+ */
+function fetchFromCustomApi(
+  args: BaseFetchArgs & { customApiKey: string; customApiBase?: string }
+): Promise<Response> {
+  const { customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, signal } = args;
 
-    if (customApiKey) {
-      const base = customApiBase || "https://api.openai.com/v1";
-      resp = await fetch(`${base.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${customApiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          stream: true,
-          messages: [
-            { role: "system", content: systemForMode(mode, mindset, depth) },
-            { role: "user", content: input },
-          ],
-        }),
-      });
-    } else {
-      resp = await fetch(FN_URL, {
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ mode, input, mindset, depth }),
-      });
-    }
+  const baseUrl = (customApiBase ?? DEFAULT_OPENAI_BASE).replace(/\/$/, "");
+  const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
 
-    if (!resp.ok) {
-      let msg = `Request failed (${resp.status})`;
-      try {
-        const j = await resp.json();
-        if (j?.error) msg = j.error;
-      } catch {
-        /* noop */
-      }
-      onError(msg);
-      return;
-    }
-    if (!resp.body) {
-      onError("No response stream");
-      return;
-    }
+  // Use OpenAI SDK for Nvidia API
+  if (baseUrl === "https://integrate.api.nvidia.com/v1") {
+    return fetchFromNvidiaApi(customApiKey, mode, input, mindset, depth, citationStyle, signal);
+  }
 
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    let done = false;
+  // Fallback to generic OpenAI-compatible fetch
+  return fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    signal,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${customApiKey}`,
+    },
+    body: JSON.stringify({
+      model: getModelForMode(mode),
+      stream: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: input },
+      ],
+    }),
+  });
+}
 
-    while (!done) {
-      const { done: d, value } = await reader.read();
-      if (d) break;
-      buf += decoder.decode(value, { stream: true });
+/**
+ * Route to Nvidia API using OpenAI SDK.
+ * Uses the specific Nvidia model and configuration.
+ */
+async function fetchFromNvidiaApi(
+  apiKey: string,
+  mode: StreamOptions["mode"],
+  input: string,
+  mindset?: StreamOptions["mindset"],
+  depth?: StreamOptions["depth"],
+  citationStyle?: string,
+  signal?: AbortSignal
+): Promise<Response> {
+  const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
 
-      let idx: number;
-      while ((idx = buf.indexOf("\n")) !== -1) {
-        let line = buf.slice(0, idx);
-        buf = buf.slice(idx + 1);
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line || line.startsWith(":")) continue;
-        if (!line.startsWith("data: ")) continue;
-        const json = line.slice(6).trim();
-        if (json === "[DONE]") {
-          done = true;
-          break;
-        }
+  const openai = new OpenAI({
+    apiKey,
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+  });
+
+  const completion = await openai.chat.completions.create({
+    model: "minimaxai/minimax-m2.7",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: input }
+    ],
+    temperature: 1,
+    top_p: 0.95,
+    max_tokens: 8192,
+    stream: true,
+  });
+
+  // Convert the OpenAI stream to a Response object with ReadableStream
+  const stream = new ReadableStream({
+    start(controller) {
+      (async () => {
         try {
-          const parsed = JSON.parse(json);
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) onDelta(delta);
-        } catch {
-          buf = line + "\n" + buf;
-          break;
+          for await (const chunk of completion) {
+            if (signal?.aborted) {
+              controller.close();
+              return;
+            }
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              // Format as SSE data
+              const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+              controller.enqueue(new TextEncoder().encode(sseData));
+            }
+          }
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.close();
+        } catch (error) {
+          controller.error(error);
         }
-      }
+      })();
+    },
+    cancel() {
+      // Handle cancellation if needed
     }
-    onDone();
-  } catch (e: any) {
-    if (e?.name === "AbortError") return;
-    onError(e?.message ?? "Network error");
-  }
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
+  });
 }
 
-function systemForMode(mode: AiMode, mindset?: MindsetType, depth?: string): string {
-  const mindsetGuide = getMindsetGuide(mindset);
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
-  if (mode === "problem") {
-    return `You are Tyn Tutor. IMPORTANT: Be BRIEF and FOCUSED. Respond with: ## Solution (concise explanation and direct answer), ## Check Your Answer (provide exactly 4 multiple choice options on separate lines: A) option text, B) option text, C) option text, D) option text. Mark the correct answer with [CORRECT] at the end of that line only). Keep explanation SHORT - max 2-3 sentences.`;
+/**
+ * Attempt to extract a human-readable error message from an error response.
+ * Falls back to a generic HTTP status message.
+ */
+async function extractErrorMessage(resp: Response): Promise<string> {
+  try {
+    const body = await resp.json();
+    if (typeof body?.error === "string")       return body.error;
+    if (typeof body?.error?.message === "string") return body.error.message;
+  } catch {
+    // Response body was not JSON — fall through to generic message
   }
-  if (mode === "tutor") {
-    const depthGuide = getDepthGuide(depth);
-    return `You are Tyn Tutor, an expert educator. ${depthGuide} Respond in Markdown with sections: ## Introduction, ## Core Concepts (explain fundamental ideas), ## Detailed Explanation (comprehensive breakdown with examples), ## Key Takeaways, ## Practice Questions (Provide 3 practice questions in JSON format at the end: {"practice_questions": [{"question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "A"}]}). ${mindsetGuide} Use terminology and examples relevant to the chosen mindset.`;
-  }
-  const depthGuide = getDepthGuide(depth);
-  return `You are Tyn Tutor research assistant. ${depthGuide} Respond in Markdown with: ## Key Points, ## Organized Sections (### subheadings), ## Summary, ## Suggested Formats. ${mindsetGuide}`;
+  return `Request failed with status ${resp.status} (${resp.statusText || "unknown error"}).`;
 }
 
-function getMindsetGuide(mindset?: MindsetType): string {
-  const guides: Record<MindsetType, string> = {
-    general: "Use clear, everyday language suitable for a general audience.",
-    medical: "Use medical terminology, reference anatomy/physiology, and provide clinical context when relevant.",
-    engineering: "Use technical terminology, focus on systems, efficiency, and design principles. Include equations and technical specifications where applicable.",
-    lecturer: "Use pedagogical language, break down concepts progressively, and use teaching metaphors and analogies.",
-    scientific: "Use scientific terminology, cite principles and laws, and explain mechanisms from first principles.",
-    creative: "Use imaginative language, examples, and metaphors to make concepts engaging and memorable.",
-  };
-  return mindset ? `Mindset: ${guides[mindset]}` : "";
-}
+// ── Chat History Logging ─────────────────────────────────────────────────────
 
-function getDepthGuide(depth?: string): string {
-  const guides: Record<string, string> = {
-    beginner: `
-- Use VERY simple language (like explaining to a 12-year-old).
-- Limit explanation to 5-7 sentences TOTAL.
-- Use 1 simple real-life analogy.
-- Avoid technical terms unless absolutely necessary.
-- DO NOT include equations or complex details.
-`,
-
-    intermediate: `
-- Use clear explanations with some technical terms (but explain them).
-- Provide 1–2 examples.
-- Keep explanation medium length (10–15 sentences).
-- You MAY include simple formulas if helpful.
-`,
-
-    advanced: `
-- Provide deep, technical explanation.
-- Include detailed reasoning and multiple examples.
-- Use domain-specific terminology freely.
-- Include equations, formulas, or derivations where applicable.
-- Do NOT simplify concepts unless necessary.
-- Response should be long and comprehensive.
-`,
-  };
-
-  return depth ? `Explanation depth rules:\n${guides[depth] || guides.intermediate}` : "";
+async function logChatHistory(userId: string, opts: StreamOptions, response: string): Promise<void> {
+  try {
+    // Use the database function that handles credit deduction and chat insertion
+    await supabase.rpc('insert_chat', {
+      p_user_id: userId,
+      p_mode: opts.mode,
+      p_prompt: opts.input,
+      p_response: response,
+      p_credits: 1, // Each AI interaction costs 1 credit
+    });
+  } catch (error) {
+    console.warn('Failed to log chat history:', error);
+    // If the database function fails (likely due to insufficient credits),
+    // the credit check should have caught this earlier, but let's handle it gracefully
+  }
 }

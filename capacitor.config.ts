@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tyntutor.app',
-  appName: 'Tyn Tutor',
+  appId: 'com.xplainfy.app',
+  appName: 'Xplainfy',
   webDir: 'dist'
 };
 

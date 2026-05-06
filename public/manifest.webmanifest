@@ -1,6 +1,6 @@
 {
-  "name": "Tyn Tutor",
-  "short_name": "Tyn Tutor",
+  "name": "Xplainfy",
+  "short_name": "Xplainfy",
   "description": "AI-powered learning tool for problem solving, research, and structured notes.",
   "start_url": "/",
   "display": "standalone",
