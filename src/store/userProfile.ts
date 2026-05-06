@@ -126,7 +126,10 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
 
   deductCredits: async (amount) => {
     const { profile } = get();
-    if (!profile) return false;
+    if (!profile) {
+      set({ error: 'Unable to validate credits. Please sign in again.' });
+      return false;
+    }
 
     try {
       // Use the database function to deduct credits
@@ -141,7 +144,11 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       await get().fetchProfile();
       return true;
     } catch (error: any) {
-      set({ error: error.message });
+      const message =
+        error?.message?.includes('Insufficient credits')
+          ? 'You do not have enough app credits. Please purchase credits, upgrade your plan, or add a custom API key.'
+          : error?.message || 'Failed to deduct credits. Please try again.';
+      set({ error: message });
       return false;
     }
   },

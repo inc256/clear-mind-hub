@@ -363,6 +363,26 @@ begin
 end;
 $$ language plpgsql security definer;
 
+create or replace function public.grant_credits(
+  p_user_id uuid,
+  p_amount integer,
+  p_reason text default 'bonus'
+)
+returns void as $$
+begin
+  update public.user_profiles
+  set credits = credits + p_amount
+  where id = p_user_id;
+
+  if not found then
+    raise exception 'User not found';
+  end if;
+
+  insert into public.credit_transactions (user_id, amount, type)
+  values (p_user_id, p_amount, p_reason);
+end;
+$$ language plpgsql security definer;
+
 -- =========================================================
 -- REFILL SUBSCRIPTION CREDITS
 -- =========================================================
