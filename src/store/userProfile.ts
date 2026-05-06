@@ -23,6 +23,7 @@ interface UserProfileState {
   refreshCredits: () => Promise<void>;
   applyPlan: (planName: string) => Promise<boolean>;
   purchaseCredits: (credits: number) => Promise<boolean>;
+  setupRealtimeListeners: (userId: string) => void;
 }
 
 export const useUserProfile = create<UserProfileState>((set, get) => ({
@@ -214,5 +215,50 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       set({ error: error.message, loading: false });
       return false;
     }
+  },
+
+  setupRealtimeListeners: (userId: string) => {
+    // Subscribe to user_profiles changes to get instant credit updates
+    const profileSub = supabase
+      .channel(`profile_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: `id=eq.${userId}`,
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new === 'object') {
+            set({ profile: payload.new as UserProfile });
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to credit_transactions to see transaction history update in real-time
+    const transactionsSub = supabase
+      .channel(`transactions_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'credit_transactions',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // Refresh the entire profile when a new transaction is recorded
+          get().fetchProfile();
+        }
+      )
+      .subscribe();
+
+    // Cleanup function to unsubscribe when user logs out
+    return () => {
+      supabase.removeChannel(profileSub);
+      supabase.removeChannel(transactionsSub);
+    };
   },
 }));

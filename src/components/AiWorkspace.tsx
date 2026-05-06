@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { streamAi, AiMode, MindsetType, DepthLevel } from "@/services/aiService";
 import { useHistory } from "../store/history";
+import { useUserProfile } from "@/store/userProfile";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -140,6 +141,7 @@ const getDepthOptions = (t: any) => [
 export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
   const { t } = useTranslation();
   const history = useHistory();
+  const { refreshCredits } = useUserProfile();
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [steps, setSteps] = useState<Array<{title: string, content: string}>>([]);
@@ -177,7 +179,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         finalOutput += chunk;
         setOutput((p) => p + chunk);
       },
-      onDone: (finalResponse) => {
+      onDone: async (finalResponse) => {
         const response = finalResponse || finalOutput;
         setLoading(false);
         setSteps(parseSteps(response, mode));
@@ -186,6 +188,8 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
           input: text,
           output: response,
         });
+        // Refresh credits immediately after successful AI response
+        await refreshCredits();
       },
       onError: (msg) => {
         setLoading(false);

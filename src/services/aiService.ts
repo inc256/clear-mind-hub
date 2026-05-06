@@ -9,7 +9,6 @@ import { useUserProfile } from "@/store/userProfile";
 import { buildSystemPrompt } from "./ai/prompts";
 import { consumeSseStream } from "./ai/sseParser";
 import type { AiMode, StreamOptions } from "./ai/types";
-import OpenAI from "openai";
 import { supabase } from "@/integrations/supabase/client";
 
 // Re-export types so consumers only need to import from this one file
@@ -22,8 +21,6 @@ export type { AiMode, MindsetType, DepthLevel, StreamOptions } from "./ai/types"
 const SUPABASE_FN_URL   = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prompt-edge-function`;
 const SUPABASE_KEY      = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 const DEFAULT_OPENAI_BASE = "https://api.openai.com/v1";
-const NVIDIA_BASE_URL   = "https://integrate.api.nvidia.com/v1";
-const NVIDIA_MODEL      = "minimaxai/minimax-m2.7";
 
 // Model routing — matches server-side logic in index.js
 const STANDARD_MODES = new Set<AiMode>(["problem", "tutor", "research"]);
@@ -163,7 +160,6 @@ function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
 
 /**
  * Custom API key path — routes to OpenAI-compatible endpoint supplied by the user.
- * Dispatches to Nvidia SDK path if the base URL matches, otherwise uses generic fetch.
  */
 function fetchFromCustomApi(
   args: BaseFetchArgs & { customApiKey: string; customApiBase?: string }
@@ -171,10 +167,6 @@ function fetchFromCustomApi(
   const { customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, signal } = args;
 
   const baseUrl = (customApiBase ?? DEFAULT_OPENAI_BASE).replace(/\/$/, "");
-
-  if (baseUrl === NVIDIA_BASE_URL) {
-    return fetchFromNvidiaApi({ apiKey: customApiKey, mode, input, mindset, depth, citationStyle, signal });
-  }
 
   const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
 
@@ -198,65 +190,7 @@ function fetchFromCustomApi(
   });
 }
 
-/**
- * Nvidia NIM path via OpenAI SDK.
- * Converts the async iterator into an SSE-formatted ReadableStream
- * so the rest of the pipeline (consumeSseStream) works identically.
- */
-async function fetchFromNvidiaApi(args: {
-  apiKey:         string;
-  mode:           AiMode;
-  input:          string;
-  mindset?:       StreamOptions["mindset"];
-  depth?:         StreamOptions["depth"];
-  citationStyle?: string;
-  signal?:        AbortSignal;
-}): Promise<Response> {
-  const { apiKey, mode, input, mindset, depth, citationStyle, signal } = args;
 
-  const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
-  const encoder = new TextEncoder();
-
-  const openai = new OpenAI({ apiKey, baseURL: NVIDIA_BASE_URL });
-
-  const completion = await openai.chat.completions.create({
-    model:       NVIDIA_MODEL,
-    stream:      true,
-    temperature: 1,
-    top_p:       0.95,
-    max_tokens:  8192,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user",   content: input.trim() },
-    ],
-  });
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const chunk of completion) {
-          if (signal?.aborted) {
-            controller.close();
-            return;
-          }
-          const content = chunk.choices[0]?.delta?.content;
-          if (content) {
-            const sse = `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
-            controller.enqueue(encoder.encode(sse));
-          }
-        }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: { "Content-Type": "text/event-stream" },
-  });
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -302,7 +236,7 @@ async function logChatHistory(opts: StreamOptions, response: string): Promise<vo
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.rpc("insert_chat", {
+    await (supabase.rpc as any)("insert_chat", {
       p_user_id: user.id,
       p_mode:     opts.mode,
       p_prompt:   opts.input,

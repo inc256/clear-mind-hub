@@ -2,6 +2,7 @@ import { NavLink } from "@/components/NavLink";
 import { Brain, History, Search, User, Sparkles, CreditCard } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
+import { useUserProfile } from "@/store/userProfile";
 
 const getItems = (t: any) => [
   { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
@@ -12,6 +13,8 @@ const getItems = (t: any) => [
 
 export function Sidebar() {
   const { t } = useTranslation();
+  const { profile } = useUserProfile();
+
   return (
     <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen flex-col border-r border-border/60 bg-sidebar/80 backdrop-blur-xl animate-slide-in-left">
       <div className="px-6 py-6 border-b border-border/60">
@@ -32,6 +35,16 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Credit Balance Display */}
+      <div className="m-3 rounded-2xl border border-primary/15 bg-accent/60 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} className="text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary-deep">{t('profile.credits.title')}</span>
+        </div>
+        <div className="text-2xl font-bold text-primary">{profile?.credits ?? 0}</div>
+        <p className="text-xs text-sidebar-foreground/60">{t('profile.credits.available')}</p>
+      </div>
 
       <div className="m-3 rounded-2xl border border-primary/15 bg-accent/60 p-4">
         <NavLink

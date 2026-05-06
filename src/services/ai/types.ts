@@ -22,7 +22,7 @@ export interface StreamOptions {
   depth?: DepthLevel;
   citationStyle?: string;
   onDelta: (chunk: string) => void;
-  onDone: () => void;
+  onDone: (response: string) => void;
   onError: (msg: string) => void;
   signal?: AbortSignal;
 }

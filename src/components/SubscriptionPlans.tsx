@@ -16,6 +16,8 @@ interface Plan {
   features: string[];
   popular?: boolean;
   icon: React.ReactNode;
+  billingPeriod?: string;
+  tagline?: string;
 }
 
 export function SubscriptionPlans() {

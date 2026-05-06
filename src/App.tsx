@@ -20,10 +20,11 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const setAuth = useAuth((state) => state.setAuth);
-  const { fetchProfile } = useUserProfile();
+  const { fetchProfile, setupRealtimeListeners } = useUserProfile();
 
   useEffect(() => {
     let mounted = true;
+    let unsubscribeRealtime: (() => void) | null = null;
 
     const initAuth = async () => {
       const { data } = await supabase.auth.getSession();
@@ -32,6 +33,8 @@ const App = () => {
         // Load user profile if session exists
         if (data.session?.user) {
           await fetchProfile();
+          // Set up real-time listeners for instant updates
+          unsubscribeRealtime = setupRealtimeListeners(data.session.user.id);
         }
       }
     };
@@ -44,6 +47,11 @@ const App = () => {
         // Load or clear user profile based on session
         if (session?.user) {
           await fetchProfile();
+          // Set up real-time listeners for instant updates
+          unsubscribeRealtime = setupRealtimeListeners(session.user.id);
+        } else {
+          // Clean up listeners on logout
+          unsubscribeRealtime?.();
         }
       }
     });
@@ -51,8 +59,9 @@ const App = () => {
     return () => {
       mounted = false;
       authListener.subscription.unsubscribe();
+      unsubscribeRealtime?.();
     };
-  }, [setAuth, fetchProfile]);
+  }, [setAuth, fetchProfile, setupRealtimeListeners]);
 
   return (
     <QueryClientProvider client={queryClient}>
