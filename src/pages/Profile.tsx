@@ -496,12 +496,12 @@ const Profile = () => {
               </div>
             </div>
             <div className="mt-3">
-              <Select value={i18n.language || "en"} placeholder="" onValueChange={(value) => {
+              <Select value={i18n.language || "en"} onValueChange={(value) => {
                 i18n.changeLanguage(value);
                 s.setLanguage(value);
               }}>
                 <SelectTrigger className="w-full max-w-xs">
-                  <SelectValue placeholder="" />
+                  <SelectValue placeholder="Select language" />
                 </SelectTrigger>
                 <SelectContent>
                   {languageOptions.map(({ value, label }) => (

@@ -7,6 +7,9 @@ interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   credits: number;
+  subscription_plan: string | null;
+  subscription_status: string | null;
+  subscription_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,16 +42,23 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Fetch profile and transactions in parallel
-      const [profileResult, transactionsResult] = await Promise.allSettled([
-        supabase
+      // Fetch profile, transactions, and subscriptions in parallel
+      const [profileResult, transactionsResult, subscriptionsResult] = await Promise.allSettled([
+        (supabase as any)
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
           .single(),
-        supabase
+        (supabase as any)
           .from('credit_transactions')
           .select('amount')
+          .eq('user_id', user.id),
+        (supabase as any)
+          .from('subscriptions')
+          .select(`
+            *,
+            plans (*)
+          `)
           .eq('user_id', user.id)
       ]);
 
@@ -56,6 +66,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       const profileError = profileResult.status === 'fulfilled' ? profileResult.value.error : { message: 'Failed to fetch profile' };
 
       const transactions = transactionsResult.status === 'fulfilled' && !transactionsResult.value.error ? transactionsResult.value.data || [] : [];
+      const subscriptions = subscriptionsResult.status === 'fulfilled' && !subscriptionsResult.value.error ? subscriptionsResult.value.data || [] : [];
 
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError;
@@ -65,7 +76,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
 
       if (!profile) {
         // Create profile if it doesn't exist
-        const { data: newProfile, error: insertError } = await supabase
+        const { data: newProfile, error: insertError } = await (supabase as any)
           .from('user_profiles')
           .insert({
             id: user.id,
@@ -85,27 +96,27 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       const totalCredits = transactions.reduce((sum, t) => sum + t.amount, 0);
       profile.credits = totalCredits;
 
+      // Sync credits in database
+      if (profile.credits !== totalCredits) {
+        await (supabase as any)
+          .from('user_profiles')
+          .update({ credits: totalCredits, updated_at: new Date().toISOString() })
+          .eq('id', user.id);
+      }
+
+      // Set subscription info
+      const activeSubscription = subscriptions.find(s => s.status === 'active');
+      profile.subscription_plan = activeSubscription?.plans?.name || null;
+      profile.subscription_status = activeSubscription?.status || null;
+      profile.subscription_expires_at = activeSubscription?.current_period_end || null;
+
       // Set profile first
       set({
         profile,
-        subscriptions: [],
+        subscriptions,
         creditTransactions: transactions,
         loading: false
       });
-
-      // Fetch subscriptions in background
-      supabase
-        .from('subscriptions')
-        .select(`
-          *,
-          plans (*)
-        `)
-        .eq('user_id', user.id)
-        .then(({ data, error }) => {
-          if (!error && data) {
-            set({ subscriptions: data });
-          }
-        });
 
     } catch (error: any) {
       set({ error: error.message, loading: false });
@@ -118,7 +129,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
 
     set({ loading: true, error: null });
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_profiles')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', profile.id)
@@ -133,15 +144,20 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
   },
 
   deductCredits: async (amount) => {
-    const { profile } = get();
+    let { profile } = get();
     if (!profile) {
-      set({ error: 'Unable to validate credits. Please sign in again.' });
-      return false;
+      // Fetch profile if not loaded
+      await get().fetchProfile();
+      profile = get().profile;
+      if (!profile) {
+        set({ error: 'Unable to validate credits. Please sign in again.' });
+        return false;
+      }
     }
 
     try {
       // Use the database function to deduct credits
-      const { error } = await supabase.rpc('use_credits', {
+      const { error } = await (supabase as any).rpc('use_credits', {
         p_user_id: profile.id,
         p_amount: amount
       });
@@ -172,7 +188,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       // Use the database function to apply the plan
-      const { error } = await supabase.rpc('apply_plan', {
+      const { error } = await (supabase as any).rpc('apply_plan', {
         p_user_id: profile.id,
         p_plan_name: planName
       });
@@ -195,7 +211,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       // Add credits directly to user profile
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_profiles')
         .update({
           credits: profile.credits + credits,
@@ -208,7 +224,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       if (error) throw error;
 
       // Log the transaction
-      await supabase
+      await (supabase as any)
         .from('credit_transactions')
         .insert({
           user_id: profile.id,
