@@ -14,6 +14,7 @@ export function AuthScreen() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [loadingAuth, setLoadingAuth] = useState(false);
 
+  const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin;
 
   // OAuth providers are always shown - errors are handled gracefully when clicked
 
@@ -22,8 +23,8 @@ export function AuthScreen() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: window.location.origin
-      }
+        redirectTo: authRedirectUrl,
+      },
     });
     if (error) {
       if (error.message.includes('Unsupported provider')) {
@@ -61,8 +62,8 @@ export function AuthScreen() {
             email,
             password,
             options: {
-              emailRedirectTo: window.location.origin
-            }
+              emailRedirectTo: authRedirectUrl,
+            },
           });
           if (signUpError) throw signUpError;
           toast.success(t('auth.success.signUp'));

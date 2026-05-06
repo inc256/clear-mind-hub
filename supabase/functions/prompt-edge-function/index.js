@@ -1,504 +1,290 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// System Prompt Building Logic (ported from client)
-// ─────────────────────────────────────────────────────────────────────────────
+// Model routing: mini for complex modes, nano for lightweight modes
+const MODELS = {
+  standard: "gpt-5.4-mini",  // problem, tutor, research
+  fast: "gpt-5.4-nano",      // simplify, hints, rewrites
+};
 
-// ── Depth guides ───────────────────────────────────────────────────────────
+// Per-mode max_tokens caps — prevents runaway token usage
+const MAX_TOKENS = {
+  problem:   800,
+  tutor:    1800,
+  research: 2400,
+  simplify:  600,
+  hints:     400,
+  rewrites:  700,
+};
+
+// Per-mode temperature — lower = more focused/factual, higher = more creative
+const TEMPERATURE = {
+  problem:  0.3,
+  tutor:    0.7,
+  research: 0.3,
+  simplify: 0.5,
+  hints:    0.5,
+  rewrites: 0.7,
+};
+
+const VALID_MODES     = new Set(["problem", "tutor", "research", "simplify", "hints", "rewrites"]);
+const VALID_DEPTHS    = new Set(["beginner", "intermediate", "advanced"]);
+const VALID_MINDSETS  = new Set(["general", "medical", "engineering", "lecturer", "scientific", "creative"]);
+const VALID_CITATIONS = new Set(["APA", "MLA", "IEEE", "AMA"]);
+
+const INPUT_MAX_CHARS = 4000;
+const UPSTREAM_TIMEOUT_MS = 25000;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Prompt Fragments
+// ─────────────────────────────────────────────────────────────────────────────
 
 const DEPTH_GUIDES = {
-  beginner: `
-DEPTH: Beginner
-- Write as if explaining to a curious 12-year-old with no prior knowledge.
-- Use short sentences and everyday words. Define any term the moment you introduce it.
-- Limit the core explanation to 5–7 sentences.
-- Anchor every idea to one concrete, real-world analogy.
-- Never include equations, derivations, or jargon-heavy details.
-`.trim(),
-
-  intermediate: `
-DEPTH: Intermediate
-- Assume the reader has basic familiarity with the subject area.
-- Use domain vocabulary, but briefly clarify any specialised terms on first use.
-- Provide 1–2 worked examples that bridge theory and practice.
-- Keep the explanation moderately detailed (10–15 sentences).
-- Simple formulas or diagrams are welcome when they genuinely clarify.
-`.trim(),
-
-  advanced: `
-DEPTH: Advanced
-- Assume an expert or senior student audience.
-- Use precise domain-specific terminology without simplification.
-- Provide rigorous, multi-layered explanations with detailed reasoning chains.
-- Include equations, derivations, edge cases, or formal definitions where relevant.
-- Reference related concepts, known limitations, and open questions in the field.
-- Responses must be thorough and comprehensive — do not truncate depth for brevity.
-`.trim(),
+  beginner:     `DEPTH: Beginner — write for a curious 12-year-old. Short sentences, plain words, define terms immediately, 5–7 sentence core, one real-world analogy. No equations or jargon.`,
+  intermediate: `DEPTH: Intermediate — assume basic familiarity. Use domain vocab with brief first-use clarification, 1–2 worked examples, 10–15 sentences. Simple formulas welcome.`,
+  advanced:     `DEPTH: Advanced — expert audience. Precise terminology, rigorous multi-layered reasoning, equations/derivations/edge-cases where relevant. Be thorough; do not truncate.`,
 };
-
-function depthSection(depth) {
-  if (!depth || !(depth in DEPTH_GUIDES)) return "";
-  return `\n\n${DEPTH_GUIDES[depth]}`;
-}
-
-// ── Mindset guides ─────────────────────────────────────────────────────────
 
 const MINDSET_GUIDES = {
-  general:
-    "Write for a general audience. Favour plain, accessible language and universal examples from everyday life.",
-  medical:
-    "Write with clinical precision. Use standard medical terminology (ICD/SNOMED conventions where applicable), reference anatomy, physiology, or pharmacology as needed, and frame findings in terms of patient outcomes or clinical relevance.",
-  engineering:
-    "Write with technical rigour. Focus on systems, interfaces, efficiency, tolerances, and design trade-offs. Include equations, units, and specifications where they add value. Reference standards (ISO, IEEE, ANSI) when relevant.",
-  lecturer:
-    "Write in a pedagogical register. Sequence ideas from simple to complex. Use Socratic questions, teaching analogies, and scaffolded examples. Anticipate misconceptions and address them proactively.",
-  scientific:
-    "Write with scientific exactness. Ground every claim in established principles, laws, or empirical evidence. Explain causal mechanisms from first principles. Distinguish between correlation and causation. Note where scientific consensus is still developing.",
-  creative:
-    "Write with imaginative flair. Use vivid metaphors, storytelling devices, and sensory language to make abstract concepts feel tangible and memorable. Prioritise engagement and conceptual resonance over exhaustive detail.",
+  general:     "Audience: general public. Plain accessible language, universal everyday examples.",
+  medical:     "Audience: clinical. Use standard medical terminology, reference anatomy/physiology/pharmacology, frame in patient-outcome terms.",
+  engineering: "Audience: engineers. Focus on systems, efficiency, tolerances, trade-offs. Include equations, units, standards (ISO/IEEE/ANSI) where relevant.",
+  lecturer:    "Audience: students. Sequence simple→complex, use Socratic questions and scaffolded examples, anticipate and address misconceptions.",
+  scientific:  "Audience: scientists. Ground claims in evidence, explain causal mechanisms, distinguish correlation from causation, note areas of evolving consensus.",
+  creative:    "Audience: general, creative tone. Vivid metaphors, storytelling, sensory language. Prioritise engagement over exhaustive detail.",
 };
-
-function mindsetSection(mindset) {
-  if (!mindset || !(mindset in MINDSET_GUIDES)) return "";
-  return `\n\nMINDSET LENS: ${MINDSET_GUIDES[mindset]}`;
-}
-
-// ── Citation formats ───────────────────────────────────────────────────────
 
 const CITATION_FORMATS = {
   APA: {
-    name: "APA",
-    fullName: "American Psychological Association Style",
-    layout: {
-      font: "Times New Roman, 12pt",
-      spacing: "double-spaced",
-      margins: "1 inch on all sides",
-    },
-    inTextCitation: {
-      format: "(Author, Year)",
-      example: "(Smith, 2023)",
-    },
-    referenceSection: {
-      title: "References",
-      example: "Smith, J. (2023). Title of work. Publisher.",
-    },
+    fullName:   "American Psychological Association Style",
+    layout:     { font: "Times New Roman 12pt", spacing: "double-spaced", margins: "1 inch all sides" },
+    inText:     { format: "(Author, Year)", example: "(Smith, 2023)" },
+    refTitle:   "References",
+    refExample: "Smith, J. (2023). Title of work. Publisher.",
   },
   MLA: {
-    name: "MLA",
-    fullName: "Modern Language Association Style",
-    layout: {
-      font: "Times New Roman, 12pt",
-      spacing: "double-spaced",
-      margins: "1 inch on all sides",
-    },
-    inTextCitation: {
-      format: "(Author Page)",
-      example: "(Smith 123)",
-    },
-    referenceSection: {
-      title: "Works Cited",
-      example: 'Smith, John. "Title of Work." Publisher, Year.',
-    },
+    fullName:   "Modern Language Association Style",
+    layout:     { font: "Times New Roman 12pt", spacing: "double-spaced", margins: "1 inch all sides" },
+    inText:     { format: "(Author Page)", example: "(Smith 123)" },
+    refTitle:   "Works Cited",
+    refExample: 'Smith, John. "Title of Work." Publisher, Year.',
   },
   IEEE: {
-    name: "IEEE",
-    fullName: "Institute of Electrical and Electronics Engineers Style",
-    layout: {
-      font: "Times New Roman, 10pt",
-      spacing: "single-spaced",
-      margins: "1 inch on all sides",
-    },
-    inTextCitation: {
-      format: "[Number]",
-      example: "[1]",
-    },
-    referenceSection: {
-      title: "References",
-      example: "[1] J. Smith, \"Title,\" Journal, vol. 1, no. 1, pp. 1-10, 2023.",
-    },
+    fullName:   "Institute of Electrical and Electronics Engineers Style",
+    layout:     { font: "Times New Roman 10pt", spacing: "single-spaced", margins: "1 inch all sides" },
+    inText:     { format: "[Number]", example: "[1]" },
+    refTitle:   "References",
+    refExample: '[1] J. Smith, "Title," Journal, vol. 1, no. 1, pp. 1–10, 2023.',
   },
   AMA: {
-    name: "AMA",
-    fullName: "American Medical Association Style",
-    layout: {
-      font: "Times New Roman, 12pt",
-      spacing: "double-spaced",
-      margins: "1 inch on all sides",
-    },
-    inTextCitation: {
-      format: "superscript number",
-      example: "Smith¹",
-    },
-    referenceSection: {
-      title: "References",
-      example: "1. Smith J. Title of article. Journal Name. 2023;1(1):1-10.",
-    },
+    fullName:   "American Medical Association Style",
+    layout:     { font: "Times New Roman 12pt", spacing: "double-spaced", margins: "1 inch all sides" },
+    inText:     { format: "superscript number", example: "Smith¹" },
+    refTitle:   "References",
+    refExample: "1. Smith J. Title. Journal Name. 2023;1(1):1–10.",
   },
 };
 
-function getCitationFormat(citationStyle) {
-  if (!citationStyle) return undefined;
-  return CITATION_FORMATS[citationStyle.toUpperCase()];
+// ─────────────────────────────────────────────────────────────────────────────
+// Prompt Fragment Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function depthLine(depth) {
+  return depth && DEPTH_GUIDES[depth] ? `\n${DEPTH_GUIDES[depth]}` : "";
+}
+
+function mindsetLine(mindset) {
+  return mindset && MINDSET_GUIDES[mindset] ? `\nLens: ${MINDSET_GUIDES[mindset]}` : "";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Model selection logic
+// Prompt Builders
 // ─────────────────────────────────────────────────────────────────────────────
-
-function getModelForMode(mode) {
-  // Use gpt-5.4-mini for Problem breakdown, Explanation, and Research steps
-  if (mode === "problem" || mode === "tutor" || mode === "research") {
-    return "gpt-5.4-mini";
-  }
-  // Use gpt-5.4-nano for other modes (Simplify problem, Short hints, Rewrites)
-  return "gpt-5.4-nano";
-}
-
-// ── Mode: Problem Solver ───────────────────────────────────────────────────
 
 function buildProblemPrompt() {
-  return `
-You are Xplainfy — a precise, structured problem-solving assistant.
+  return `You are Xplainfy, a precise problem-solving assistant. Be concise — every word must earn its place.
 
-Your role is to deliver clear, accurate solutions that not only answer the question but help the user understand the reasoning behind the answer.
-
-RESPONSE RULES:
-- Be concise and direct. Every word must earn its place.
-- Never add padding, filler phrases, or unsolicited commentary.
-- Always follow the exact structure below. No deviations.
-
-────────────────────────────
-REQUIRED RESPONSE STRUCTURE:
-────────────────────────────
+Respond in exactly this structure:
 
 ## Solution
-State the answer directly in the first sentence.
-Follow with a brief explanation of the key reasoning (2–4 sentences maximum).
-If a formula, equation, or step-by-step process is needed, present it cleanly using Markdown code blocks or numbered steps.
+State the answer in sentence 1. Follow with 2–4 sentences of key reasoning. Use Markdown code blocks or numbered steps only if needed.
 
 ## Why This Works
-In 1–2 sentences, explain the underlying principle or logic that makes the solution correct. This helps the user build intuition, not just memorise an answer.
+1–2 sentences on the underlying principle that makes the solution correct.
 
 ## Check Your Answer
-Present exactly 4 multiple-choice options on separate lines using this format:
-
-A) <option text>
-B) <option text>
-C) <option text>
-D) <option text>
-
-Rules for the quiz:
-- Exactly one option must be correct. Mark it by appending [CORRECT] at the end of that line only.
-- The three wrong options must be plausible — common misconceptions or near-misses, not obviously absurd.
-- Do NOT reveal which answer is correct in any other part of your response.
-- Do NOT add explanations after the options.
-`.trim();
+Exactly 4 multiple-choice options, one per line:
+A) …
+B) …
+C) …
+D) …
+Append [CORRECT] to the correct option only. Wrong options must reflect real misconceptions. No explanations after the options.`;
 }
 
-// ── Mode: Tutor ───────────────────────────────────────────────────────────
-
 function buildTutorPrompt(mindset, depth) {
-  return `
-You are Xplainfy — an expert educator and adaptive tutor.
+  return `You are Xplainfy, an expert adaptive tutor. Teach with clarity and precision.${depthLine(depth)}${mindsetLine(mindset)}
 
-Your role is to teach topics with clarity, precision, and structure. You adapt your language and depth to the learner's level, and you make complex ideas genuinely understandable — not just paraphrased from a textbook.
-${depthSection(depth)}${mindsetSection(mindset)}
-
-RESPONSE RULES:
-- Follow the exact structure below. Every section is required.
-- Write in a warm, authoritative teaching voice — knowledgeable but never condescending.
-- Use Markdown formatting. Use **bold** for key terms on first introduction.
-- Embed relevant examples naturally within the explanation — do not relegate them to a separate "examples" block.
-- The Practice Questions MUST be valid JSON inside a fenced code block. Invalid JSON is unacceptable.
-
-────────────────────────────
-REQUIRED RESPONSE STRUCTURE:
-────────────────────────────
+Structure your response exactly as follows:
 
 ## Introduction
-Open with a 1–2 sentence hook that frames why this topic matters in the real world.
-State clearly what the learner will understand by the end of this explanation.
+1–2 sentence hook (real-world relevance) + what the learner will understand by the end.
 
 ## Core Concepts
-Define and explain the 2–4 fundamental ideas the learner must grasp before going deeper.
-Each concept gets its own short paragraph. Use bold for the concept name on first use.
+2–4 fundamental concepts, each in its own short paragraph. **Bold** the concept name on first use.
 
 ## Detailed Explanation
-Provide a thorough, layered explanation of the topic.
-- Progress logically: simple → complex.
-- Integrate examples, analogies, and (where appropriate) diagrams described in text.
-- Address at least one common misconception explicitly.
+Layered explanation (simple → complex). Integrate examples and analogies naturally. Address at least one common misconception.
 
 ## Key Takeaways
-A concise bullet list (4–6 bullets) of the most important points from this explanation.
-Each bullet should be a complete, standalone insight — not a vague heading.
+4–6 bullet points — each a complete, standalone insight.
 
 ## Practice Questions
-Return exactly 3 practice questions as a JSON code block. All fields are required. Use this exact schema:
-
+Return exactly 3 questions as valid JSON in a fenced code block:
 \`\`\`json
 {
   "practice_questions": [
     {
-      "question": "Full question text here?",
-      "options": ["A) First option", "B) Second option", "C) Third option", "D) Fourth option"],
+      "question": "…?",
+      "options": ["A) …", "B) …", "C) …", "D) …"],
       "correct_answer": "A",
-      "explanation": "Brief explanation of why this answer is correct (1–2 sentences)."
+      "explanation": "1–2 sentence rationale."
     }
   ]
 }
 \`\`\`
-
-Question quality rules:
-- Each question must test a distinct concept from the explanation above.
-- Wrong options must be plausible — reflect real misconceptions, not obvious absurdities.
-- The \`correct_answer\` field must be the letter only (A, B, C, or D).
-`.trim();
+Each question tests a distinct concept. Wrong options must reflect real misconceptions. \`correct_answer\` is the letter only.`;
 }
-
-// ── Mode: Research (general) ───────────────────────────────────────────────
 
 function buildResearchPrompt(mindset, depth) {
-  return `
-You are Xplainfy — a structured research assistant and knowledge synthesiser.
+  return `You are Xplainfy, a structured research assistant. Produce organised, actionable insight — not bullet dumps.${depthLine(depth)}${mindsetLine(mindset)}
 
-Your role is to turn a topic or question into a well-organised, deeply informative research output. You do not produce scattered bullet dumps — you produce structured insight that a reader can act on, cite, or build upon.
-${depthSection(depth)}${mindsetSection(mindset)}
-
-RESPONSE RULES:
-- Follow the exact structure below. Every section is required.
-- Write in clear, authoritative prose. Use Markdown headings and sub-headings for organisation.
-- Where facts, statistics, or named theories are referenced, note the source type (e.g. "peer-reviewed studies", "industry reports") even if you cannot cite a live URL.
-- Avoid vague generalisations. Every claim should be specific and defensible.
-- The Suggested Next Steps section must be actionable — not generic advice like "read more".
-
-────────────────────────────
-REQUIRED RESPONSE STRUCTURE:
-────────────────────────────
+Required structure:
 
 ## Executive Summary
-2–3 sentences summarising the core answer or finding. A reader who only reads this section should leave with the single most important insight.
+2–3 sentences: the single most important insight a skim-reader should leave with.
 
 ## Key Points
-4–6 bullet points of the most significant, specific facts or claims about this topic.
-Each bullet must stand on its own — complete, specific, and informative.
+4–6 specific, standalone bullet points.
 
 ## Deep Dive
-Use ### sub-headings to organise the topic into 3–5 distinct subtopics or dimensions.
-For each subtopic:
-- Explain the concept, mechanism, or finding with precision.
-- Provide relevant data, examples, or case studies where applicable.
-- Note any important nuances or contextual factors.
+3–5 ### sub-sections. Each: explain the concept/mechanism/finding precisely, include relevant data or case studies, note nuances.
 
 ## Competing Views & Limitations
-Objectively present 1–3 significant counterarguments, alternative interpretations, or known limitations of the mainstream view.
-This section demonstrates intellectual honesty and helps the reader evaluate the information critically.
+1–3 counterarguments or known limitations, presented objectively.
 
 ## Summary
-A concise 3–5 sentence wrap-up that connects the subtopics and reinforces the executive summary with added nuance gained from the deep dive.
+3–5 sentences connecting the sub-topics and adding nuance to the executive summary.
 
 ## Suggested Next Steps
-3–5 specific, actionable recommendations for what the reader should do, investigate, or explore next — tailored to this exact topic.
-`.trim();
+3–5 specific, actionable recommendations tailored to this exact topic.`;
 }
 
-// ── Mode: Research (citation-guided) ───────────────────────────────────────
+function buildCitationResearchPrompt(style, mindset, depth) {
+  const f = CITATION_FORMATS[style];
+  return `You are Xplainfy, an academic writing specialist. Write a complete research paper in ${f.fullName} (${style}).${depthLine(depth)}${mindsetLine(mindset)}
 
-function buildCitationResearchPrompt(format, mindset, depth) {
-  // ── Infer paper structure section names from the format ──────────────────
-  const paperSections = format.structure?.sections ??
-    (format.bodyStructure
-      ? ["Introduction", "Body / Analysis", "Conclusion"]
-      : ["Introduction", "Literature Review", "Discussion", "Conclusion"]);
+GOAL: Deep, substantive research on the topic. Citation style governs format, not content depth.
 
-  const abstractNote = format.structure?.abstract
-    ? typeof format.structure.abstract === "string"
-      ? `Include an Abstract: ${format.structure.abstract}.`
-      : `Include an Abstract (${format.structure.abstract.optional ? "optional" : "required"}${format.structure.abstract.length ? `, ${format.structure.abstract.length}` : ""}).`
-    : "";
+${style} FORMATTING:
+- Layout: ${f.layout.font}, ${f.layout.spacing}, ${f.layout.margins}
+- In-text: ${f.inText.format} e.g. ${f.inText.example} — cite inline wherever claims are made
+- ${f.refTitle}: at least 5 realistic entries; format: ${f.refExample}
 
-  // ── Decide reference section title ──────────────────────────────────────
-  const refTitle = format.referenceSection.title; // e.g. "References", "Works Cited"
+CONTENT RULES:
+- Minimum 2–3 solid paragraphs per section. No filler.
+- Include mechanisms, data points, named theories, real-world applications, and current research directions.
+- Address limitations, exceptions, and competing views.
+- Write as a knowledgeable expert, not a summariser.
 
-  return `
-You are Xplainfy — an expert research assistant and academic writing specialist.
+PAPER SECTIONS (in order):
+1. Introduction
+2. Literature Review
+3. Discussion
+4. Conclusion
+${f.refTitle}
 
-Your task is to write a COMPLETE, SUBSTANTIVE research paper on the user's topic, formatted correctly in ${format.fullName} (${format.name} style).
-
-═════════════════════════════════════════════
-PRIMARY GOAL: RESEARCH THE TOPIC THOROUGHLY
-═════════════════════════════════════════════
-The user wants DEEP, DETAILED research on their topic — not a summary, not bullet points.
-Every section must contain substantive, expert-level content about the actual subject matter.
-Citation style is the FORMAT of your output, not a replacement for topic content.
-${depthSection(depth)}${mindsetSection(mindset)}
-
-═════════════════════════════════════════════
-${format.name} FORMATTING RULES (apply throughout)
-═════════════════════════════════════════════
-Layout:
-  • Font: ${format.layout.font}
-  • Spacing: ${format.layout.spacing}
-  • Margins: ${format.layout.margins}
-  ${format.layout.alignment ? `• Alignment: ${format.layout.alignment}` : ""}
-
-In-text citations:
-  • Format: ${format.inTextCitation.format}
-  • Example: ${format.inTextCitation.example}
-  • IMPORTANT: Cite sources inline throughout the paper wherever claims are made.
-    Use realistic, plausible author names and years — do not skip citations.
-
-${refTitle} section:
-  • Title the final section exactly: "${refTitle}"
-  • Entry format: ${format.referenceSection.example}
-  • Include at least 5 well-chosen, realistic reference entries matching every in-text citation used.
-
-${abstractNote}
-
-═════════════════════════════════════════════
-CONTENT QUALITY RULES (non-negotiable)
-═════════════════════════════════════════════
-- Every paragraph must contain specific, factual, well-explained content about the topic.
-- No vague generalisations. No filler sentences. No repetition of headings as content.
-- Each section of the paper must be substantively developed — minimum 2–3 solid paragraphs each.
-- Where relevant, include: mechanisms, processes, data points, named theories, real-world applications,
-  clinical/engineering/scientific implications, and current research directions.
-- Address nuance: note limitations, exceptions, competing interpretations, or open questions.
-- The paper must read as if written by a knowledgeable expert, not an AI summarising Wikipedia.
-
-═════════════════════════════════════════════
-REQUIRED PAPER STRUCTURE
-═════════════════════════════════════════════
-Write the complete paper using the following ${format.name}-standard sections in order:
-
-${paperSections.map((s, i) => `${i + 1}. ${s}`).join("\n")}
-${refTitle}
-
-Each section must:
-  ✓ Have a clear, ${format.name}-formatted heading
-  ✓ Contain substantive paragraphs (not bullet lists)
-  ✓ Use in-text citations in the correct ${format.name} format
-  ✓ Flow logically into the next section
-
-═════════════════════════════════════════════
-AFTER THE PAPER: FORMATTING REFERENCE CARD
-═════════════════════════════════════════════
-After the complete paper, add a compact section:
-
-## ${format.name} Formatting Reference
-A brief (5–8 bullet) cheat-sheet of the most important ${format.name} formatting rules
-the user should remember when writing their own version of this paper.
-Include 2–3 "common mistake → correct form" examples specific to ${format.name}.
-`.trim();
+After the paper, add:
+## ${style} Quick-Reference
+5–8 bullet formatting rules + 2–3 "common mistake → correct form" examples specific to ${style}.`;
 }
-
-// ── Mode: Simplify ─────────────────────────────────────────────────────────
 
 function buildSimplifyPrompt() {
-  return `
-You are Xplainfy — a problem simplification assistant.
-
-Your role is to take complex problems and break them down into simpler, more manageable components.
-
-RESPONSE RULES:
-- Simplify the problem statement while preserving all essential information.
-- Break down complex problems into smaller, clearer steps.
-- Use simple language and avoid jargon.
-- Provide a simplified version that is easier to understand and solve.
+  return `You are Xplainfy, a problem simplification assistant. Break complex problems into clear, manageable components.
 
 ## Simplified Problem
-Provide a clear, simplified version of the original problem.
+Restate the problem clearly, preserving all essential information.
 
 ## Key Components
-List the main elements or steps needed to solve the simplified problem.
+The main elements or steps needed.
 
 ## Approach
-Suggest a straightforward approach to tackling the simplified problem.
-`.trim();
+A straightforward strategy for tackling the simplified problem.`;
 }
-
-// ── Mode: Hints ────────────────────────────────────────────────────────────
 
 function buildHintsPrompt() {
-  return `
-You are Xplainfy — a hints and guidance assistant.
-
-Your role is to provide short, helpful hints for problem-solving without giving away the full solution.
-
-RESPONSE RULES:
-- Provide brief, targeted hints that guide thinking.
-- Don't give complete answers or solutions.
-- Focus on key concepts or approaches.
-- Encourage critical thinking and problem-solving skills.
+  return `You are Xplainfy, a hints assistant. Guide thinking without revealing the full solution.
 
 ## Hint 1
-A brief hint pointing to the first key concept or step.
+Points to the first key concept or step.
 
 ## Hint 2
-A second hint building on the first.
+Builds on Hint 1.
 
 ## Hint 3
-A final hint that helps connect the concepts.
-`.trim();
+Connects the concepts to help the solver progress.`;
 }
-
-// ── Mode: Rewrites ──────────────────────────────────────────────────────────
 
 function buildRewritesPrompt() {
-  return `
-You are Xplainfy — a content rewriting assistant.
-
-Your role is to rewrite text in a clearer, more concise, or more engaging way.
-
-RESPONSE RULES:
-- Maintain the original meaning and key information.
-- Improve clarity, structure, and readability.
-- Use appropriate tone and style for the content.
-- Ensure the rewritten version is more effective than the original.
+  return `You are Xplainfy, a rewriting assistant. Improve clarity, conciseness, and engagement while preserving meaning.
 
 ## Rewritten Content
-Provide the rewritten version of the input text.
+The improved version.
 
 ## Improvements Made
-Briefly explain what changes were made and why they improve the content.
-`.trim();
+Brief explanation of what changed and why it's better.`;
 }
-
-// ── Public API ────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(mode, mindset, depth, citationStyle) {
   switch (mode) {
-    case "problem":
-      return buildProblemPrompt();
-
-    case "tutor":
-      return buildTutorPrompt(mindset, depth);
-
-    case "research": {
-      if (citationStyle) {
-        const format = getCitationFormat(citationStyle);
-        if (format) return buildCitationResearchPrompt(format, mindset, depth);
+    case "problem":  return buildProblemPrompt();
+    case "tutor":    return buildTutorPrompt(mindset, depth);
+    case "research":
+      if (citationStyle && CITATION_FORMATS[citationStyle]) {
+        return buildCitationResearchPrompt(citationStyle, mindset, depth);
       }
       return buildResearchPrompt(mindset, depth);
-    }
-    case "simplify":
-      return buildSimplifyPrompt();
-    case "hints":
-      return buildHintsPrompt();
-    case "rewrites":
-      return buildRewritesPrompt();
+    case "simplify": return buildSimplifyPrompt();
+    case "hints":    return buildHintsPrompt();
+    case "rewrites": return buildRewritesPrompt();
+    default:         return "";
   }
 }
 
+function getModel(mode) {
+  return ["problem", "tutor", "research"].includes(mode) ? MODELS.standard : MODELS.fast;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Request Handler
+// ─────────────────────────────────────────────────────────────────────────────
+
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
+  }
+
+  if (req.method !== "POST") {
+    return errResp("Method not allowed", 405);
   }
 
   // ── Parse body ─────────────────────────────────────────────────────────
@@ -506,62 +292,114 @@ serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return err("Invalid JSON body", 400);
+    return errResp("Invalid JSON body", 400);
   }
 
   const { input, mode, mindset, depth, citationStyle } = body;
 
-  if (!input?.trim()) return err("Missing required field: input", 400);
-  if (!mode) return err("Missing required field: mode", 400);
+  // ── Validate required fields ───────────────────────────────────────────
+  if (!input?.trim()) return errResp("Missing required field: input", 400);
+  if (!mode)          return errResp("Missing required field: mode", 400);
 
-  // ── Build system prompt ───────────────────────────────────────────────
-  const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
+  if (!VALID_MODES.has(mode)) {
+    return errResp(`Invalid mode. Must be one of: ${[...VALID_MODES].join(", ")}`, 400);
+  }
 
-  // ── Call OpenAI ─────────────────────────────────────────────────────────
+  if (input.length > INPUT_MAX_CHARS) {
+    return errResp(`Input too long. Maximum ${INPUT_MAX_CHARS} characters allowed.`, 400);
+  }
+
+  // ── Validate optional fields (fail fast on typos) ──────────────────────
+  if (depth && !VALID_DEPTHS.has(depth)) {
+    return errResp(`Invalid depth. Must be one of: ${[...VALID_DEPTHS].join(", ")}`, 400);
+  }
+  if (mindset && !VALID_MINDSETS.has(mindset)) {
+    return errResp(`Invalid mindset. Must be one of: ${[...VALID_MINDSETS].join(", ")}`, 400);
+  }
+
+  const normalizedCitation = citationStyle?.toUpperCase();
+  if (citationStyle && !VALID_CITATIONS.has(normalizedCitation)) {
+    return errResp(`Invalid citationStyle. Must be one of: ${[...VALID_CITATIONS].join(", ")}`, 400);
+  }
+
+  // ── Build system prompt ────────────────────────────────────────────────
+  const systemPrompt = buildSystemPrompt(mode, mindset, depth, normalizedCitation);
+
+  // ── Resolve API key ────────────────────────────────────────────────────
   const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY");
-  if (!OPENAI_KEY) return err("Server misconfiguration: missing OPENAI_API_KEY", 500);
+  if (!OPENAI_KEY) return errResp("Server misconfiguration: missing OPENAI_API_KEY", 500);
 
+  // ── Call OpenAI with timeout ───────────────────────────────────────────
   let aiResp;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
   try {
     aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${OPENAI_KEY}`,
       },
       body: JSON.stringify({
-        model: getModelForMode(mode),
-        stream: true,
+        model:      getModel(mode),
+        stream:     true,
+        max_tokens: MAX_TOKENS[mode] ?? 1000,
+        temperature: TEMPERATURE[mode] ?? 0.7,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: input },
+          { role: "user",   content: input.trim() },
         ],
       }),
     });
   } catch (e) {
+    clearTimeout(timeout);
+    if (e.name === "AbortError") {
+      return errResp("Request timed out — AI provider did not respond in time", 504);
+    }
     console.error("[chat] upstream fetch failed:", e);
-    return err("Failed to reach AI provider", 502);
+    return errResp("Failed to reach AI provider", 502);
   }
 
+  clearTimeout(timeout);
+
+  // ── Handle upstream errors ─────────────────────────────────────────────
   if (!aiResp.ok) {
     const detail = await aiResp.text().catch(() => "");
     console.error(`[chat] upstream ${aiResp.status}:`, detail);
-    return err(`AI provider error (${aiResp.status})`, 502);
+
+    if (aiResp.status === 429) {
+      return errResp("Rate limit reached — please retry in a moment", 429);
+    }
+    if (aiResp.status === 401) {
+      return errResp("Invalid OpenAI API key", 401);
+    }
+    if (aiResp.status === 503) {
+      return errResp("AI provider temporarily unavailable — please retry", 503);
+    }
+    return errResp(`AI provider error (${aiResp.status})`, 502);
   }
 
-  // ── Stream response back ────────────────────────────────────────────────
+  // ── Stream response back to client ─────────────────────────────────────
   return new Response(aiResp.body, {
     status: 200,
     headers: {
       ...CORS,
-      "Content-Type": "text/event-stream",
+      "Content-Type":  "text/event-stream",
       "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
+      "Connection":    "keep-alive",
+      "X-Xplainfy-Mode":  mode,
+      "X-Xplainfy-Model": getModel(mode),
     },
   });
 });
 
-function err(message, status) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function errResp(message, status) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
