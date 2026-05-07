@@ -71,7 +71,6 @@ export function SubscriptionPlans() {
         "Structured research tools",
         "Priority responses",
       ],
-      popular: true,
       icon: <Crown className="w-6 h-6" />,
     },
     {
@@ -102,6 +101,7 @@ export function SubscriptionPlans() {
         "Priority processing",
         "All platforms",
       ],
+      popular: true,
       icon: <Crown className="w-6 h-6" />,
     },
     {

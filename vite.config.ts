@@ -16,29 +16,29 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    VitePWA({
-      registerType: "autoUpdate",
-      devOptions: { enabled: false },
-      includeAssets: ["favicon.ico", "icons/icon-192.png", "icons/icon-512.png"],
-      manifest: {
-        name: "Xplainfy — Anything explained",
-        short_name: "Xplainfy",
-        description: "AI-powered thinking, research, and structured notes.",
-        theme_color: "#3b82f6",
-        background_color: "#fafbfc",
-        display: "standalone",
-        start_url: "/",
-        scope: "/",
-        icons: [
-          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
-        ],
-      },
-      workbox: {
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api/],
-      },
-    }),
+     VitePWA({
+       registerType: "autoUpdate",
+       devOptions: { enabled: false },
+       includeAssets: ["favicon.ico", "icons/icon-192.png", "icons/icon-desktop-512.png", "icons/icon-512.png"],
+       manifest: {
+         name: "Xplainfy — Anything explained",
+         short_name: "Xplainfy",
+         description: "AI-powered thinking, research, and structured notes.",
+         theme_color: "#3b82f6",
+         background_color: "#fafbfc",
+         display: "standalone",
+         start_url: "/",
+         scope: "/",
+         icons: [
+           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+           { src: "/icons/icon-desktop-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+         ],
+       },
+       workbox: {
+         navigateFallbackDenylist: [/^\/~oauth/, /^\/api/],
+       },
+     }),
   ].filter(Boolean),
   resolve: {
     alias: {

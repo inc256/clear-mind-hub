@@ -14,6 +14,8 @@ create table if not exists public.user_profiles (
   avatar_url text,
 
   credits integer not null default 0 check (credits >= 0),
+  daily_free_credits_used integer not null default 0,
+  daily_free_credits_reset_at timestamptz not null default now(),
 
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -227,6 +229,12 @@ begin
 end;
 $$ language plpgsql security definer;
 
+alter table public.user_profiles
+  add column if not exists daily_free_credits_used integer not null default 0;
+
+alter table public.user_profiles
+  add column if not exists daily_free_credits_reset_at timestamptz not null default now();
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
@@ -260,18 +268,68 @@ for each row execute procedure public.handle_user_update();
 -- =========================================================
 create or replace function public.use_credits(p_user_id uuid, p_amount integer)
 returns void as $$
+declare
+  v_user record;
+  v_free_used integer;
+  v_reset_at timestamptz;
+  v_paid_credits integer;
+  v_free_remaining integer;
+  v_has_paid_tier boolean;
 begin
-  update public.user_profiles
-  set credits = credits - p_amount
-  where id = p_user_id
-  and credits >= p_amount;
+  select credits, created_at, daily_free_credits_used, daily_free_credits_reset_at
+  into v_user
+  from public.user_profiles
+  where id = p_user_id;
 
   if not found then
+    raise exception 'User not found';
+  end if;
+
+  v_paid_credits := coalesce(v_user.credits, 0);
+  v_free_used := coalesce(v_user.daily_free_credits_used, 0);
+  v_reset_at := coalesce(v_user.daily_free_credits_reset_at, date_trunc('day', now()));
+
+  if v_paid_credits >= p_amount then
+    update public.user_profiles
+    set credits = credits - p_amount
+    where id = p_user_id;
+
+    insert into public.credit_transactions (user_id, amount, type)
+    values (p_user_id, -p_amount, 'usage');
+    return;
+  end if;
+
+  v_has_paid_tier := exists (
+    select 1 from public.subscriptions s
+    join public.plans p on s.plan_id = p.id
+    where s.user_id = p_user_id
+      and s.status = 'active'
+      and p.billing_type in ('monthly','yearly','one_time')
+  );
+
+  if now() > v_user.created_at + interval '30 days' or v_has_paid_tier then
     raise exception 'Insufficient credits';
   end if;
 
+  if v_reset_at < date_trunc('day', now()) then
+    v_free_used := 0;
+    v_reset_at := date_trunc('day', now());
+  end if;
+
+  v_free_remaining := 10 - v_free_used;
+
+  if v_free_remaining < p_amount then
+    raise exception 'Daily free credits exhausted';
+  end if;
+
+  update public.user_profiles
+  set
+    daily_free_credits_used = v_free_used + p_amount,
+    daily_free_credits_reset_at = v_reset_at
+  where id = p_user_id;
+
   insert into public.credit_transactions (user_id, amount, type)
-  values (p_user_id, -p_amount, 'usage');
+  values (p_user_id, 0, 'free_daily');
 end;
 $$ language plpgsql security definer;
 

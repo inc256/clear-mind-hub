@@ -1,12 +1,41 @@
 import { create } from "zustand";
 import { supabase } from "@/integrations/supabase/client";
 
+// Local storage keys for profile persistence
+const STORAGE_KEYS = {
+  AVATAR_URL: 'user_profile_avatar_url',
+  FULL_NAME: 'user_profile_full_name',
+} as const;
+
+// Helper functions for localStorage
+const getFromStorage = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setToStorage = (key: string, value: string | null): void => {
+  try {
+    if (value === null) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+};
+
 interface UserProfile {
   id: string;
   email: string | null;
   full_name: string | null;
   avatar_url: string | null;
   credits: number;
+  daily_free_credits_used?: number;
+  daily_free_credits_reset_at?: string | null;
   subscription_plan: string | null;
   subscription_status: string | null;
   subscription_expires_at: string | null;
@@ -16,6 +45,8 @@ interface UserProfile {
 
 interface UserProfileState {
   profile: UserProfile | null;
+  cachedAvatarUrl: string | null;
+  cachedFullName: string | null;
   subscriptions: any[];
   creditTransactions: any[];
   loading: boolean;
@@ -31,6 +62,8 @@ interface UserProfileState {
 
 export const useUserProfile = create<UserProfileState>((set, get) => ({
   profile: null,
+  cachedAvatarUrl: getFromStorage(STORAGE_KEYS.AVATAR_URL),
+  cachedFullName: getFromStorage(STORAGE_KEYS.FULL_NAME),
   subscriptions: [],
   creditTransactions: [],
   loading: false,
@@ -92,16 +125,10 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         profile = newProfile;
       }
 
-      // Calculate total credits from transactions
-      const totalCredits = transactions.reduce((sum, t) => sum + t.amount, 0);
-      profile.credits = totalCredits;
-
-      // Sync credits in database
-      if (profile.credits !== totalCredits) {
-        await (supabase as any)
-          .from('user_profiles')
-          .update({ credits: totalCredits, updated_at: new Date().toISOString() })
-          .eq('id', user.id);
+      // Keep the current balance from the profile row.
+      // Transactions are used for history/audit and should not overwrite the authoritative credit balance.
+      if (profile.credits == null) {
+        profile.credits = transactions.reduce((sum, t) => sum + t.amount, 0);
       }
 
       // Set subscription info
@@ -110,9 +137,15 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       profile.subscription_status = activeSubscription?.status || null;
       profile.subscription_expires_at = activeSubscription?.current_period_end || null;
 
-      // Set profile first
+      // Update localStorage with latest data
+      setToStorage(STORAGE_KEYS.AVATAR_URL, profile.avatar_url);
+      setToStorage(STORAGE_KEYS.FULL_NAME, profile.full_name);
+
+      // Set profile and cached values
       set({
         profile,
+        cachedAvatarUrl: profile.avatar_url,
+        cachedFullName: profile.full_name,
         subscriptions,
         creditTransactions: transactions,
         loading: false
@@ -137,7 +170,21 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         .single();
 
       if (error) throw error;
-      set({ profile: data, loading: false });
+
+      // Update localStorage with the new values
+      if (updates.avatar_url !== undefined) {
+        setToStorage(STORAGE_KEYS.AVATAR_URL, updates.avatar_url);
+      }
+      if (updates.full_name !== undefined) {
+        setToStorage(STORAGE_KEYS.FULL_NAME, updates.full_name);
+      }
+
+      set({
+        profile: data,
+        cachedAvatarUrl: data.avatar_url,
+        cachedFullName: data.full_name,
+        loading: false
+      });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }
@@ -169,9 +216,11 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       return true;
     } catch (error: any) {
       const message =
-        error?.message?.includes('Insufficient credits')
-          ? 'You do not have enough app credits. Please purchase credits, upgrade your plan, or add a custom API key.'
-          : error?.message || 'Failed to deduct credits. Please try again.';
+        error?.message?.includes('Daily free credits exhausted')
+          ? 'You’ve used your 10 daily free credits. Please wait until tomorrow for the reset.'
+          : error?.message?.includes('Insufficient credits')
+            ? 'You do not have enough app credits. Please purchase credits, upgrade your plan, or add a custom API key.'
+            : error?.message || 'Failed to deduct credits. Please try again.';
       set({ error: message });
       return false;
     }
@@ -254,7 +303,15 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         },
         (payload) => {
           if (payload.new && typeof payload.new === 'object') {
-            set({ profile: payload.new as UserProfile });
+            const updatedProfile = payload.new as UserProfile;
+            // Update localStorage with realtime changes
+            setToStorage(STORAGE_KEYS.AVATAR_URL, updatedProfile.avatar_url);
+            setToStorage(STORAGE_KEYS.FULL_NAME, updatedProfile.full_name);
+            set({
+              profile: updatedProfile,
+              cachedAvatarUrl: updatedProfile.avatar_url,
+              cachedFullName: updatedProfile.full_name
+            });
           }
         }
       )
@@ -271,7 +328,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
           table: 'credit_transactions',
           filter: `user_id=eq.${userId}`,
         },
-        () => {
+        (payload) => {
           // Refresh the entire profile when a new transaction is recorded
           get().fetchProfile();
         }

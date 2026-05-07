@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Globe, CreditCard, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import appLogo from "@/images/Xplainfy-Icon-Rounded-1080px.png";
 import {
   Select,
   SelectContent,
@@ -136,12 +137,15 @@ const Profile = () => {
   }, [auth.user]); // Removed profile from dependencies to prevent infinite loop
 
   useEffect(() => {
-    if (profile.profile) {
-      setFullName(profile.profile.full_name || "");
-      setAvatarUrl(profile.profile.avatar_url || "");
-      setAvatarError(false); // Reset error state when profile loads
-    }
-  }, [profile.profile]);
+    // Use cached values immediately, then update with server data when available
+    const avatar = profile.cachedAvatarUrl || profile.profile?.avatar_url || "";
+    const name = profile.cachedFullName || profile.profile?.full_name || "";
+
+    setFullName(name);
+    setAvatarUrl(avatar);
+    setAvatarError(false); // Reset error state when profile loads
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.cachedAvatarUrl, profile.cachedFullName, profile.profile?.avatar_url, profile.profile?.full_name]);
 
 
 
@@ -161,31 +165,33 @@ const Profile = () => {
                   <p className="mt-1 text-base font-medium text-foreground">{auth.user.email ?? auth.user.id}</p>
                   <p className="text-xs text-muted-foreground mt-1">{auth.user.role ?? t('profile.user')}</p>
                 </div>
-                {profile.loading ? (
+                {profile.loading && !(profile.cachedAvatarUrl || profile.cachedFullName) ? (
                   <div className="rounded-2xl border border-border p-4">
                     <p className="text-sm text-muted-foreground">Loading profile...</p>
                   </div>
-                ) : profile.profile ? (
+                ) : (profile.cachedAvatarUrl || profile.cachedFullName || profile.profile) ? (
                   <div className="rounded-2xl border border-border p-6 space-y-4">
-                    {/* Profile Header */}
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
-                          {profile.profile.avatar_url && !avatarError ? (
-                            <img
-                              src={profile.profile.avatar_url}
-                              alt="Profile"
-                              className="w-full h-full object-cover"
-                              onError={() => setAvatarError(true)}
-                              onLoad={() => setAvatarError(false)}
-                            />
-                          ) : null}
-                          {(!profile.profile.avatar_url || avatarError) && (
-                            <div className="w-full h-full flex items-center justify-center text-primary text-xl font-semibold">
-                              {(profile.profile.full_name || auth.user?.email || 'U')[0].toUpperCase()}
-                            </div>
-                          )}
-                        </div>
+                     {/* Profile Header */}
+                     <div className="flex items-center gap-3 sm:gap-4">
+                       <div className="relative">
+                         <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
+                           {(profile.cachedAvatarUrl || profile.profile?.avatar_url) && !avatarError ? (
+                             <img
+                               src={profile.cachedAvatarUrl || profile.profile?.avatar_url || ''}
+                               alt="Profile"
+                               className="w-full h-full object-cover"
+                               onError={() => setAvatarError(true)}
+                               onLoad={() => setAvatarError(false)}
+                             />
+                           ) : null}
+                            {(!(profile.cachedAvatarUrl || profile.profile?.avatar_url) || avatarError) && (
+                              <img
+                                src={appLogo}
+                                alt="App Logo"
+                                className="w-full h-full object-cover rounded-full"
+                              />
+                            )}
+                         </div>
                         {editing && (
                           <button
                             onClick={() => document.getElementById('avatarUrl')?.focus()}
@@ -195,34 +201,36 @@ const Profile = () => {
                           </button>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {profile.profile.full_name || "No name set"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {auth.user?.email}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {profile.profile.credits} credits available
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => profile.refreshCredits()}
-                          disabled={profile.loading}
-                        >
-                          {profile.loading ? "Refreshing..." : "Refresh"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditing(!editing)}
-                        >
-                          {editing ? "Cancel" : "Edit Profile"}
-                        </Button>
-                      </div>
+                       <div className="flex-1 min-w-0">
+                         <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                           {(profile.cachedFullName || profile.profile?.full_name) || "No name set"}
+                         </h3>
+                         <p className="text-xs sm:text-sm text-muted-foreground">
+                           {auth.user?.email}
+                         </p>
+                         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                           {profile.profile?.credits ?? 0} credits available
+                         </p>
+                       </div>
+                       <div className="flex flex-col sm:flex-row gap-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => profile.refreshCredits()}
+                           disabled={profile.loading}
+                           className="text-xs sm:text-sm"
+                         >
+                           {profile.loading ? "Refreshing..." : "Refresh"}
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => setEditing(!editing)}
+                           className="text-xs sm:text-sm"
+                         >
+                           {editing ? "Cancel" : "Edit Profile"}
+                         </Button>
+                       </div>
                     </div>
 
                     {/* Edit Form */}
@@ -276,11 +284,11 @@ const Profile = () => {
                       </div>
                     )}
                   </div>
-                ) : (
+                ) : !profile.loading ? (
                   <div className="rounded-2xl border border-border p-4">
                     <p className="text-sm text-muted-foreground">Profile not found. Try refreshing.</p>
                   </div>
-                )}
+                ) : null}
                 <Button size="sm" variant="secondary" onClick={handleSignOut}>
                   {t('profile.signOut')}
                 </Button>

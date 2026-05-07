@@ -64,4 +64,26 @@ export async function consumeSseStream(
       }
     }
   }
+
+  // Process any remaining buffered data after stream end.
+  if (buffer.trim().length > 0) {
+    const line = buffer.trim();
+    if (line.startsWith("data: ")) {
+      const payload = line.slice(6).trim();
+      if (payload !== "[DONE]") {
+        try {
+          const parsed = JSON.parse(payload);
+          const delta: string | undefined =
+            parsed.choices?.[0]?.delta?.content ??
+            parsed.choices?.[0]?.text;
+
+          if (typeof delta === "string" && delta.length > 0) {
+            onDelta(delta);
+          }
+        } catch {
+          // ignore leftover unparsable trailing data
+        }
+      }
+    }
+  }
 }
