@@ -228,16 +228,15 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
   console.log("[streamAi] stream complete, total chars:", finalOutput.length);
 
   // ── Post-completion: deduct credits + log history ──────────────────────
-  // ── Post-completion: deduct credits + log history ──────────────────────
-if (!customApiKey) {
-  const deducted = await useUserProfile.getState().deductCredits(1);
-  if (!deducted) {
-    console.warn("[streamAi] credit deduction failed (response already delivered)");
+  if (!customApiKey) {
+    const deducted = await withTimeout(useUserProfile.getState().deductCredits(1), PROFILE_TIMEOUT_MS);
+    if (!deducted) {
+      console.warn("[streamAi] credit deduction failed (response already delivered)");
+    }
+    void logChatHistory(opts, finalOutput);
   }
-  void logChatHistory(opts, finalOutput);
-}
 
-onDone(finalOutput);  // ← this line exists and IS being reached
+  onDone(finalOutput);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
