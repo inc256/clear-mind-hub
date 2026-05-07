@@ -195,11 +195,12 @@
     "lecturer": "Lecturer",
     "scientific": "Scientific",
     "creative": "Creative",
-    "depth": "Explanation Depth",
-    "depthDescription": "Choose how detailed the explanations should be.",
-    "beginner": "Beginner",
-    "intermediate": "Intermediate",
-    "advanced": "Advanced",
+     "depth": "Explanation Depth",
+     "depthDescription": "Choose how detailed the explanations should be.",
+     "beginner": "Beginner",
+     "intermediate": "Intermediate",
+     "higher": "Higher",
+     "advanced": "Advanced",
     "renderingContent": "Rendering content..."
   },
   "tutor": {

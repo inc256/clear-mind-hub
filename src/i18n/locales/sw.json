@@ -150,8 +150,14 @@
     "engineering": "Uhandisi",
     "lecturer": "Mhadhiri",
     "scientific": "Kisayansi",
-    "creative": "Ubunifu",
-    "renderingContent": "Inatoa maudhui..."
+     "creative": "Ubunifu",
+     "depth": "Uwiano wa Ufafanuzi",
+     "depthDescription": "Chagua jinsi maelezo yanavyopaswa kufafanuliwa.",
+     "beginner": "Mwanzo",
+     "intermediate": "Kati",
+     "higher": "Juu",
+     "advanced": "Juu Kuliko",
+     "renderingContent": "Inatoa maudhui..."
   },
   "tutor": {
     "title": "Mwalimu wa AI",

@@ -8,6 +8,10 @@ export interface HistoryEntry {
   input: string;
   output: string;
   timestamp: number;
+  imageData?: string;
+  imageMimeType?: string;
+  imageName?: string;
+  codeSnippets?: Array<{id: string, content: string, language?: string}>;
 }
 
 const STORAGE_KEY = "organyze.history.v1";
@@ -31,57 +35,57 @@ interface HistoryState {
   clearHistory: () => void;
 }
 
-export const useHistory = create<HistoryState>((set) => {
-  if (typeof window !== "undefined") {
-    useSettings.subscribe(
-      (state) => state.privacyMode,
-      (privacyMode) => {
-        if (privacyMode) {
-          try {
-            localStorage.removeItem(STORAGE_KEY);
-          } catch {
-            /* noop */
-          }
-          set({ items: [] });
-        }
-      },
-    );
-  }
+ export const useHistory = create<HistoryState>((set) => {
+   if (typeof window !== "undefined") {
+     useSettings.subscribe(
+       (state) => state.privacyMode,
+       (privacyMode) => {
+         if (privacyMode) {
+           try {
+             localStorage.removeItem(STORAGE_KEY);
+           } catch {
+             /* noop */
+           }
+           set({ items: [] });
+         }
+       },
+     );
+   }
 
-  return {
-    items: loadHistory(),
-    addEntry: ({ mode, input, output }) => {
-      const entry: HistoryEntry = {
-        id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        mode,
-        input,
-        output,
-        timestamp: Date.now(),
-      };
+   return {
+     items: loadHistory(),
+     addEntry: ({ mode, input, output }) => {
+       const entry: HistoryEntry = {
+         id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+           ? crypto.randomUUID()
+           : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+         mode,
+         input,
+         output,
+         timestamp: Date.now(),
+       };
 
-      set((state) => {
-        const next = [entry, ...state.items].slice(0, 100);
-        if (!useSettings.getState().privacyMode) {
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-          } catch {
-            /* noop */
-          }
-        }
-        return { items: next };
-      });
-    },
-    clearHistory: () => {
-      set({ items: [] });
-      if (!useSettings.getState().privacyMode) {
-        try {
-          localStorage.removeItem(STORAGE_KEY);
-        } catch {
-          /* noop */
-        }
-      }
-    },
-  };
-});
+       set((state) => {
+         const next = [entry, ...state.items].slice(0, 100);
+         if (!useSettings.getState().privacyMode) {
+           try {
+             localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+           } catch {
+             /* noop */
+           }
+         }
+         return { items: next };
+       });
+     },
+     clearHistory: () => {
+       set({ items: [] });
+       if (!useSettings.getState().privacyMode) {
+         try {
+           localStorage.removeItem(STORAGE_KEY);
+         } catch {
+           /* noop */
+         }
+       }
+     },
+   };
+ });

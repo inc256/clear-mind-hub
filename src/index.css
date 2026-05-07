@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap');
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+ @import "katex/dist/katex.min.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+ @tailwind base;
+ @tailwind components;
+ @tailwind utilities;
 
 /* Xplainfy — Cloud White design system */
 @layer base {
@@ -82,22 +83,25 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  html {
-    font-family: 'Inter', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  h1, h2, h3, h4 {
-    font-family: 'Poppins', 'Inter', sans-serif;
-    letter-spacing: -0.02em;
-  }
-}
+ @layer base {
+   * {
+     @apply border-border;
+   }
+   html {
+     font-family: 'Inter', system-ui, sans-serif;
+     -webkit-font-smoothing: antialiased;
+   }
+   body {
+     @apply bg-background text-foreground;
+   }
+   h1, h2, h3, h4 {
+     font-family: 'Poppins', 'Inter', sans-serif;
+     letter-spacing: -0.02em;
+   }
+   code, pre {
+     font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+   }
+ }
 
 @layer components {
   .glass-card {
@@ -115,20 +119,101 @@
   }
 }
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fade-in 0.4s var(--transition-smooth);
-  }
-  .animate-slide-up {
-    animation: slide-up 0.5s var(--transition-smooth);
-  }
-  .animate-pop {
-    animation: pop 0.3s var(--transition-smooth);
-  }
-  .animate-slide-in-left {
-    animation: slide-in-left 0.4s var(--transition-smooth);
-  }
-}
+ @layer utilities {
+   .animate-fade-in {
+     animation: fade-in 0.4s var(--transition-smooth);
+   }
+   .animate-slide-up {
+     animation: slide-up 0.5s var(--transition-smooth);
+   }
+   .animate-pop {
+     animation: pop 0.3s var(--transition-smooth);
+   }
+   .animate-slide-in-left {
+     animation: slide-in-left 0.4s var(--transition-smooth);
+   }
+ }
+
+ /* KaTeX math formula styling for dark mode */
+ @layer components {
+   .katex-display {
+     overflow-x: auto;
+     overflow-y: hidden;
+     padding: 1rem 0;
+   }
+   
+   .katex {
+     font-size: 1.1em;
+     color: var(--foreground);
+   }
+   
+   .katex .katex-mathml {
+     display: none;
+   }
+   
+   .katex .mrel,
+   .katex .mbin,
+   .katex .mopen,
+   .katex .mclose,
+   .katex .mpunct {
+     color: var(--foreground);
+   }
+   
+   .katex .mord,
+   .katex .mop,
+   .katex .mfrac {
+     color: var(--foreground);
+   }
+   
+   .katex .msups,
+   .katex .msub,
+   .katex .munder,
+   .katex .mover {
+     color: var(--foreground);
+   }
+   
+   .katex .mtable {
+     color: var(--foreground);
+   }
+   
+   .katex .mlowered {
+     color: var(--foreground);
+   }
+   
+   /* Light mode adjustments */
+   .light .katex {
+     color: hsl(222 47% 11%);
+   }
+   
+   .light .katex .mrel,
+   .light .katex .mbin,
+   .light .katex .mopen,
+   .light .katex .mclose,
+   .light .katex .mpunct {
+     color: hsl(222 47% 11%);
+   }
+   
+   .light .katex .mord,
+   .light .katex .mop,
+   .light .katex .mfrac {
+     color: hsl(222 47% 11%);
+   }
+   
+   .light .katex .msups,
+   .light .katex .msub,
+   .light .katex .munder,
+   .light .katex .mover {
+     color: hsl(222 47% 11%);
+   }
+   
+   .light .katex .mtable {
+     color: hsl(222 47% 11%);
+   }
+   
+   .light .katex .mlowered {
+     color: hsl(222 47% 11%);
+   }
+ }
 
 @keyframes fade-in {
   from { opacity: 0; }

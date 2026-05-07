@@ -1,17 +1,76 @@
 import { jsPDF } from 'jspdf';
 
-// Clean LaTeX-like symbols from content
+// Convert LaTeX-like content to plain text with Unicode subscripts/superscripts
 export const cleanLaTeXContent = (content: string): string => {
   let cleaned = content;
 
-  // Convert fractions from \frac{a}{b} to a/b
+  // Convert fractions \frac{a}{b} → a/b
   cleaned = cleaned.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');
 
-  // Handle other LaTeX commands like \text{...} by keeping only the content inside braces
+  // Remove \text{} but keep content
   cleaned = cleaned.replace(/\\text\{([^}]+)\}/g, '$1');
 
-  // Remove backslashes before common symbols
-  cleaned = cleaned.replace(/\\([a-zA-Z])/g, '$1');
+  // Subscript digit mapping
+  const subscriptDigits: Record<string, string> = {
+    '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+    '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+  };
+
+  // Subscript letter mapping (common in chemistry/math)
+  const subscriptLetters: Record<string, string> = {
+    'a': 'ₐ', 'e': 'ₑ', 'i': 'ᵢ', 'o': 'ₒ', 'r': 'ᵣ',
+    'x': 'ₓ', 'y': 'ᵧ', 'z': '𝑧', 'n': 'ₙ',
+  };
+
+  // Subscript mapping combining digits and letters
+  const subscriptMap: Record<string, string> = { ...subscriptDigits, ...subscriptLetters };
+
+  // Convert subscript without braces: _4 → ₄, _n → ₙ
+  cleaned = cleaned.replace(/_(\w)/g, (_, ch) => subscriptMap[ch] || '_' + ch);
+
+  // Convert subscript with braces: _{4} → ₄, _{n} → ₙ, _{12} → ₁₂
+  cleaned = cleaned.replace(/_\{(.+?)\}/g, (_, content) => {
+    return content.split('').map(ch => subscriptMap[ch] || ch).join('');
+  });
+
+  // Superscript digit mapping
+  const superscriptDigits: Record<string, string> = {
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+  };
+
+  // Superscript symbol mapping
+  const superscriptSymbols: Record<string, string> = {
+    '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
+    'n': 'ⁿ', 'i': 'ⁱ', 'x': 'ˣ',
+  };
+
+  const superscriptMap: Record<string, string> = { ...superscriptDigits, ...superscriptSymbols };
+
+  // Superscript without braces: ^2 → ²
+  cleaned = cleaned.replace(/\^(\w)/g, (_, ch) => superscriptMap[ch] || '^' + ch);
+  // Superscript with braces: ^{2} → ²
+  cleaned = cleaned.replace(/\^\{(.+?)\}/g, (_, content) => {
+    return content.split('').map(ch => superscriptMap[ch] || ch).join('');
+  });
+
+  // Map common Greek letter commands to their actual letter names (remove backslash)
+  const greekMap: Record<string, string> = {
+    'alpha': 'alpha', 'beta': 'beta', 'gamma': 'gamma', 'delta': 'delta',
+    'epsilon': 'epsilon', 'zeta': 'zeta', 'eta': 'eta', 'theta': 'theta',
+    'iota': 'iota', 'kappa': 'kappa', 'lambda': 'lambda', 'mu': 'mu',
+    'nu': 'nu', 'xi': 'xi', 'omicron': 'omicron', 'pi': 'pi', 'rho': 'rho',
+    'sigma': 'sigma', 'tau': 'tau', 'upsilon': 'upsilon', 'phi': 'phi',
+    'chi': 'chi', 'psi': 'psi', 'omega': 'omega',
+    'Gamma': 'Gamma', 'Delta': 'Delta', 'Theta': 'Theta', 'Lambda': 'Lambda',
+    'Xi': 'Xi', 'Pi': 'Pi', 'Sigma': 'Sigma', 'Upsilon': 'Upsilon',
+    'Phi': 'Phi', 'Psi': 'Psi', 'Omega': 'Omega',
+  };
+
+  // Replace \cmd with its mapped value; if unknown, strip backslash
+  cleaned = cleaned.replace(/\\([a-zA-Z]+)/g, (_, cmd) => {
+    return greekMap[cmd] || cmd;
+  });
 
   // Remove all dollar signs
   cleaned = cleaned.replace(/\$/g, '');
@@ -140,6 +199,30 @@ const parseTable = (lines: string[]): TableData | null => {
   };
 };
 
+interface PdfPracticeQuestion {
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation?: string;
+}
+
+const extractPracticeQuestionsFromText = (text: string): PdfPracticeQuestion[] => {
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*?"practice_questions"\s*:\s*\[[\s\S]*?\](?:[\s\S]*?)\}/);
+    if (!jsonMatch) return [];
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed.practice_questions ?? [];
+  } catch {
+    return [];
+  }
+};
+
+const extractPracticeQuestionsFromSteps = (
+  steps: Array<{ title: string; content: string }>
+): PdfPracticeQuestion[] => {
+  return steps.flatMap(step => extractPracticeQuestionsFromText(step.content));
+};
+
 // Generate PDF
 export const generatePDF = async (
   title: string,
@@ -177,8 +260,14 @@ export const generatePDF = async (
     doc.text(`Generated on ${date} at ${time}`, margins.left, currentY);
     currentY += 10;
 
+    const practiceQuestions = extractPracticeQuestionsFromSteps(steps);
+
     // Add content
     for (const step of steps) {
+      const isPracticeStep = /practice_questions|practice questions/i.test(step.title) ||
+        step.content.includes('"practice_questions"');
+      if (isPracticeStep) continue;
+
       // Check if we need a new page
       if (currentY > pageHeight - margins.bottom - 20) {
         doc.addPage();
@@ -256,6 +345,53 @@ export const generatePDF = async (
       }
 
       currentY += 5; // Space between sections
+    }
+
+    if (practiceQuestions.length > 0) {
+      if (currentY > pageHeight - margins.bottom - 25) {
+        doc.addPage();
+        currentY = margins.top;
+      }
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('Practice Questions', margins.left, currentY);
+      currentY += 10;
+
+      practiceQuestions.forEach((question, index) => {
+        if (currentY > pageHeight - margins.bottom - 40) {
+          doc.addPage();
+          currentY = margins.top;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        const questionLines = (doc as any).splitTextToSize(
+          `${index + 1}. ${question.question}`,
+          contentWidth
+        );
+        doc.text(questionLines, margins.left, currentY);
+        currentY += questionLines.length * 5 + 4;
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        question.options.forEach((option) => {
+          if (currentY > pageHeight - margins.bottom - 20) {
+            doc.addPage();
+            currentY = margins.top;
+          }
+          const optionLines = (doc as any).splitTextToSize(`- ${option}`, contentWidth - 6);
+          doc.text(optionLines, margins.left + 6, currentY);
+          currentY += optionLines.length * 5 + 2;
+        });
+
+        const answerText = `Answer: ${question.correct_answer}${question.explanation ? ` — ${question.explanation}` : ''}`;
+        const answerLines = (doc as any).splitTextToSize(answerText, contentWidth - 6);
+        doc.setFont('helvetica', 'italic');
+        doc.text(answerLines, margins.left + 6, currentY);
+        currentY += answerLines.length * 5 + 10;
+      });
     }
 
     // Add footer

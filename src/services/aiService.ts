@@ -133,7 +133,7 @@ function getFreeTierStatus(profile: any, subscriptions: any[]) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function streamAi(opts: StreamOptions): Promise<void> {
-  const { mode, input, mindset, depth, citationStyle, onDelta, onDone, onError, signal } = opts;
+  const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, onDelta, onDone, onError, signal } = opts;
   const { customApiKey, customApiBase } = useSettings.getState();
 
   console.log("[streamAi] mode:", mode, "| customApiKey:", !!customApiKey);
@@ -183,10 +183,8 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
   let resp: Response;
   try {
     resp = customApiKey
-      ? await fetchFromCustomApi({ customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, signal })
-      : await fetchFromSupabase({ mode, input, mindset, depth, citationStyle, signal });
-
-    console.log("[streamAi] response status:", resp.status, "| ok:", resp.ok);
+      ? await fetchFromCustomApi({ customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal })
+      : await fetchFromSupabase({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal });
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") return;
     console.error("[streamAi] fetch threw:", error);
@@ -249,11 +247,13 @@ interface BaseFetchArgs {
   mindset?:       StreamOptions["mindset"];
   depth?:         StreamOptions["depth"];
   citationStyle?: string;
+  imageBase64?:   StreamOptions["imageBase64"];
+  imageMimeType?: StreamOptions["imageMimeType"];
   signal?:        AbortSignal;
 }
 
 function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
-  const { mode, input, mindset, depth, citationStyle, signal } = args;
+  const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal } = args;
 
   console.log("[fetchFromSupabase] URL:", SUPABASE_FN_URL);
   console.log("[fetchFromSupabase] key present:", !!SUPABASE_ANON_KEY, "| key prefix:", SUPABASE_ANON_KEY?.slice(0, 20));
@@ -267,14 +267,14 @@ function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
       "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
       "apikey": SUPABASE_ANON_KEY,
     },
-    body: JSON.stringify({ mode, input, mindset, depth, citationStyle }),
+    body: JSON.stringify({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType }),
   });
 }
 
 function fetchFromCustomApi(
   args: BaseFetchArgs & { customApiKey: string; customApiBase?: string }
 ): Promise<Response> {
-  const { customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, signal } = args;
+  const { customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal } = args;
   const baseUrl      = (customApiBase ?? DEFAULT_OPENAI_BASE).replace(/\/$/, "");
   const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
   const ctrl         = createTimeoutController(signal);
@@ -293,7 +293,15 @@ function fetchFromCustomApi(
       temperature: TEMPERATURE[mode],
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user",   content: input.trim() },
+        {
+          role: "user",
+          content: imageBase64
+            ? [
+                { type: "input_text", text: input.trim() },
+                { type: "input_image", image_url: `data:${imageMimeType};base64,${imageBase64}` },
+              ]
+            : input.trim(),
+        },
       ],
     }),
   });

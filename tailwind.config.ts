@@ -90,6 +90,7 @@ export default {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         display: ["Poppins", "Inter", "sans-serif"],
+        mono: ["JetBrains Mono", "Fira Code", "Consolas", "monospace"],
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",

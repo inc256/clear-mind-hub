@@ -130,26 +130,24 @@ on public.credit_transactions(user_id);
 -- CHAT HISTORY
 -- =========================================================
 create table if not exists public.chat_history (
-  id uuid primary key default gen_random_uuid(),
-
-  user_id uuid references auth.users(id) on delete cascade,
-
-  mode text not null
-    check (mode in ('tutor','research','problem','simplify','hints','rewrites')),
-
+  id uuid not null default gen_random_uuid(),
+  user_id uuid null,
+  mode text not null,
   prompt text not null,
   response text not null,
+  created_at timestamp with time zone not null default now(),
+  constraint chat_history_pkey primary key (id),
+  constraint chat_history_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade,
+  constraint chat_history_mode_check check (
+    (
+      mode = any (array['tutor'::text, 'research'::text])
+    )
+  )
+) TABLESPACE pg_default;
 
-  credits_used integer not null default 1 check (credits_used > 0),
+create index if not exists idx_chat_user on public.chat_history using btree (user_id) TABLESPACE pg_default;
 
-  created_at timestamptz default now()
-);
-
-create index if not exists idx_chat_user
-on public.chat_history(user_id);
-
-create index if not exists idx_chat_created
-on public.chat_history(created_at desc);
+create index if not exists idx_chat_created on public.chat_history using btree (created_at desc) TABLESPACE pg_default;
 
 -- =========================================================
 -- ROW LEVEL SECURITY
@@ -413,10 +411,10 @@ begin
   perform public.use_credits(p_user_id, p_credits);
 
   insert into public.chat_history (
-    user_id, mode, prompt, response, credits_used
+    user_id, mode, prompt, response
   )
   values (
-    p_user_id, p_mode, p_prompt, p_response, p_credits
+    p_user_id, p_mode, p_prompt, p_response
   );
 end;
 $$ language plpgsql security definer;

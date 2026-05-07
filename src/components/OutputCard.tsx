@@ -1,14 +1,20 @@
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import {
   Copy, RefreshCw, Check, ChevronRight, ChevronLeft,
   Plus, Volume2, VolumeX, Download, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { generatePDF, cleanLaTeXContent } from "@/lib/pdfGenerator";
 import { AiMode } from "@/services/aiService";
+import { hapticSuccess } from "@/lib/haptic";
+import { hapticLight } from "@/lib/haptic";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Markdown table components
@@ -180,49 +186,59 @@ export function OutputCard({
   onNewQuery,
   mode,
 }: OutputCardProps) {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [speaking, setSpeaking] = useState(false);
-  const [practiceAnswers, setPracticeAnswers] = useState<Record<number, string>>({});
-  const [showingPracticeQuestions, setShowingPracticeQuestions] = useState(false);
-  const [isRenderingTable, setIsRenderingTable] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+   const { t } = useTranslation();
+   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+   const [speaking, setSpeaking] = useState(false);
+   const [practiceAnswers, setPracticeAnswers] = useState<Record<number, string>>({});
+   const [showingPracticeQuestions, setShowingPracticeQuestions] = useState(false);
+   const [isRenderingTable, setIsRenderingTable] = useState(false);
+   const [isDownloading, setIsDownloading] = useState(false);
+   const [hasShownHaptic, setHasShownHaptic] = useState(false);
+   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+   const codeBlockRef = useRef<HTMLDivElement | null>(null);
 
-  // Memoised cleaned content for display
-  const cleanedContent = useMemo(() => {
-    if (!content && steps.length === 0) return "";
-    try {
-      const stepContent =
-        steps[currentStep]?.content?.trim() ? steps[currentStep].content : content;
+   // Memoised cleaned content for display
+   const cleanedContent = useMemo(() => {
+     if (!content && steps.length === 0) return "";
+     try {
+       const stepContent =
+         steps[currentStep]?.content?.trim() ? steps[currentStep].content : content;
 
-      const latexCleaned =
-        mode === "research" && currentStep === steps.length - 1
-          ? steps
-              .map((s) => `## ${cleanLaTeXContent(s.title)}\n${cleanLaTeXContent(s.content)}`)
-              .join("\n\n")
-          : cleanLaTeXContent(stepContent || "")
-              .replace(/\[CORRECT\]/g, "")
-              // Strip any leftover practice_questions JSON blob from display
-              .replace(/\{"practice_questions"[\s\S]*$/, "")
-              // Strip fenced JSON blocks (practice questions)
-              .replace(/```(?:json)?\s*\[[\s\S]*?\]\s*```/g, "");
+       // For research final step, reconstruct from all steps; otherwise use current step
+       const baseContent =
+         mode === "research" && currentStep === steps.length - 1 && steps.length > 0
+           ? steps
+               .map((s) => `## ${s.title}\n${s.content}`)
+               .join("\n\n")
+           : stepContent || "";
 
-      return cleanTableContent(latexCleaned.replace(/[\^$\\*]/g, ""));
-    } catch {
-      return content;
-    }
-  }, [content, steps, currentStep, mode]);
+       // Only clean for table parsing; preserve LaTeX for KaTeX rendering
+       return cleanTableContent(baseContent)
+         .replace(/\[CORRECT\]/g, "")
+         // Strip any leftover practice_questions JSON blob from display
+         .replace(/\{"practice_questions"[\s\S]*$/, "")
+         // Strip fenced JSON blocks (practice questions)
+         .replace(/```(?:json)?\s*\[[\s\S]*?\]\s*```/g, "");
+     } catch {
+       return content;
+     }
+   }, [content, steps, currentStep, mode]);
 
-  useEffect(() => {
-    if (!loading && cleanedContent?.trim()) {
-      setIsRenderingTable(true);
-      const t = setTimeout(() => setIsRenderingTable(false), 50);
-      return () => clearTimeout(t);
-    } else if (loading) {
-      setIsRenderingTable(false);
-    }
-  }, [cleanedContent, loading]);
+   useEffect(() => {
+     if (!loading && cleanedContent?.trim()) {
+       setIsRenderingTable(true);
+       const t = setTimeout(() => setIsRenderingTable(false), 50);
+       // Trigger haptic feedback when output appears (once)
+       if (!hasShownHaptic) {
+         hapticSuccess();
+         setHasShownHaptic(true);
+       }
+       return () => clearTimeout(t);
+     } else if (loading) {
+       setIsRenderingTable(false);
+       setHasShownHaptic(false);
+     }
+   }, [cleanedContent, loading, hasShownHaptic]);
 
   // ── Multiple choice (problem mode) ────────────────────────────────────────
 
@@ -316,35 +332,19 @@ export function OutputCard({
     } finally {
       setIsDownloading(false);
     }
-  }, [steps, mode]);
+   }, [steps, mode]);
 
-  // ── Copy ──────────────────────────────────────────────────────────────────
-
-  const getCopyText = useCallback(() => {
-    if (mode === "research" && currentStep === steps.length - 1 && steps.length > 0) {
-      return steps.map((s) => `## ${s.title}\n${s.content}`).join("\n\n");
-    }
-    if (steps[currentStep]?.content?.trim()) return steps[currentStep].content;
-    if (cleanedContent?.trim()) return cleanedContent;
-    return content;
-  }, [cleanedContent, content, steps, currentStep, mode]);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(getCopyText());
-      setCopied(true);
-      toast.success("Copied to clipboard");
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error("Couldn't copy");
-    }
-  }, [getCopyText]);
-
-  // FIX: also guard against content being present (during streaming)
+   // FIX: also guard against content being present (during streaming)
   if (!loading && steps.length === 0 && !content) return null;
 
   // Derive practice questions once for reuse in render
   const practiceQuestions = mode === "tutor" ? extractPracticeQuestions(content) : [];
+  const isTutorPracticeStep =
+    mode === "tutor" &&
+    currentStep === steps.length - 1 &&
+    practiceQuestions.length > 0 &&
+    /(practice_questions|```json)/i.test(steps[currentStep]?.content || "");
+  const visibleContent = isTutorPracticeStep ? "" : cleanedContent;
 
   return (
     <div className="glass-card rounded-2xl p-4 sm:p-6 lg:p-7 animate-slide-up">
@@ -358,48 +358,44 @@ export function OutputCard({
               : (steps[currentStep]?.title || t("workspace.response")).replace(/[\^$]/g, "")}
           </span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {onNewQuery && (
-            <Button size="sm" variant="ghost" onClick={onNewQuery}>
-              <Plus size={14} className="mr-1.5" /> {t("workspace.newQuery")}
-            </Button>
-          )}
-          {onRegenerate && (
-            <Button size="sm" variant="ghost" onClick={onRegenerate} disabled={loading}>
-              <RefreshCw size={14} className="mr-1.5" /> {t("workspace.regenerate")}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleSpeak}
-            disabled={!content || showingPracticeQuestions}
-          >
-            {speaking ? (
-              <VolumeX size={14} className="mr-1.5" />
-            ) : (
-              <Volume2 size={14} className="mr-1.5" />
-            )}
-            {speaking ? t("workspace.stop") : t("workspace.speak")}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={downloadDocument}
-            disabled={!content || loading || isDownloading}
-          >
-            {isDownloading ? (
-              <Loader2 size={14} className="mr-1.5 animate-spin" />
-            ) : (
-              <Download size={14} className="mr-1.5" />
-            )}
-            {isDownloading ? t("workspace.downloading") || "Downloading…" : t("workspace.download")}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={handleCopy} disabled={!content}>
-            {copied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
-            {copied ? t("workspace.copied") : t("workspace.copy")}
-          </Button>
-        </div>
+         <div className="flex items-center gap-2 flex-wrap">
+           {onNewQuery && (
+             <Button size="sm" variant="ghost" onClick={() => { hapticLight(); onNewQuery(); }}>
+               <Plus size={14} className="mr-1.5" /> {t("workspace.newQuery")}
+             </Button>
+           )}
+           {onRegenerate && (
+             <Button size="sm" variant="ghost" onClick={() => { hapticLight(); onRegenerate(); }} disabled={loading}>
+               <RefreshCw size={14} className="mr-1.5" /> {t("workspace.regenerate")}
+             </Button>
+           )}
+           <Button
+             size="sm"
+             variant="ghost"
+             onClick={() => { hapticLight(); handleSpeak(); }}
+             disabled={!content || showingPracticeQuestions}
+           >
+             {speaking ? (
+               <VolumeX size={14} className="mr-1.5" />
+             ) : (
+               <Volume2 size={14} className="mr-1.5" />
+             )}
+             {speaking ? t("workspace.stop") : t("workspace.speak")}
+           </Button>
+           <Button
+             size="sm"
+             variant="ghost"
+             onClick={downloadDocument}
+             disabled={!content || loading || isDownloading}
+           >
+             {isDownloading ? (
+               <Loader2 size={14} className="mr-1.5 animate-spin" />
+             ) : (
+               <Download size={14} className="mr-1.5" />
+             )}
+             {isDownloading ? t("workspace.downloading") || "Downloading…" : t("workspace.download")}
+           </Button>
+         </div>
       </div>
 
       {/* Body */}
@@ -426,81 +422,158 @@ export function OutputCard({
         <>
           {!showingPracticeQuestions ? (
             <>
-              {/* Main markdown content */}
-              <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground">
-                <ReactMarkdown
-                  components={{
-                    table: ({ node, ...props }) => <MarkdownTable {...props} />,
-                    thead: ({ node, ...props }) => <MarkdownTableHead {...props} />,
-                    tbody: ({ node, ...props }) => <MarkdownTableBody {...props} />,
-                    tr: ({ node, ...props }) => <MarkdownTableRow {...props} />,
-                    th: ({ node, ...props }) => <MarkdownTableCell isHeader {...props} />,
-                    td: ({ node, ...props }) => <MarkdownTableCell {...props} />,
-                    p: ({ children, node }) => {
-                      const textContent =
-                        node?.children?.map((c: any) => c.value || c.raw || "").join("") || "";
-                      if (
-                        textContent.includes("|") &&
-                        (textContent.match(/\|/g) || []).length > 4
-                      ) {
-                        const lines = textContent.split("\n");
-                        const rows = lines.filter((r) => r.trim().includes("|"));
-                        if (rows.length >= 2) {
-                          let sepIdx = rows.findIndex((r) => {
-                            const cells = r.split("|").slice(1, -1);
-                            return cells.every((c) => /^:?-+:?$/.test(c.trim()) || c.trim() === "");
-                          });
-                          if (sepIdx < 0) sepIdx = 0;
-                          try {
-                            const headerRow = rows[Math.max(0, sepIdx)];
-                            const headerCells = headerRow
-                              .split("|")
-                              .slice(1, -1)
-                              .map((c) => c.trim())
-                              .filter(Boolean);
-                            const bodyRows = (
-                              sepIdx >= 0 ? rows.slice(sepIdx + 1) : rows.slice(1)
-                            )
-                              .map((r) => r.split("|").slice(1, -1).map((c) => c.trim()))
-                              .filter((r) => r.some((c) => c));
-                            if (headerCells.length > 0 && bodyRows.length > 0) {
-                              return (
-                                <MarkdownTable>
-                                  <MarkdownTableHead>
-                                    <MarkdownTableRow>
-                                      {headerCells.map((cell, idx) => (
-                                        <MarkdownTableCell key={idx} isHeader>
-                                          {cell}
-                                        </MarkdownTableCell>
-                                      ))}
-                                    </MarkdownTableRow>
-                                  </MarkdownTableHead>
-                                  <MarkdownTableBody>
-                                    {bodyRows.map((row, ri) => (
-                                      <MarkdownTableRow key={ri}>
-                                        {headerCells.map((_, ci) => (
-                                          <MarkdownTableCell key={ci}>
-                                            {row[ci] || ""}
-                                          </MarkdownTableCell>
-                                        ))}
-                                      </MarkdownTableRow>
-                                    ))}
-                                  </MarkdownTableBody>
-                                </MarkdownTable>
-                              );
-                            }
-                          } catch {
-                            // fall through to normal <p>
-                          }
-                        }
-                      }
-                      return <p>{children}</p>;
-                    },
-                  }}
-                >
-                  {cleanedContent}
-                </ReactMarkdown>
-              </article>
+               {/* Main markdown content */}
+               {visibleContent ? (
+                 <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-code:text-foreground prose-code:bg-muted/60 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:border-none prose-pre:shadow-none">
+                   <ReactMarkdown
+                     remarkPlugins={[remarkMath]}
+                     rehypePlugins={[rehypeKatex]}
+                     components={{
+                       table: ({ node, ...props }) => <MarkdownTable {...props} />,
+                       thead: ({ node, ...props }) => <MarkdownTableHead {...props} />,
+                       tbody: ({ node, ...props }) => <MarkdownTableBody {...props} />,
+                       tr: ({ node, ...props }) => <MarkdownTableRow {...props} />,
+                       th: ({ node, ...props }) => <MarkdownTableCell isHeader {...props} />,
+                       td: ({ node, ...props }) => <MarkdownTableCell {...props} />,
+                       code: ({ node, className, children, ...props }) => {
+                         const match = /language-(\w+)/.exec(className || "");
+                         const isInline = !match && !className;
+                         const language = match ? match[1] : "";
+                         const codeString = String(children).replace(/\n$/, "");
+
+                         if (isInline) {
+                           return (
+                             <code
+                               className="px-1.5 py-0.5 rounded-md bg-muted/60 text-foreground/95 text-sm font-mono border border-border/30"
+                               {...props}
+                             >
+                               {children}
+                             </code>
+                           );
+                         }
+
+                         return (
+                           <div ref={codeBlockRef} className="relative group">
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               className="absolute right-2 top-2 z-10 h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur"
+                               onClick={async () => {
+                                 try {
+                                   await navigator.clipboard.writeText(codeString);
+                                   setCopiedCode(codeString);
+                                   hapticLight();
+                                   toast.success("Code copied to clipboard");
+                                   setTimeout(() => setCopiedCode(null), 1500);
+                                 } catch {
+                                   toast.error("Failed to copy code");
+                                 }
+                               }}
+                             >
+                               {copiedCode === codeString ? (
+                                 <Check size={12} className="text-green-500" />
+                               ) : (
+                                 <Copy size={12} />
+                               )}
+                               <span className="ml-1 text-xs">
+                                 {copiedCode === codeString ? "Copied" : "Copy"}
+                               </span>
+                             </Button>
+                             <SyntaxHighlighter
+                               style={oneDark}
+                               language={language}
+                               PreTag="div"
+                               className="rounded-lg border border-border/50 shadow-lg mb-4 text-sm"
+                               customStyle={{
+                                 background: "#1e1e1e",
+                                 margin: 0,
+                                 padding: "1rem",
+                                 paddingRight: "5rem", // make space for copy button
+                                 borderRadius: "0.5rem",
+                               }}
+                               codeTagProps={{
+                                 style: {
+                                   fontFamily: "JetBrains Mono, Fira Code, monospace",
+                                   fontSize: "0.875rem",
+                                   lineHeight: "1.6",
+                                 },
+                               }}
+                             >
+                               {codeString}
+                             </SyntaxHighlighter>
+                           </div>
+                         );
+                       },
+                       p: ({ children, node }) => {
+                         const textContent =
+                           node?.children?.map((c: any) => c.value || c.raw || "").join("") || "";
+                         if (
+                           textContent.includes("|") &&
+                           (textContent.match(/\|/g) || []).length > 4
+                         ) {
+                           const lines = textContent.split("\n");
+                           const rows = lines.filter((r) => r.trim().includes("|"));
+                           if (rows.length >= 2) {
+                             let sepIdx = rows.findIndex((r) => {
+                               const cells = r.split("|").slice(1, -1);
+                               return cells.every((c) => /^:?-+:?$/.test(c.trim()) || c.trim() === "");
+                             });
+                             if (sepIdx < 0) sepIdx = 0;
+                             try {
+                               const headerRow = rows[Math.max(0, sepIdx)];
+                               const headerCells = headerRow
+                                 .split("|")
+                                 .slice(1, -1)
+                                 .map((c) => c.trim())
+                                 .filter(Boolean);
+                               const bodyRows = (
+                                 sepIdx >= 0 ? rows.slice(sepIdx + 1) : rows.slice(1)
+                               )
+                                 .map((r) => r.split("|").slice(1, -1).map((c) => c.trim()))
+                                 .filter((r) => r.some((c) => c));
+                               if (headerCells.length > 0 && bodyRows.length > 0) {
+                                 return (
+                                   <MarkdownTable>
+                                     <MarkdownTableHead>
+                                       <MarkdownTableRow>
+                                         {headerCells.map((cell, idx) => (
+                                           <MarkdownTableCell key={idx} isHeader>
+                                             {cell}
+                                           </MarkdownTableCell>
+                                         ))}
+                                       </MarkdownTableRow>
+                                     </MarkdownTableHead>
+                                     <MarkdownTableBody>
+                                       {bodyRows.map((row, ri) => (
+                                         <MarkdownTableRow key={ri}>
+                                           {headerCells.map((_, ci) => (
+                                             <MarkdownTableCell key={ci}>
+                                               {row[ci] || ""}
+                                             </MarkdownTableCell>
+                                           ))}
+                                         </MarkdownTableRow>
+                                       ))}
+                                     </MarkdownTableBody>
+                                   </MarkdownTable>
+                                 );
+                               }
+                             } catch {
+                               // fall through to normal <p>
+                             }
+                           }
+                         }
+                         return <p>{children}</p>;
+                       },
+                     }}
+                   >
+                     {visibleContent}
+                   </ReactMarkdown>
+                 </article>
+               ) : isTutorPracticeStep ? (
+                <div className="rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+                  Practice questions are available below.
+                </div>
+              ) : null}
 
               {/* Problem mode — multiple choice */}
               {mode === "problem" && currentStep === steps.length - 1 && (
@@ -553,7 +626,7 @@ export function OutputCard({
                     <p className="font-medium">
                       {qIndex + 1}. {question.question}
                     </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                       {question.options.map((option) => {
                         const letter = option.match(/^([A-D])\)/)?.[1] ?? "";
                         const isSelected = practiceAnswers[qIndex] === letter;
@@ -592,26 +665,26 @@ export function OutputCard({
         </>
       )}
 
-      {/* Step navigation */}
-      {!loading && steps.length > 1 && !showingPracticeQuestions && (
-        <div className="flex justify-center gap-3 mt-6">
-          <Button
-            onClick={onPrevious}
-            disabled={currentStep === 0}
-            variant="outline"
-            className="bg-background hover:bg-muted"
-          >
-            <ChevronLeft size={16} className="mr-2" /> Previous
-          </Button>
-          <Button
-            onClick={onNext}
-            disabled={currentStep === steps.length - 1}
-            className="bg-primary hover:opacity-90 btn-glow"
-          >
-            {t("workspace.nextStep")} <ChevronRight size={16} className="ml-2" />
-          </Button>
-        </div>
-      )}
+       {/* Step navigation */}
+       {!loading && steps.length > 1 && !showingPracticeQuestions && (
+         <div className="flex justify-center gap-3 mt-6">
+           <Button
+             onClick={() => { hapticLight(); onPrevious(); }}
+             disabled={currentStep === 0}
+             variant="outline"
+             className="bg-background hover:bg-muted"
+           >
+             <ChevronLeft size={16} className="mr-2" /> Previous
+           </Button>
+           <Button
+             onClick={() => { hapticLight(); onNext(); }}
+             disabled={currentStep === steps.length - 1}
+             className="bg-primary hover:opacity-90 btn-glow"
+           >
+             {t("workspace.nextStep")} <ChevronRight size={16} className="ml-2" />
+           </Button>
+         </div>
+       )}
     </div>
   );
 }

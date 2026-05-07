@@ -152,13 +152,14 @@
     "engineering": "هندسي",
     "lecturer": "محاضر",
     "scientific": "علمي",
-    "creative": "إبداعي",
-    "depth": "عمق الشرح",
-    "depthDescription": "اختر مستوى تفصيل الشرح.",
-    "beginner": "مبتدئ",
-    "intermediate": "متوسط",
-    "advanced": "متقدم",
-    "renderingContent": "جاري معالجة المحتوى..."
+     "creative": "إبداعي",
+     "depth": "عمق الشرح",
+     "depthDescription": "اختر مستوى تفصيل الشرح.",
+     "beginner": "مبتدئ",
+     "intermediate": "متوسط",
+     "higher": "عالي",
+     "advanced": "متقدم",
+     "renderingContent": "جاري معالجة المحتوى..."
   },
   "tutor": {
     "title": "المدرس الذكي",

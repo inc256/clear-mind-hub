@@ -152,13 +152,14 @@
     "engineering": "工程",
     "lecturer": "讲师",
     "scientific": "科学",
-    "creative": "创意",
-    "depth": "解释深度",
-    "depthDescription": "选择解释的详细程度。",
-    "beginner": "初学者",
-    "intermediate": "中等",
-    "advanced": "高级",
-    "renderingContent": "正在渲染内容..."
+     "creative": "创意",
+     "depth": "解释深度",
+     "depthDescription": "选择解释的详细程度。",
+     "beginner": "初学者",
+     "intermediate": "中等",
+     "higher": "中高级",
+     "advanced": "高级",
+     "renderingContent": "正在渲染内容..."
   },
   "tutor": {
     "title": "AI 导师",

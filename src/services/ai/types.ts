@@ -13,7 +13,7 @@ export type MindsetType =
   | "scientific"
   | "creative";
 
-export type DepthLevel = "beginner" | "intermediate" | "advanced";
+export type DepthLevel = "beginner" | "intermediate" | "higher" | "advanced";
 
 export interface StreamOptions {
   mode: AiMode;
@@ -21,6 +21,9 @@ export interface StreamOptions {
   mindset?: MindsetType;
   depth?: DepthLevel;
   citationStyle?: string;
+  imageBase64?: string;
+  imageMimeType?: string;
+  imageName?: string;
   onDelta: (chunk: string) => void;
   onDone: (response: string) => void;
   onError: (msg: string) => void;

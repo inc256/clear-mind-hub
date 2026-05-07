@@ -1,11 +1,11 @@
-import { useRef, useState } from "react";
+ import { useRef, useState } from "react";
 import { streamAi, AiMode, MindsetType, DepthLevel } from "@/services/aiService";
-import { useHistory } from "../store/history";
+import { useHistory } from "@/store/history";
 import { useUserProfile } from "@/store/userProfile";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip } from "lucide-react";
+import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip, X, MinusCircle, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { hapticLight, hapticMedium } from "@/lib/haptic";
 
 interface AiWorkspaceProps {
   mode: AiMode;
@@ -119,26 +120,34 @@ const getMindsetOptions = (t: any) => [
 const getDepthOptions = (t: any) => [
   { value: "beginner", label: t("workspace.beginner") },
   { value: "intermediate", label: t("workspace.intermediate") },
+  { value: "higher", label: t("workspace.higher") },
   { value: "advanced", label: t("workspace.advanced") },
 ];
 
-export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
-  const { t } = useTranslation();
-  const history = useHistory();
-  const { refreshCredits } = useUserProfile();
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [steps, setSteps] = useState<Array<{ title: string; content: string }>>([]);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
-  const [selectedDepth, setSelectedDepth] = useState<string>("beginner");
-  const [selectedCitationStyle, setSelectedCitationStyle] = useState<string>("APA");
-  const abortRef = useRef<AbortController | null>(null);
-  const lastInputRef = useRef("");
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const documentInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
+   const { t } = useTranslation();
+   const history = useHistory();
+   const { refreshCredits } = useUserProfile();
+   const [input, setInput] = useState("");
+   const [output, setOutput] = useState("");
+   const [steps, setSteps] = useState<Array<{ title: string; content: string }>>([]);
+   const [currentStep, setCurrentStep] = useState(0);
+   const [loading, setLoading] = useState(false);
+   const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
+   const [selectedDepth, setSelectedDepth] = useState<string>("beginner");
+   const [selectedCitationStyle, setSelectedCitationStyle] = useState<string>("APA");
+   const [imageData, setImageData] = useState<string | null>(null);
+   const [imageMimeType, setImageMimeType] = useState<string | null>(null);
+   const [imageName, setImageName] = useState<string | null>(null);
+   const [codeSnippets, setCodeSnippets] = useState<Array<{id: string, content: string, language?: string}>>([]);
+   const abortRef = useRef<AbortController | null>(null);
+   const lastInputRef = useRef("");
+   const cameraInputRef = useRef<HTMLInputElement>(null);
+   const documentInputRef = useRef<HTMLInputElement>(null);
+   const imageInputRef = useRef<HTMLInputElement>(null);
+   const textareaRef = useRef<HTMLTextAreaElement>(null);
+   const [isTrayOpen, setIsTrayOpen] = useState(false);
+   const [trayContent, setTrayContent] = useState("");
 
   const parseSteps = (content: string, mode: AiMode) => {
     // Strip the practice questions JSON before parsing into steps so it
@@ -175,55 +184,174 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     return parsedSteps;
   };
 
-  const run = async (text: string) => {
-    if (!text.trim() || loading) return;
-    lastInputRef.current = text;
-    setOutput("");
-    setSteps([]);
-    setCurrentStep(0);
-    setLoading(true);
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    let finalOutput = "";
+   const run = async (text: string) => {
+     const hasText = text.trim().length > 0;
+     if (!hasText && !imageData && codeSnippets.length === 0) return;
+     if (loading) return;
 
-    await streamAi({
-      mode,
-      input: text,
-      mindset: mode === "tutor" ? selectedMindset : undefined,
-      depth: mode === "tutor" ? (selectedDepth as DepthLevel) : undefined,
-      citationStyle: mode === "research" ? selectedCitationStyle : undefined,
-      signal: ctrl.signal,
-      onDelta: (chunk) => {
-        finalOutput += chunk;
-        setOutput((p) => p + chunk);
-      },
-      onDone: async (finalResponse) => {
-        const response = finalResponse || finalOutput;
-        setSteps(parseSteps(response, mode));
-        setLoading(false);
-        history.addEntry({ mode, input: text, output: response });
-        await refreshCredits();
-      },
-      onError: (msg) => {
-        setLoading(false);
-        toast.error(msg);
-      },
-    });
-  };
+     const prompt = hasText
+       ? text
+       : codeSnippets.length > 0
+         ? "Please analyze the attached code snippets."
+         : "Please scan the attached image and answer the question.";
 
-  const reset = () => {
-    setOutput("");
-    setSteps([]);
-    setCurrentStep(0);
-    setInput("");
-  };
+     lastInputRef.current = prompt;
+     setOutput("");
+     setSteps([]);
+     setCurrentStep(0);
+     setLoading(true);
+     abortRef.current?.abort();
+     const ctrl = new AbortController();
+     abortRef.current = ctrl;
+     let finalOutput = "";
+
+     // Haptic feedback on send
+     hapticMedium();
+
+     // Build code context
+     let codeContext = "";
+     if (codeSnippets.length > 0) {
+       codeContext = "\n\nAttached Code Snippets:\n" + codeSnippets.map((snippet, index) =>
+         `Code Snippet ${index + 1}${snippet.language ? ` (${snippet.language})` : ''}:\n\`\`\`${snippet.language || ''}\n${snippet.content}\n\`\`\``
+       ).join('\n\n');
+     }
+
+     await streamAi({
+       mode,
+       input: prompt + codeContext,
+       imageBase64: imageData?.split(",")[1],
+       imageMimeType: imageMimeType || undefined,
+       imageName: imageName || undefined,
+       mindset: mode === "tutor" ? selectedMindset : undefined,
+       depth: mode === "tutor" || mode === "research" ? (selectedDepth as DepthLevel) : undefined,
+       citationStyle: mode === "research" ? selectedCitationStyle : undefined,
+       signal: ctrl.signal,
+       onDelta: (chunk) => {
+         finalOutput += chunk;
+         setOutput((p) => p + chunk);
+       },
+       onDone: async (finalResponse) => {
+         const response = finalResponse || finalOutput;
+         setSteps(parseSteps(response, mode));
+         setLoading(false);
+         history.addEntry({
+           mode,
+           input: prompt,
+           output: response,
+           imageData: imageData || undefined,
+           imageMimeType: imageMimeType || undefined,
+           imageName: imageName || undefined,
+           codeSnippets: codeSnippets.length > 0 ? codeSnippets : undefined,
+         });
+         await refreshCredits();
+       },
+       onError: (msg) => {
+         setLoading(false);
+         toast.error(msg);
+       },
+     });
+   };
+
+   const reset = () => {
+     setOutput("");
+     setSteps([]);
+     setCurrentStep(0);
+     setInput("");
+     setImageData(null);
+     setImageMimeType(null);
+     setImageName(null);
+     setCodeSnippets([]);
+     setTrayContent("");
+     setIsTrayOpen(false);
+   };
+
+   // Paste handler - detect code and create code cards
+   const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+     const pastedText = await navigator.clipboard.readText();
+     if (!pastedText.trim()) return;
+
+     // Detect code-like patterns
+     const hasCodeIndicators =
+       pastedText.includes('```') ||
+       pastedText.includes('function ') ||
+       pastedText.includes('import ') ||
+       pastedText.includes('class ') ||
+       pastedText.includes('def ') ||
+       pastedText.includes('var ') ||
+       pastedText.includes('let ') ||
+       pastedText.includes('const ') ||
+       pastedText.match(/[{}[\];]/);
+
+     // If it's code or large text, create a code card instead of putting in input
+     if (pastedText.length > 200 || hasCodeIndicators) {
+       e.preventDefault();
+
+       // Detect language from code fences or common patterns
+       let language = "";
+       const fenceMatch = pastedText.match(/```(\w+)/);
+       if (fenceMatch) {
+         language = fenceMatch[1];
+       } else if (pastedText.includes('function ') || pastedText.includes('const ') || pastedText.includes('let ')) {
+         language = 'javascript';
+       } else if (pastedText.includes('def ') || pastedText.includes('import ')) {
+         language = 'python';
+       } else if (pastedText.includes('class ')) {
+         language = 'java';
+       }
+
+       const newSnippet = {
+         id: `code-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+         content: pastedText.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, ''), // Remove code fences
+         language: language || undefined,
+       };
+
+       setCodeSnippets(prev => [...prev, newSnippet]);
+       hapticLight();
+       toast.success("Code snippet added");
+     }
+   };
+
+   const moveFromTrayToInput = () => {
+     setInput(prev => prev + (prev ? "\n\n" : "") + trayContent);
+     setTrayContent("");
+     setIsTrayOpen(false);
+     hapticLight();
+   };
+
+   const clearTray = () => {
+     setTrayContent("");
+     setIsTrayOpen(false);
+   };
 
   const handleFile = async (file: File) => {
     if (file.size > 1_000_000) {
       toast.error("File too large (max 1MB for MVP)");
       return;
     }
+
+    if (file.type.startsWith("image/")) {
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          if (typeof result === "string") {
+            setImageData(result);
+            setImageMimeType(file.type);
+            setImageName(file.name);
+            setInput((prev) => prev || "Please scan this image and answer the question.");
+            toast.success(`Loaded image ${file.name} for scanning`);
+          }
+        };
+        reader.onerror = () => {
+          toast.error("Couldn't read image file");
+        };
+        reader.readAsDataURL(file);
+      } catch {
+        toast.error("Couldn't read image file");
+      }
+      return;
+    }
+
     try {
       const text = await file.text();
       setInput(text.slice(0, 18000));
@@ -292,133 +420,257 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         </div>
       )}
 
-      {mode === "research" && steps.length === 0 && !loading && (
-        <div className="glass-card rounded-2xl p-3 sm:p-4">
-          <div className="mb-4">
-            <label className="text-sm font-medium text-foreground block mb-3">
-              Citation Style
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {citationStyles.map((style) => (
-                <Dialog key={style.name}>
-                  <DialogTrigger asChild>
-                    <button
-                      onClick={() => setSelectedCitationStyle(style.name)}
-                      className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
-                        selectedCitationStyle === style.name
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm text-center w-full">{style.name}</h3>
-                        {selectedCitationStyle === style.name && (
-                          <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        )}
-                      </div>
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{style.full_name}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">{style.use.purpose}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Primary Fields:</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {style.use.primary_fields.map((field) => (
-                            <span key={field} className="text-xs bg-muted px-2 py-1 rounded">
-                              {field}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Common Scenarios:</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          {style.use.common_scenarios.map((scenario) => (
-                            <li key={scenario} className="flex items-center">
-                              <span className="w-1.5 h-1.5 bg-current rounded-full mr-2 flex-shrink-0"></span>
-                              {scenario}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-2">Users & Disciplines:</h4>
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-1">
-                            {style.users.main_users.map((user) => (
-                              <span
-                                key={user}
-                                className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
-                              >
-                                {user}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {style.users.disciplines.map((discipline) => (
-                              <span
-                                key={discipline}
-                                className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
-                              >
-                                {discipline}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground text-center">
-                          <strong>Level:</strong> {style.users.level.join(", ")}
-                        </p>
-                      </div>
-                      <div className="flex justify-center pt-4 border-t">
-                        <DialogClose asChild>
-                          <Button className="px-8 bg-primary hover:bg-primary/90">
-                            Use {style.name}
-                          </Button>
-                        </DialogClose>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Choose a citation style for your research report. Click any style to learn more.
-            </p>
-          </div>
-        </div>
-      )}
+       {mode === "research" && steps.length === 0 && !loading && (
+         <div className="glass-card rounded-2xl p-3 sm:p-4">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+             <div>
+               <label className="text-sm font-medium text-foreground block mb-2">
+                 {t("workspace.depth")}
+               </label>
+               <Select value={selectedDepth} onValueChange={setSelectedDepth}>
+                 <SelectTrigger className="w-full">
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {getDepthOptions(t).map(({ value, label }) => (
+                     <SelectItem key={value} value={value}>
+                       {label}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+               <p className="text-xs text-muted-foreground mt-2">
+                 {t("workspace.depthDescription")}
+               </p>
+             </div>
+             <div>
+               <label className="text-sm font-medium text-foreground block mb-3">
+                 Citation Style
+               </label>
+               <div className="grid grid-cols-2 gap-2">
+                 {citationStyles.map((style) => (
+                   <Dialog key={style.name}>
+                     <DialogTrigger asChild>
+                       <button
+                         onClick={() => setSelectedCitationStyle(style.name)}
+                         className={`p-2 rounded-lg border-2 transition-all duration-200 text-xs ${
+                           selectedCitationStyle === style.name
+                             ? "border-primary bg-primary/5 shadow-sm"
+                             : "border-border hover:border-primary/50"
+                         }`}
+                       >
+                         <div className="flex items-center justify-between">
+                           <h3 className="font-semibold text-center w-full">{style.name}</h3>
+                           {selectedCitationStyle === style.name && (
+                             <div className="w-1.5 h-1.5 bg-primary rounded-full ml-1" />
+                           )}
+                         </div>
+                       </button>
+                     </DialogTrigger>
+                     <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                       <DialogHeader>
+                         <DialogTitle>{style.full_name}</DialogTitle>
+                       </DialogHeader>
+                       <div className="space-y-4">
+                         <div className="text-center">
+                           <p className="text-sm text-muted-foreground">{style.use.purpose}</p>
+                         </div>
+                         <div>
+                           <h4 className="font-medium text-sm mb-2">Primary Fields:</h4>
+                           <div className="flex flex-wrap gap-1">
+                             {style.use.primary_fields.map((field) => (
+                               <span key={field} className="text-xs bg-muted px-2 py-1 rounded">
+                                 {field}
+                               </span>
+                             ))}
+                           </div>
+                         </div>
+                         <div>
+                           <h4 className="font-medium text-sm mb-2">Common Scenarios:</h4>
+                           <ul className="text-sm text-muted-foreground space-y-1">
+                             {style.use.common_scenarios.map((scenario) => (
+                               <li key={scenario} className="flex items-center">
+                                 <span className="w-1.5 h-1.5 bg-current rounded-full mr-2 flex-shrink-0" />
+                                 {scenario}
+                               </li>
+                             ))}
+                           </ul>
+                         </div>
+                         <div>
+                           <h4 className="font-medium text-sm mb-2">Users & Disciplines:</h4>
+                           <div className="space-y-2">
+                             <div className="flex flex-wrap gap-1">
+                               {style.users.main_users.map((user) => (
+                                 <span
+                                   key={user}
+                                   className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
+                                 >
+                                   {user}
+                                 </span>
+                               ))}
+                             </div>
+                             <div className="flex flex-wrap gap-1">
+                               {style.users.disciplines.map((discipline) => (
+                                 <span
+                                   key={discipline}
+                                   className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
+                                 >
+                                   {discipline}
+                                 </span>
+                               ))}
+                             </div>
+                           </div>
+                         </div>
+                         <div className="pt-2 border-t">
+                           <p className="text-sm text-muted-foreground text-center">
+                             <strong>Level:</strong> {style.users.level.join(", ")}
+                           </p>
+                         </div>
+                         <div className="flex justify-center pt-4 border-t">
+                           <DialogClose asChild>
+                             <Button className="px-8 bg-primary hover:bg-primary/90">
+                               Use {style.name}
+                             </Button>
+                           </DialogClose>
+                         </div>
+                       </div>
+                     </DialogContent>
+                   </Dialog>
+                 ))}
+               </div>
+               <p className="text-xs text-muted-foreground mt-3">
+                 Choose a citation style. Click any style to learn more.
+               </p>
+             </div>
+           </div>
+         </div>
+       )}
 
-      {steps.length === 0 && !loading && (
-        <div className="glass-card rounded-2xl p-3 sm:p-4">
-          <Textarea
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = "auto";
-              target.style.height = Math.min(target.scrollHeight, 140) + "px";
-            }}
-            placeholder={placeholder}
-            className="min-h-[60px] max-h-[140px] resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0 px-2"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                run(input);
-              }
-            }}
-          />
-          <div className="flex items-center justify-between gap-2 pt-2 px-1">
-            <div className="flex items-center gap-2">
-              {acceptFile && (
-                <DropdownMenu>
+       {steps.length === 0 && !loading && (
+         <div className="glass-card rounded-2xl p-3 sm:p-4">
+           {/* Code Cards */}
+           {codeSnippets.length > 0 && (
+             <div className="mb-3 space-y-2">
+               {codeSnippets.map((snippet, index) => (
+                 <div key={snippet.id} className="rounded-lg border border-border bg-muted/30 p-3 relative group">
+                   <div className="flex items-center justify-between mb-2">
+                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                       Code Snippet {index + 1}{snippet.language ? ` (${snippet.language})` : ''}
+                     </span>
+                     <Button
+                       size="sm"
+                       variant="ghost"
+                       className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                       onClick={() => {
+                         setCodeSnippets(prev => prev.filter(s => s.id !== snippet.id));
+                         hapticLight();
+                       }}
+                     >
+                       <X size={12} />
+                     </Button>
+                   </div>
+                   <div className="max-h-32 overflow-y-auto rounded bg-background/50 p-2 text-xs font-mono whitespace-pre-wrap border border-border/30">
+                     {snippet.content}
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
+
+           {/* Code Tray (legacy - can be removed later) */}
+           {isTrayOpen && trayContent && (
+             <div className="mb-3 p-3 rounded-lg border border-border bg-muted/30 relative">
+               <div className="flex items-center justify-between mb-2">
+                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                   Pasted Code / Large Text
+                 </span>
+                 <div className="flex items-center gap-1">
+                   <Button
+                     size="sm"
+                     variant="ghost"
+                     className="h-7 px-2"
+                     onClick={() => setIsTrayOpen(false)}
+                   >
+                     <MinusCircle size={12} />
+                   </Button>
+                   <Button
+                     size="sm"
+                     variant="ghost"
+                     className="h-7 px-2"
+                     onClick={clearTray}
+                   >
+                     <X size={12} />
+                   </Button>
+                 </div>
+               </div>
+               <div className="max-h-32 overflow-y-auto rounded bg-background/50 p-2 text-xs font-mono whitespace-pre-wrap border border-border/30">
+                 {trayContent}
+               </div>
+               <div className="mt-2 flex justify-end gap-2">
+                 <Button size="sm" variant="outline" onClick={clearTray}>
+                   Discard
+                 </Button>
+                 <Button size="sm" onClick={moveFromTrayToInput}>
+                   <Maximize2 size={12} className="mr-1" /> Use in Input
+                 </Button>
+               </div>
+             </div>
+           )}
+
+           <Textarea
+             ref={textareaRef}
+             value={input}
+             onChange={(e) => {
+               setInput(e.target.value);
+               const target = e.target as HTMLTextAreaElement;
+               target.style.height = "auto";
+               target.style.height = Math.min(target.scrollHeight, 140) + "px";
+             }}
+             onPaste={handlePaste}
+             placeholder={placeholder}
+             className="min-h-[60px] max-h-[140px] resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0 px-2"
+             onKeyDown={(e) => {
+               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                 e.preventDefault();
+                 run(input);
+               }
+             }}
+           />
+           {imageData && (
+             <div className="mt-3 rounded-2xl border border-border/60 bg-background/80 p-3 flex items-start gap-3">
+               <img
+                 src={imageData}
+                 alt={imageName || "attached image"}
+                 className="h-24 w-24 rounded-xl object-cover"
+               />
+               <div className="flex-1">
+                 <div className="flex items-center justify-between gap-2">
+                   <div>
+                     <p className="text-sm font-medium text-foreground">{imageName}</p>
+                     <p className="text-xs text-muted-foreground">{imageMimeType}</p>
+                   </div>
+                   <Button
+                     size="icon"
+                     variant="ghost"
+                     onClick={() => {
+                       setImageData(null);
+                       setImageMimeType(null);
+                       setImageName(null);
+                     }}
+                   >
+                     <X size={16} />
+                   </Button>
+                 </div>
+                 <p className="mt-2 text-xs text-muted-foreground">
+                   Image attached for scanning. Send to ask the AI to interpret it.
+                 </p>
+               </div>
+             </div>
+           )}
+           <div className="flex items-center justify-between gap-2 pt-2 px-1">
+             <div className="flex items-center gap-2">
+               {acceptFile && (
+                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
                       <Paperclip size={14} />
@@ -479,13 +731,16 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                 <Square size={14} className="mr-1.5" /> {t("common.cancel")}
               </Button>
             ) : (
-              <Button
-                onClick={() => run(input)}
-                disabled={!input.trim()}
-                className="bg-primary hover:opacity-90 btn-glow rounded-full w-10 h-10 p-0"
-              >
-                <ArrowUp size={16} />
-              </Button>
+               <Button
+                 onClick={() => {
+                   hapticMedium();
+                   run(input);
+                 }}
+                 disabled={!input.trim() && !imageData && codeSnippets.length === 0}
+                 className="bg-primary hover:opacity-90 btn-glow rounded-full w-10 h-10 p-0"
+               >
+                 <ArrowUp size={16} />
+               </Button>
             )}
           </div>
         </div>

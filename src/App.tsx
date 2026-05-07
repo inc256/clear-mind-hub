@@ -75,6 +75,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/research" element={<Research />} />
               <Route path="/history" element={<History />} />
+              <Route path="/history/:entryId" element={<History />} />
               <Route path="/subscription" element={<Subscription />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />

@@ -150,8 +150,14 @@
     "engineering": "Ingénierie",
     "lecturer": "Conférencier",
     "scientific": "Scientifique",
-    "creative": "Créatif",
-    "renderingContent": "Rendu du contenu en cours..."
+     "creative": "Créatif",
+     "depth": "Niveau d'explication",
+     "depthDescription": "Choisissez le niveau de détail des explications.",
+     "beginner": "Débutant",
+     "intermediate": "Intermédiaire",
+     "higher": "Supérieur",
+     "advanced": "Avancé",
+     "renderingContent": "Rendu du contenu en cours..."
   },
   "tutor": {
     "title": "Tuteur IA",
