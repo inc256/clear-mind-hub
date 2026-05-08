@@ -1,0 +1,6 @@
+# Sync icons automatically before commit
+npm run icons
+
+# Run tests to ensure nothing broke
+npm test
+
