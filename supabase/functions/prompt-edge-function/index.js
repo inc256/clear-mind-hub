@@ -18,7 +18,11 @@ const MODELS = {
 const MAX_TOKENS = {
   problem:   800,
   tutor:    2400,
-  research: 3200,
+  // Research: tiered by depth (resolved in getMaxTokens)
+  research_beginner:     5000,
+  research_intermediate: 10000,
+  research_higher:       80000,
+  research_advanced:     120000,
   simplify:  600,
   hints:     400,
   rewrites:  700,
@@ -38,18 +42,121 @@ const VALID_DEPTHS    = new Set(["beginner", "intermediate", "higher", "advanced
 const VALID_MINDSETS  = new Set(["general", "medical", "engineering", "lecturer", "scientific", "creative"]);
 const VALID_CITATIONS = new Set(["APA", "MLA", "IEEE", "AMA"]);
 
+// Input limits per modality
 const INPUT_MAX_CHARS     = 4000;
 const UPSTREAM_TIMEOUT_MS = 25000;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Token resolver
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getMaxTokens(mode: string, depth?: string): number {
+  if (mode === "research" && depth) {
+    const key = `research_${depth}` as keyof typeof MAX_TOKENS;
+    if (key in MAX_TOKENS) return MAX_TOKENS[key];
+  }
+  return MAX_TOKENS[mode as keyof typeof MAX_TOKENS] ?? 1000;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Prompt Fragments
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DEPTH_GUIDES = {
-  beginner:     `DEPTH: Beginner — write for a curious 12-year-old. Short sentences, plain words, define terms immediately, 5–7 sentence core, one real-world analogy. No equations or jargon.`,
-  intermediate: `DEPTH: Intermediate — assume basic familiarity. Use domain vocab with brief first-use clarification, 1–2 worked examples, 10–15 sentences. Simple formulas welcome.`,
-  higher:       `DEPTH: Higher — assume solid subject knowledge. Use precise terminology, multi-step worked examples, introduce and explain relevant formulas/equations with derivation context, 15–25 sentences. Address nuance and common misconceptions.`,
-  advanced:     `DEPTH: Advanced — expert audience. Precise terminology, rigorous multi-layered reasoning, full equations/derivations/edge-cases where relevant. Be thorough; do not truncate.`,
+  beginner: `
+DEPTH: Beginner
+Audience:
+- Assume zero prior knowledge.
+- Explain like teaching a curious young learner.
+Writing Style:
+- Use short, simple sentences.
+- Avoid jargon unless absolutely necessary.
+- Define all technical terms immediately in plain language.
+- Use conversational clarity without sounding childish.
+Explanation Rules:
+- Focus on foundational understanding only.
+- Explain one idea at a time.
+- Use concrete real-world analogies and relatable examples.
+- Avoid abstraction, edge cases, or deep theory.
+- No equations unless extremely simple and necessary.
+Structure:
+- Start with a direct definition or overview.
+- Follow with a simple explanation.
+- Include 1 relatable example or analogy.
+- End with a short recap.
+Depth Target:
+- Basic awareness and understanding.
+- Prioritize clarity over completeness.
+`,
+  intermediate: `
+DEPTH: Intermediate
+Audience:
+- Assume basic familiarity with the topic.
+- User understands common concepts but needs guided explanation.
+Writing Style:
+- Use clear professional language.
+- Introduce domain vocabulary with brief clarification on first use.
+- Balance simplicity with technical accuracy.
+Explanation Rules:
+- Explain relationships between concepts.
+- Include practical examples and applications.
+- Use simple formulas or structured logic where useful.
+- Introduce moderate nuance without overwhelming detail.
+Structure:
+- Start with a concise overview.
+- Break explanation into logical sections.
+- Include 1–2 worked examples or applications.
+- Summarize key takeaways.
+Depth Target:
+- Application and practical understanding.
+- Build confidence using structured explanations.
+`,
+  higher: `
+DEPTH: Higher
+Audience:
+- Assume strong subject familiarity.
+- User can understand technical terminology and analytical reasoning.
+Writing Style:
+- Use precise terminology and academically structured explanations.
+- Maintain clarity while increasing analytical depth.
+Explanation Rules:
+- Analyze concepts critically rather than only describing them.
+- Explain causes, implications, trade-offs, and limitations.
+- Include multi-step reasoning and worked examples.
+- Introduce and explain relevant formulas, derivations, or models where appropriate.
+- Address common misconceptions and edge cases.
+Structure:
+- Begin with conceptual framing.
+- Develop ideas progressively using evidence or reasoning.
+- Use sectioned explanations for complex topics.
+- Include analytical interpretation and evaluation.
+Depth Target:
+- Critical analysis and synthesis.
+- Prioritize reasoning depth over simplicity.
+`,
+  advanced: `
+DEPTH: Advanced
+Audience:
+- Assume expert-level understanding and technical fluency.
+Writing Style:
+- Use rigorous, precise, and domain-appropriate terminology.
+- Maintain high informational density without unnecessary simplification.
+Explanation Rules:
+- Deliver deep multi-layered reasoning.
+- Explore theory, assumptions, limitations, and edge cases.
+- Include formal derivations, equations, proofs, frameworks, or advanced models where relevant.
+- Compare competing perspectives or methodologies.
+- Highlight unresolved issues, optimization strategies, or research directions.
+- Avoid oversimplification.
+Structure:
+- Organize into logically rigorous sections.
+- Build arguments progressively and thoroughly.
+- Integrate theory, evidence, and evaluation.
+- Conclude with implications, limitations, or future considerations.
+Depth Target:
+- Mastery, originality, and expert-level analysis.
+- Maximize completeness, rigor, and intellectual depth.
+`,
 };
 
 const MINDSET_GUIDES = {
@@ -529,20 +636,25 @@ Theoretical, practical, policy, or clinical implications as appropriate.
 5-7 concrete, prioritised recommendations.`,
 };
 
-function depthLine(depth) {
-  return depth && DEPTH_GUIDES[depth] ? `\n${DEPTH_GUIDES[depth]}` : "";
+function depthLine(depth?: string): string {
+  return depth && DEPTH_GUIDES[depth as keyof typeof DEPTH_GUIDES]
+    ? `\n${DEPTH_GUIDES[depth as keyof typeof DEPTH_GUIDES]}`
+    : "";
 }
 
-function mindsetLine(mindset) {
-  return mindset && MINDSET_GUIDES[mindset] ? `\nLens: ${MINDSET_GUIDES[mindset]}` : "";
+function mindsetLine(mindset?: string): string {
+  return mindset && MINDSET_GUIDES[mindset as keyof typeof MINDSET_GUIDES]
+    ? `\nLens: ${MINDSET_GUIDES[mindset as keyof typeof MINDSET_GUIDES]}`
+    : "";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Prompt Builders
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildProblemPrompt() {
+function buildProblemPrompt(): string {
   return `You are Xplainfy, a precise problem-solving assistant.
+If an image, document, or voice transcript has been provided, analyse it thoroughly to identify and solve the problem it contains.
 
 ## Solution
 State the answer in sentence 1. Follow with 2-4 sentences of key reasoning.
@@ -558,12 +670,13 @@ D) ...
 Append [CORRECT] to the correct option only.`;
 }
 
-function buildTutorPrompt(mindset, depth) {
+function buildTutorPrompt(mindset?: string, depth?: string): string {
   const formulaInstruction = (depth === "higher" || depth === "advanced")
     ? `\nFORMULAS: This is a ${depth}-level response. If the topic involves any mathematical, scientific, or technical formulas, equations, or derivations, you MUST include them with full explanation. Show step-by-step working where applicable. Do not omit formulas for brevity.`
     : `\nFORMULAS: If the question involves or would benefit from formulas, equations, or calculations, include them clearly with explanation. Do not skip relevant formulas.`;
 
   return `You are Xplainfy, an expert adaptive tutor.${depthLine(depth)}${mindsetLine(mindset)}${formulaInstruction}
+If an image, scanned document, voice transcript, or uploaded file has been provided, analyse it and generate your tutoring response based on its content.
 
 Respond with the following sections in order:
 
@@ -584,35 +697,43 @@ If the topic involves any formulas or equations, list and explain each one here.
 
 ## Practice Questions
 After all the above sections, output EXACTLY this raw JSON object — no markdown fences, no backticks, no extra text before or after:
-{"practice_questions":[{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"A) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"B) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"C) ..."}]}
+{"practice_questions":[{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"A) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"B) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"C) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"D) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"A) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"B) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"C) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"D) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"A) ..."},{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct_answer":"B) ..."}]}
 
 Rules for the JSON:
+- You MUST generate EXACTLY 10 practice questions — no more, no fewer.
 - options must always start with the letter prefix: "A) ", "B) ", "C) ", "D) "
 - correct_answer must exactly match one of the options including the letter prefix
+- Vary the correct answers across all 10 questions — do not always use the same letter.
 - output the JSON as the very last thing, nothing after it`;
 }
 
-function buildResearchPrompt(mindset, depth) {
-  const base = GENERIC_RESEARCH_STRUCTURES[depth] ?? GENERIC_RESEARCH_STRUCTURES["intermediate"];
-  const mindsetSuffix = mindset && MINDSET_GUIDES[mindset] ? `\nLens: ${MINDSET_GUIDES[mindset]}` : "";
-  return `${base}${mindsetSuffix}`;
+function buildResearchPrompt(mindset?: string, depth?: string): string {
+  const base = GENERIC_RESEARCH_STRUCTURES[depth as keyof typeof GENERIC_RESEARCH_STRUCTURES]
+    ?? GENERIC_RESEARCH_STRUCTURES["intermediate"];
+  const mindsetSuffix = mindset && MINDSET_GUIDES[mindset as keyof typeof MINDSET_GUIDES]
+    ? `\nLens: ${MINDSET_GUIDES[mindset as keyof typeof MINDSET_GUIDES]}`
+    : "";
+  const imageSuffix = `\nIf an image, scanned document, voice transcript, or uploaded file has been provided, analyse it and base your research response on its content.`;
+  return `${base}${mindsetSuffix}${imageSuffix}`;
 }
 
-function buildCitationResearchPrompt(style, mindset, depth) {
-  const f  = CITATION_FORMATS[style];
-  const structures = RESEARCH_STRUCTURES[style];
-  const normalizedDepth = depth && structures[depth] ? depth : "intermediate";
-  const struct = structures[normalizedDepth];
+function buildCitationResearchPrompt(style: string, mindset?: string, depth?: string): string {
+  const f = CITATION_FORMATS[style as keyof typeof CITATION_FORMATS];
+  const structures = RESEARCH_STRUCTURES[style as keyof typeof RESEARCH_STRUCTURES];
+  const normalizedDepth = depth && structures[depth as keyof typeof structures] ? depth : "intermediate";
+  const struct = structures[normalizedDepth as keyof typeof structures] as { label: string; sections: string[]; instructions: string };
 
-  const mindsetSuffix = mindset && MINDSET_GUIDES[mindset]
-    ? `\nAudience Lens: ${MINDSET_GUIDES[mindset]}`
+  const mindsetSuffix = mindset && MINDSET_GUIDES[mindset as keyof typeof MINDSET_GUIDES]
+    ? `\nAudience Lens: ${MINDSET_GUIDES[mindset as keyof typeof MINDSET_GUIDES]}`
     : "";
 
-  const depthSuffix = depth && DEPTH_GUIDES[depth]
-    ? `\n${DEPTH_GUIDES[depth]}`
+  const depthSuffix = depth && DEPTH_GUIDES[depth as keyof typeof DEPTH_GUIDES]
+    ? `\n${DEPTH_GUIDES[depth as keyof typeof DEPTH_GUIDES]}`
     : "";
 
-  return `You are Xplainfy, an academic writing specialist in ${f.fullName} (${style}) at ${struct.label} level.${depthSuffix}${mindsetSuffix}
+  const imageSuffix = `\nIf an image, scanned document, voice transcript, or uploaded file has been provided, analyse it and incorporate its content into the research paper.`;
+
+  return `You are Xplainfy, an academic writing specialist in ${f.fullName} (${style}) at ${struct.label} level.${depthSuffix}${mindsetSuffix}${imageSuffix}
 
 CITATION RULES:
 - In-text citation format: ${f.inText.format} — e.g. ${f.inText.example}
@@ -627,8 +748,9 @@ ${struct.instructions}
 Important: Produce a complete, well-written paper following all the steps above. Use correct ${style} heading levels, citation format, and reference format throughout.`;
 }
 
-function buildSimplifyPrompt() {
+function buildSimplifyPrompt(): string {
   return `You are Xplainfy, a simplification assistant.
+If an image, scanned document, voice transcript, or uploaded file has been provided, analyse it and simplify its content.
 
 ## Simplified Problem
 Restate clearly.
@@ -640,8 +762,9 @@ Main elements needed.
 Straightforward strategy.`;
 }
 
-function buildHintsPrompt() {
+function buildHintsPrompt(): string {
   return `You are Xplainfy, a hints assistant.
+If an image, scanned document, voice transcript, or uploaded file has been provided, analyse it and provide hints based on its content.
 
 ## Hint 1
 First key concept.
@@ -653,8 +776,9 @@ Builds on Hint 1.
 Connects the concepts.`;
 }
 
-function buildRewritesPrompt() {
+function buildRewritesPrompt(): string {
   return `You are Xplainfy, a rewriting assistant.
+If an image, scanned document, voice transcript, or uploaded file has been provided, analyse it and rewrite or improve its content.
 
 ## Rewritten Content
 Improved version.
@@ -663,12 +787,12 @@ Improved version.
 What changed and why.`;
 }
 
-function buildSystemPrompt(mode, mindset, depth, citationStyle) {
+function buildSystemPrompt(mode: string, mindset?: string, depth?: string, citationStyle?: string | null): string {
   switch (mode) {
     case "problem":  return buildProblemPrompt();
     case "tutor":    return buildTutorPrompt(mindset, depth);
     case "research":
-      if (citationStyle && CITATION_FORMATS[citationStyle]) {
+      if (citationStyle && CITATION_FORMATS[citationStyle as keyof typeof CITATION_FORMATS]) {
         return buildCitationResearchPrompt(citationStyle, mindset, depth);
       }
       return buildResearchPrompt(mindset, depth);
@@ -679,17 +803,88 @@ function buildSystemPrompt(mode, mindset, depth, citationStyle) {
   }
 }
 
-function getModel(mode) {
+function getModel(mode: string): string {
   return ["problem", "tutor", "research"].includes(mode) ? MODELS.standard : MODELS.fast;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Content builder — supports image, document (PDF/DOCX base64), and voice
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Builds the user content array for OpenAI's messages API.
+ *
+ * Supported input modalities (all optional, combinable):
+ *   imageBase64 + imageMimeType     → inline image (jpg/png/webp/gif)
+ *   documentBase64 + documentMimeType → inline document (pdf / docx treated as file attachment)
+ *   voiceTranscript                 → plain text prepended as "[Voice transcript]: ..."
+ *
+ * The text `input` is always included.
+ */
+function buildUserContent(
+  input: string,
+  imageBase64?: string,
+  imageMimeType?: string,
+  documentBase64?: string,
+  documentMimeType?: string,
+  voiceTranscript?: string,
+): string | Array<Record<string, unknown>> {
+  const parts: Array<Record<string, unknown>> = [];
+
+  // Voice transcript prepended to text
+  const textParts: string[] = [];
+  if (voiceTranscript && voiceTranscript.trim()) {
+    textParts.push(`[Voice transcript]: ${voiceTranscript.trim()}`);
+  }
+  textParts.push(input.trim());
+  parts.push({ type: "text", text: textParts.join("\n\n") });
+
+  // Inline image
+  if (imageBase64 && imageMimeType) {
+    parts.push({
+      type: "image_url",
+      image_url: { url: `data:${imageMimeType};base64,${imageBase64}`, detail: "high" },
+    });
+  }
+
+  // Document (PDF or other)
+  if (documentBase64 && documentMimeType) {
+    if (documentMimeType === "application/pdf") {
+      // OpenAI supports PDF as a file attachment via the file_content type
+      parts.push({
+        type: "file",
+        file: {
+          filename: "uploaded_document.pdf",
+          file_data: `data:application/pdf;base64,${documentBase64}`,
+        },
+      });
+    } else {
+      // For other document types (docx, txt, etc.) include as a base64-encoded file
+      parts.push({
+        type: "file",
+        file: {
+          filename: "uploaded_document",
+          file_data: `data:${documentMimeType};base64,${documentBase64}`,
+        },
+      });
+    }
+  }
+
+  // If only text, return plain string (backward-compatible)
+  if (parts.length === 1 && parts[0].type === "text") {
+    return input.trim();
+  }
+
+  return parts;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Request Handler
 // ─────────────────────────────────────────────────────────────────────────────
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const requestId = crypto.randomUUID().slice(0, 8);
-  const log = (msg, ...args) => console.log(`[${requestId}] ${msg}`, ...args);
+  const log = (msg: string, ...args: unknown[]) => console.log(`[${requestId}] ${msg}`, ...args);
 
   log("Incoming", req.method, new URL(req.url).pathname);
 
@@ -710,21 +905,49 @@ serve(async (req) => {
   log("API key present, starts with:", OPENAI_KEY.slice(0, 7));
 
   // ── Parse body ─────────────────────────────────────────────────────────
-  let body;
+  let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch (e) {
-    log("Failed to parse body:", e.message);
+    log("Failed to parse body:", (e as Error).message);
     return errResp("Invalid JSON body", 400);
   }
 
-  const { input, mode, mindset, depth, citationStyle, imageBase64, imageMimeType } = body;
+  const {
+    input,
+    mode,
+    mindset,
+    depth,
+    citationStyle,
+    // Image modality
+    imageBase64,
+    imageMimeType,
+    // Document modality (PDF, DOCX, TXT, etc.)
+    documentBase64,
+    documentMimeType,
+    // Voice modality — pass a plain-text transcript of the voice input
+    voiceTranscript,
+  } = body as {
+    input?: string;
+    mode?: string;
+    mindset?: string;
+    depth?: string;
+    citationStyle?: string;
+    imageBase64?: string;
+    imageMimeType?: string;
+    documentBase64?: string;
+    documentMimeType?: string;
+    voiceTranscript?: string;
+  };
+
   log(
     "mode:", mode,
     "| input length:", input?.length,
     "| mindset:", mindset,
     "| depth:", depth,
-    "| image:", imageBase64 ? imageMimeType : "none"
+    "| image:", imageBase64 ? imageMimeType : "none",
+    "| document:", documentBase64 ? documentMimeType : "none",
+    "| voice:", voiceTranscript ? `${voiceTranscript.length} chars` : "none",
   );
 
   // ── Validate ───────────────────────────────────────────────────────────
@@ -734,19 +957,40 @@ serve(async (req) => {
   if (input.length > INPUT_MAX_CHARS)              return errResp("Input too long", 400);
   if (depth && !VALID_DEPTHS.has(depth))           return errResp(`Invalid depth: ${depth}`, 400);
   if (mindset && !VALID_MINDSETS.has(mindset))     return errResp(`Invalid mindset: ${mindset}`, 400);
+
+  // Image validation
   if (imageBase64 && typeof imageBase64 !== "string") return errResp("Invalid imageBase64", 400);
   if (imageMimeType && typeof imageMimeType !== "string") return errResp("Invalid imageMimeType", 400);
   if (imageBase64 && !imageMimeType) return errResp("Missing imageMimeType for uploaded image", 400);
   if (imageBase64 && imageMimeType && !imageMimeType.startsWith("image/")) return errResp("Invalid imageMimeType", 400);
 
-  const normalizedCitation = citationStyle?.toUpperCase?.() ?? null;
-  if (citationStyle && !VALID_CITATIONS.has(normalizedCitation)) {
+  // Document validation
+  if (documentBase64 && typeof documentBase64 !== "string") return errResp("Invalid documentBase64", 400);
+  if (documentMimeType && typeof documentMimeType !== "string") return errResp("Invalid documentMimeType", 400);
+  if (documentBase64 && !documentMimeType) return errResp("Missing documentMimeType for uploaded document", 400);
+
+  // Voice validation
+  if (voiceTranscript && typeof voiceTranscript !== "string") return errResp("Invalid voiceTranscript", 400);
+
+  const normalizedCitation = (citationStyle as string | undefined)?.toUpperCase() ?? null;
+  if (citationStyle && !VALID_CITATIONS.has(normalizedCitation!)) {
     return errResp(`Invalid citationStyle: ${citationStyle}`, 400);
   }
 
   const systemPrompt = buildSystemPrompt(mode, mindset, depth, normalizedCitation);
   const model        = getModel(mode);
-  log("Calling OpenAI with model:", model);
+  const maxTokens    = getMaxTokens(mode, depth);
+  log("Calling OpenAI with model:", model, "| max_tokens:", maxTokens);
+
+  // ── Build user message content ─────────────────────────────────────────
+  const userContent = buildUserContent(
+    input,
+    imageBase64,
+    imageMimeType,
+    documentBase64,
+    documentMimeType,
+    voiceTranscript,
+  );
 
   // ── OpenAI request ─────────────────────────────────────────────────────
   const controller = new AbortController();
@@ -755,7 +999,7 @@ serve(async (req) => {
     controller.abort();
   }, UPSTREAM_TIMEOUT_MS);
 
-  let aiResp;
+  let aiResp: Response;
   try {
     aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -767,28 +1011,20 @@ serve(async (req) => {
       body: JSON.stringify({
         model,
         stream:      true,
-        max_tokens:  MAX_TOKENS[mode] ?? 1000,
-        temperature: TEMPERATURE[mode] ?? 0.7,
+        max_tokens:  maxTokens,
+        temperature: TEMPERATURE[mode as keyof typeof TEMPERATURE] ?? 0.7,
         messages: [
           { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: imageBase64
-              ? [
-                  { type: "input_text", text: input.trim() },
-                  { type: "input_image", image_url: `data:${imageMimeType};base64,${imageBase64}` },
-                ]
-              : input.trim(),
-          },
+          { role: "user",   content: userContent },
         ],
       }),
     });
     log("OpenAI response received | status:", aiResp.status, "| content-type:", aiResp.headers.get("content-type"));
   } catch (e) {
     clearTimeout(timeout);
-    log("Fetch error:", e.name, e.message);
-    if (e.name === "AbortError") return errResp("Upstream timeout — OpenAI did not respond in time.", 504);
-    return errResp(`Network error reaching OpenAI: ${e.message}`, 502);
+    log("Fetch error:", (e as Error).name, (e as Error).message);
+    if ((e as Error).name === "AbortError") return errResp("Upstream timeout — OpenAI did not respond in time.", 504);
+    return errResp(`Network error reaching OpenAI: ${(e as Error).message}`, 502);
   }
 
   clearTimeout(timeout);
@@ -815,7 +1051,7 @@ serve(async (req) => {
     log("ERROR: not an SSE stream. content-type:", contentType, "| body:", raw.slice(0, 300));
     return errResp(
       `OpenAI returned wrong content-type: "${contentType}". Body: ${raw.slice(0, 200)}`,
-      502
+      502,
     );
   }
 
@@ -828,8 +1064,9 @@ serve(async (req) => {
       "Content-Type":  "text/event-stream",
       "Cache-Control": "no-cache",
       "Connection":    "keep-alive",
-      "X-Xplainfy-Mode":  mode,
-      "X-Xplainfy-Model": model,
+      "X-Xplainfy-Mode":       mode,
+      "X-Xplainfy-Model":      model,
+      "X-Xplainfy-MaxTokens":  String(maxTokens),
     },
   });
 });
@@ -838,7 +1075,7 @@ serve(async (req) => {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function errResp(message, status) {
+function errResp(message: string, status: number): Response {
   console.error(`[errResp] HTTP ${status}: ${message}`);
   return new Response(JSON.stringify({ error: message }), {
     status,

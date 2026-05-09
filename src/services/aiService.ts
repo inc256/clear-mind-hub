@@ -133,7 +133,7 @@ function getFreeTierStatus(profile: any, subscriptions: any[]) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function streamAi(opts: StreamOptions): Promise<void> {
-  const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, onDelta, onDone, onError, signal } = opts;
+  const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, onDelta, onDone, onError, signal } = opts;
   const { customApiKey, customApiBase } = useSettings.getState();
 
   console.log("[streamAi] mode:", mode, "| customApiKey:", !!customApiKey);
@@ -183,8 +183,8 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
   let resp: Response;
   try {
     resp = customApiKey
-      ? await fetchFromCustomApi({ customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal })
-      : await fetchFromSupabase({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal });
+      ? await fetchFromCustomApi({ customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, signal })
+      : await fetchFromSupabase({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, signal });
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") return;
     console.error("[streamAi] fetch threw:", error);
@@ -231,7 +231,21 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     if (!deducted) {
       console.warn("[streamAi] credit deduction failed (response already delivered)");
     }
-    void logChatHistory(opts, finalOutput);
+
+    // Extract practice questions for logging
+    let practiceQuestions = null;
+    if (opts.mode === "tutor" && finalOutput.includes('{"practice_questions"')) {
+      try {
+        const jsonMatch = finalOutput.match(/\{"practice_questions"[\s\S]*$/);
+        if (jsonMatch) {
+          practiceQuestions = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.warn("[streamAi] Failed to parse practice questions for logging:", e);
+      }
+    }
+
+    void logChatHistory(opts, finalOutput, practiceQuestions);
   }
 
   onDone(finalOutput);
@@ -249,11 +263,14 @@ interface BaseFetchArgs {
   citationStyle?: string;
   imageBase64?:   StreamOptions["imageBase64"];
   imageMimeType?: StreamOptions["imageMimeType"];
+  documentBase64?:   string;
+  documentMimeType?: string;
+  voiceTranscript?:  string;
   signal?:        AbortSignal;
 }
 
 function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
-  const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal } = args;
+  const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, signal } = args;
 
   console.log("[fetchFromSupabase] URL:", SUPABASE_FN_URL);
   console.log("[fetchFromSupabase] key present:", !!SUPABASE_ANON_KEY, "| key prefix:", SUPABASE_ANON_KEY?.slice(0, 20));
@@ -267,7 +284,7 @@ function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
       "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
       "apikey": SUPABASE_ANON_KEY,
     },
-    body: JSON.stringify({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType }),
+    body: JSON.stringify({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript }),
   });
 }
 
@@ -307,7 +324,7 @@ function fetchFromCustomApi(
   });
 }
 
-async function logChatHistory(opts: StreamOptions, response: string): Promise<void> {
+async function logChatHistory(opts: StreamOptions, response: string, practiceQuestions?: any): Promise<void> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -315,8 +332,9 @@ async function logChatHistory(opts: StreamOptions, response: string): Promise<vo
       user_id:      user.id,
       mode:         opts.mode,
       prompt:       opts.input,
-      response,
+      response:     response.replace(/\{"practice_questions"[\s\S]*$/, "").trim(), // Remove practice questions from response
       credits_used: 1,
+      code_snippets: practiceQuestions ? JSON.stringify(practiceQuestions) : null,
     });
   } catch (error) {
     console.warn("[aiService] Failed to log chat history:", error);

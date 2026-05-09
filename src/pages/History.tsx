@@ -4,7 +4,7 @@ import { useHistory } from "@/store/history";
 import { useAuth } from "@/store/auth";
 import type { HistoryEntry } from "@/store/history";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Clock, MessageSquare, Search } from "lucide-react";
+import { ArrowLeft, Trash2, Clock, MessageSquare, Search, Image as ImageIcon, FileText, Mic, Code } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,7 @@ const History = () => {
   const navigate = useNavigate();
   const { entryId } = useParams<{ entryId?: string }>();
   const { t } = useTranslation();
-  const [filter, setFilter] = useState<"all" | "tutor" | "research" | "problem">("all");
+  const [filter, setFilter] = useState<"all" | "tutor" | "research" | "problem" | "simplify" | "hints" | "rewrites">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const sortedHistory = useMemo(
@@ -177,6 +177,9 @@ const History = () => {
               <SelectItem value="tutor">Tutor</SelectItem>
               <SelectItem value="research">Research</SelectItem>
               <SelectItem value="problem">Problem Solver</SelectItem>
+              <SelectItem value="simplify">Simplify</SelectItem>
+              <SelectItem value="hints">Hints</SelectItem>
+              <SelectItem value="rewrites">Rewrites</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -213,6 +216,10 @@ const History = () => {
                     <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-primary/10 text-primary">
                       {entry.mode}
                     </span>
+                    {entry.imageData && <ImageIcon size={12} className="text-muted-foreground" />}
+                    {entry.documentData && <FileText size={12} className="text-muted-foreground" />}
+                    {entry.voiceTranscript && <Mic size={12} className="text-muted-foreground" />}
+                    {(entry.codeSnippets && entry.codeSnippets.length > 0) && <Code size={12} className="text-muted-foreground" />}
                     <span className="text-xs text-muted-foreground">
                       {formatDate(entry.timestamp)}
                     </span>

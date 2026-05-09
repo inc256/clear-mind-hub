@@ -5,7 +5,7 @@ import { useUserProfile } from "@/store/userProfile";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip, X, MinusCircle, Maximize2 } from "lucide-react";
+import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip, X, MinusCircle, Maximize2, Mic } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -136,18 +136,25 @@ const getDepthOptions = (t: any) => [
    const [selectedMindset, setSelectedMindset] = useState<MindsetType>("general");
    const [selectedDepth, setSelectedDepth] = useState<string>("beginner");
    const [selectedCitationStyle, setSelectedCitationStyle] = useState<string>("APA");
-   const [imageData, setImageData] = useState<string | null>(null);
-   const [imageMimeType, setImageMimeType] = useState<string | null>(null);
-   const [imageName, setImageName] = useState<string | null>(null);
+    const [imageData, setImageData] = useState<string | null>(null);
+    const [imageMimeType, setImageMimeType] = useState<string | null>(null);
+    const [imageName, setImageName] = useState<string | null>(null);
+    const [documentData, setDocumentData] = useState<string | null>(null);
+    const [documentMimeType, setDocumentMimeType] = useState<string | null>(null);
+    const [documentName, setDocumentName] = useState<string | null>(null);
+    const [voiceTranscript, setVoiceTranscript] = useState<string>("");
    const [codeSnippets, setCodeSnippets] = useState<Array<{id: string, content: string, language?: string}>>([]);
    const abortRef = useRef<AbortController | null>(null);
    const lastInputRef = useRef("");
-   const cameraInputRef = useRef<HTMLInputElement>(null);
-   const documentInputRef = useRef<HTMLInputElement>(null);
-   const imageInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const documentInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const voiceInputRef = useRef<HTMLInputElement>(null);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
-   const [isTrayOpen, setIsTrayOpen] = useState(false);
-   const [trayContent, setTrayContent] = useState("");
+    const [isTrayOpen, setIsTrayOpen] = useState(false);
+    const [trayContent, setTrayContent] = useState("");
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingVisualizer, setRecordingVisualizer] = useState<number[]>([]);
 
   const parseSteps = (content: string, mode: AiMode) => {
     // Strip the practice questions JSON before parsing into steps so it
@@ -185,15 +192,21 @@ const getDepthOptions = (t: any) => [
   };
 
    const run = async (text: string) => {
-     const hasText = text.trim().length > 0;
-     if (!hasText && !imageData && codeSnippets.length === 0) return;
+    const hasText = text.trim().length > 0;
+      if (!hasText && !imageData && !documentData && !voiceTranscript.trim() && codeSnippets.length === 0) return;
      if (loading) return;
 
-     const prompt = hasText
-       ? text
-       : codeSnippets.length > 0
-         ? "Please analyze the attached code snippets."
-         : "Please scan the attached image and answer the question.";
+      const prompt = hasText
+        ? text
+        : codeSnippets.length > 0
+          ? "Please analyze the attached code snippets."
+          : imageData
+          ? "Please scan the attached image and answer the question."
+          : documentData
+          ? "Please analyze the attached document and answer the question."
+          : voiceTranscript.trim()
+          ? "Please analyze the voice transcript and answer the question."
+          : "";
 
      lastInputRef.current = prompt;
      setOutput("");
@@ -216,54 +229,76 @@ const getDepthOptions = (t: any) => [
        ).join('\n\n');
      }
 
-     await streamAi({
-       mode,
-       input: prompt + codeContext,
-       imageBase64: imageData?.split(",")[1],
-       imageMimeType: imageMimeType || undefined,
-       imageName: imageName || undefined,
-       mindset: mode === "tutor" ? selectedMindset : undefined,
-       depth: mode === "tutor" || mode === "research" ? (selectedDepth as DepthLevel) : undefined,
-       citationStyle: mode === "research" ? selectedCitationStyle : undefined,
-       signal: ctrl.signal,
-       onDelta: (chunk) => {
-         finalOutput += chunk;
-         setOutput((p) => p + chunk);
-       },
-       onDone: async (finalResponse) => {
-         const response = finalResponse || finalOutput;
-         setSteps(parseSteps(response, mode));
-         setLoading(false);
-         history.addEntry({
-           mode,
-           input: prompt,
-           output: response,
-           imageData: imageData || undefined,
-           imageMimeType: imageMimeType || undefined,
-           imageName: imageName || undefined,
-           codeSnippets: codeSnippets.length > 0 ? codeSnippets : undefined,
-         });
-         await refreshCredits();
-       },
-       onError: (msg) => {
-         setLoading(false);
-         toast.error(msg);
-       },
-     });
+      await streamAi({
+        mode,
+        input: prompt + codeContext,
+        imageBase64: imageData?.split(",")[1],
+        imageMimeType: imageMimeType || undefined,
+        imageName: imageName || undefined,
+        documentBase64: documentData?.split(",")[1],
+        documentMimeType: documentMimeType || undefined,
+        documentName: documentName || undefined,
+        voiceTranscript: voiceTranscript || undefined,
+        mindset: mode === "tutor" ? selectedMindset : undefined,
+        depth: mode === "tutor" || mode === "research" ? (selectedDepth as DepthLevel) : undefined,
+        citationStyle: mode === "research" ? selectedCitationStyle : undefined,
+        signal: ctrl.signal,
+        onDelta: (chunk) => {
+          finalOutput += chunk;
+          setOutput((p) => p + chunk);
+        },
+        onDone: async (finalResponse) => {
+          const response = finalResponse || finalOutput;
+          const parsedSteps = parseSteps(response, mode);
+          setSteps(parsedSteps);
+          setLoading(false);
+
+          // Extract practice questions from response if present
+          let practiceQuestions = null;
+          if (mode === "tutor" && response.includes('{"practice_questions"')) {
+            try {
+              const jsonMatch = response.match(/\{"practice_questions"[\s\S]*$/);
+              if (jsonMatch) {
+                practiceQuestions = JSON.parse(jsonMatch[0]);
+              }
+            } catch (e) {
+              console.warn("Failed to parse practice questions:", e);
+            }
+          }
+
+          history.addEntry({
+            mode,
+            input: prompt, // Keep the processed prompt text
+            output: response.replace(/\{"practice_questions"[\s\S]*$/, "").trim(), // Remove practice questions JSON from output
+            practiceQuestions,
+            // Don't store raw binary data in history - only keep processed text
+          });
+
+          await refreshCredits();
+        },
+        onError: (msg) => {
+          setLoading(false);
+          toast.error(msg);
+        },
+      });
    };
 
-   const reset = () => {
-     setOutput("");
-     setSteps([]);
-     setCurrentStep(0);
-     setInput("");
-     setImageData(null);
-     setImageMimeType(null);
-     setImageName(null);
-     setCodeSnippets([]);
-     setTrayContent("");
-     setIsTrayOpen(false);
-   };
+    const reset = () => {
+      setOutput("");
+      setSteps([]);
+      setCurrentStep(0);
+      setInput("");
+      setImageData(null);
+      setImageMimeType(null);
+      setImageName(null);
+      setDocumentData(null);
+      setDocumentMimeType(null);
+      setDocumentName(null);
+      setVoiceTranscript("");
+      setCodeSnippets([]);
+      setTrayContent("");
+      setIsTrayOpen(false);
+    };
 
    // Paste handler - detect code and create code cards
    const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -352,6 +387,30 @@ const getDepthOptions = (t: any) => [
       return;
     }
 
+    // Handle document files (PDF, DOCX, etc.)
+    if (file.type === "application/pdf" || file.type.includes("document") || file.type === "text/plain") {
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          if (typeof result === "string") {
+            setDocumentData(result);
+            setDocumentMimeType(file.type);
+            setDocumentName(file.name);
+            setInput((prev) => prev || "Please analyze this document and answer the question.");
+            toast.success(`Loaded document ${file.name} for analysis`);
+          }
+        };
+        reader.onerror = () => {
+          toast.error("Couldn't read document file");
+        };
+        reader.readAsDataURL(file);
+      } catch {
+        toast.error("Couldn't read document file");
+      }
+      return;
+    }
+
     try {
       const text = await file.text();
       setInput(text.slice(0, 18000));
@@ -359,6 +418,78 @@ const getDepthOptions = (t: any) => [
     } catch {
       toast.error("Couldn't read file");
     }
+  };
+
+  const startVoiceRecording = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      toast.error("Voice recognition not supported in this browser");
+      return;
+    }
+
+    const SpeechRecognition = (window as typeof window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
+    }).SpeechRecognition || (window as typeof window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
+    }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Voice recognition not supported in this browser");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    // Create visualizer interval
+    let visualizerInterval: number;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setRecordingVisualizer(Array.from({ length: 20 }, () => Math.random() * 100));
+
+      // Update visualizer every 100ms
+      visualizerInterval = window.setInterval(() => {
+        setRecordingVisualizer(prev =>
+          prev.map(() => Math.random() * 100)
+        );
+      }, 100);
+    };
+
+    recognition.onresult = async (event: SpeechRecognitionEvent) => {
+      clearInterval(visualizerInterval);
+      const transcript = event.results[0][0].transcript;
+      setVoiceTranscript(transcript);
+      setRecordingVisualizer([]);
+
+      // Automatically submit after recording
+      await run(transcript);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      clearInterval(visualizerInterval);
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(false);
+      setRecordingVisualizer([]);
+      toast.error("Voice recognition failed. Please try again.");
+    };
+
+    recognition.onend = () => {
+      clearInterval(visualizerInterval);
+      setIsRecording(false);
+      setRecordingVisualizer([]);
+    };
+
+    recognition.start();
+  };
+
+  const clearVoiceTranscript = () => {
+    setVoiceTranscript("");
+    hapticLight();
   };
 
   return (
@@ -636,61 +767,120 @@ const getDepthOptions = (t: any) => [
                }
              }}
            />
-           {imageData && (
-             <div className="mt-3 rounded-2xl border border-border/60 bg-background/80 p-3 flex items-start gap-3">
-               <img
-                 src={imageData}
-                 alt={imageName || "attached image"}
-                 className="h-24 w-24 rounded-xl object-cover"
-               />
-               <div className="flex-1">
-                 <div className="flex items-center justify-between gap-2">
-                   <div>
-                     <p className="text-sm font-medium text-foreground">{imageName}</p>
-                     <p className="text-xs text-muted-foreground">{imageMimeType}</p>
-                   </div>
-                   <Button
-                     size="icon"
-                     variant="ghost"
-                     onClick={() => {
-                       setImageData(null);
-                       setImageMimeType(null);
-                       setImageName(null);
-                     }}
-                   >
-                     <X size={16} />
-                   </Button>
-                 </div>
-                 <p className="mt-2 text-xs text-muted-foreground">
-                   Image attached for scanning. Send to ask the AI to interpret it.
-                 </p>
-               </div>
-             </div>
-           )}
-           <div className="flex items-center justify-between gap-2 pt-2 px-1">
-             <div className="flex items-center gap-2">
-               {acceptFile && (
-                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
-                      <Paperclip size={14} />
-                      {t("workspace.attachFiles")}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" side="top">
-                    <DropdownMenuItem onClick={() => cameraInputRef.current?.click()}>
-                      <Camera size={14} className="mr-2" />
-                      {t("workspace.camera")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => documentInputRef.current?.click()}>
-                      <FileText size={14} className="mr-2" />
-                      {t("workspace.document")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
-                      <ImageIcon size={14} className="mr-2" />
-                      {t("workspace.image")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+            {imageData && (
+              <div className="mt-3 rounded-2xl border border-border/60 bg-background/80 p-3 flex items-start gap-3">
+                <img
+                  src={imageData}
+                  alt={imageName || "attached image"}
+                  className="h-24 w-24 rounded-xl object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{imageName}</p>
+                      <p className="text-xs text-muted-foreground">{imageMimeType}</p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setImageData(null);
+                        setImageMimeType(null);
+                        setImageName(null);
+                      }}
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Image attached for scanning. Send to ask the AI to interpret it.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {documentData && (
+              <div className="mt-3 rounded-2xl border border-border/60 bg-background/80 p-3 flex items-start gap-3">
+                <div className="h-24 w-24 rounded-xl bg-muted flex items-center justify-center">
+                  <FileText size={32} className="text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{documentName}</p>
+                      <p className="text-xs text-muted-foreground">{documentMimeType}</p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setDocumentData(null);
+                        setDocumentMimeType(null);
+                        setDocumentName(null);
+                      }}
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Document attached for analysis. Send to ask the AI to analyze it.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {voiceTranscript && (
+              <div className="mt-3 rounded-2xl border border-border/60 bg-background/80 p-3">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Voice Transcript
+                    </span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={clearVoiceTranscript}
+                  >
+                    <X size={12} />
+                  </Button>
+                </div>
+                <div className="max-h-32 overflow-y-auto rounded bg-background/50 p-2 text-sm">
+                  {voiceTranscript}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Voice transcript recorded. Send to ask the AI to analyze it.
+                </p>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 pt-2 px-1">
+              <div className="flex items-center gap-2">
+                {acceptFile && (
+                  <DropdownMenu>
+                   <DropdownMenuTrigger asChild>
+                     <button className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
+                       <Paperclip size={14} />
+                       {t("workspace.attachFiles")}
+                     </button>
+                   </DropdownMenuTrigger>
+                   <DropdownMenuContent align="start" side="top">
+                     <DropdownMenuItem onClick={() => cameraInputRef.current?.click()}>
+                       <Camera size={14} className="mr-2" />
+                       {t("workspace.camera")}
+                     </DropdownMenuItem>
+                     <DropdownMenuItem onClick={() => documentInputRef.current?.click()}>
+                       <FileText size={14} className="mr-2" />
+                       {t("workspace.document")}
+                     </DropdownMenuItem>
+                     <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+                       <ImageIcon size={14} className="mr-2" />
+                       {t("workspace.image")}
+                     </DropdownMenuItem>
+                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
               <input
@@ -704,7 +894,7 @@ const getDepthOptions = (t: any) => [
               <input
                 ref={documentInputRef}
                 type="file"
-                accept=".txt,.md,.csv,.json"
+                accept=".txt,.md,.csv,.json,.pdf,.docx"
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
               />
@@ -719,29 +909,57 @@ const getDepthOptions = (t: any) => [
                 {t("workspace.sendShortcut")}
               </span>
             </div>
-            {loading ? (
-              <Button
-                onClick={() => {
-                  abortRef.current?.abort();
-                  setLoading(false);
-                }}
-                variant="secondary"
-                size="sm"
-              >
-                <Square size={14} className="mr-1.5" /> {t("common.cancel")}
-              </Button>
-            ) : (
-               <Button
-                 onClick={() => {
-                   hapticMedium();
-                   run(input);
-                 }}
-                 disabled={!input.trim() && !imageData && codeSnippets.length === 0}
-                 className="bg-primary hover:opacity-90 btn-glow rounded-full w-10 h-10 p-0"
-               >
-                 <ArrowUp size={16} />
-               </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {loading ? (
+                <Button
+                  onClick={() => {
+                    abortRef.current?.abort();
+                    setLoading(false);
+                  }}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Square size={14} className="mr-1.5" /> {t("common.cancel")}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={startVoiceRecording}
+                    disabled={isRecording || loading}
+                    className={`rounded-full w-10 h-10 p-0 transition-all duration-200 ${
+                      isRecording
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                        : 'bg-secondary hover:bg-secondary/80'
+                    }`}
+                    title="Voice input"
+                  >
+                    {isRecording ? (
+                      <div className="flex items-end justify-center gap-0.5 h-4">
+                        {recordingVisualizer.slice(0, 4).map((height, i) => (
+                          <div
+                            key={i}
+                            className="w-0.5 bg-white rounded-full transition-all duration-100"
+                            style={{ height: `${Math.max(2, height * 0.15)}px` }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <Mic size={16} className={isRecording ? 'text-white' : 'text-muted-foreground'} />
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      hapticMedium();
+                      run(input);
+                    }}
+                     disabled={!input.trim() && !imageData && !documentData && !voiceTranscript.trim() && codeSnippets.length === 0}
+                    className="bg-primary hover:opacity-90 btn-glow rounded-full w-10 h-10 p-0"
+                  >
+                    <ArrowUp size={16} />
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

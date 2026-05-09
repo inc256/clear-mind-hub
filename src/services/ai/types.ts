@@ -24,6 +24,10 @@ export interface StreamOptions {
   imageBase64?: string;
   imageMimeType?: string;
   imageName?: string;
+  documentBase64?: string;
+  documentMimeType?: string;
+  documentName?: string;
+  voiceTranscript?: string;
   onDelta: (chunk: string) => void;
   onDone: (response: string) => void;
   onError: (msg: string) => void;

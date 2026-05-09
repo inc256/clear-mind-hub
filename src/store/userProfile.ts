@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/integrations/supabase/client";
+import { useHistory } from "@/store/history";
 
 // Local storage keys for profile persistence
 const STORAGE_KEYS = {
@@ -150,6 +151,9 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         creditTransactions: transactions,
         loading: false
       });
+
+      // Load chat history from Supabase
+      await useHistory.getState().loadFromSupabase();
 
     } catch (error: any) {
       set({ error: error.message, loading: false });

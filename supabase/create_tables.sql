@@ -136,11 +136,25 @@ create table if not exists public.chat_history (
   prompt text not null,
   response text not null,
   created_at timestamp with time zone not null default now(),
+
+  -- New fields for multimodal inputs
+  image_data text,
+  image_mime_type text,
+  image_name text,
+  document_data text,
+  document_mime_type text,
+  document_name text,
+  voice_transcript text,
+
+  -- Additional metadata
+  code_snippets jsonb,
+  credits_used integer not null default 1,
+
   constraint chat_history_pkey primary key (id),
   constraint chat_history_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade,
   constraint chat_history_mode_check check (
     (
-      mode = any (array['tutor'::text, 'research'::text])
+      mode = any (array['problem'::text, 'tutor'::text, 'research'::text, 'simplify'::text, 'hints'::text, 'rewrites'::text])
     )
   )
 ) TABLESPACE pg_default;
@@ -148,6 +162,34 @@ create table if not exists public.chat_history (
 create index if not exists idx_chat_user on public.chat_history using btree (user_id) TABLESPACE pg_default;
 
 create index if not exists idx_chat_created on public.chat_history using btree (created_at desc) TABLESPACE pg_default;
+
+-- Add new columns to existing chat_history table
+alter table public.chat_history
+  add column if not exists image_data text;
+
+alter table public.chat_history
+  add column if not exists image_mime_type text;
+
+alter table public.chat_history
+  add column if not exists image_name text;
+
+alter table public.chat_history
+  add column if not exists document_data text;
+
+alter table public.chat_history
+  add column if not exists document_mime_type text;
+
+alter table public.chat_history
+  add column if not exists document_name text;
+
+alter table public.chat_history
+  add column if not exists voice_transcript text;
+
+alter table public.chat_history
+  add column if not exists code_snippets jsonb;
+
+alter table public.chat_history
+  add column if not exists credits_used integer not null default 1;
 
 -- =========================================================
 -- ROW LEVEL SECURITY
@@ -404,17 +446,31 @@ create or replace function public.insert_chat(
   p_mode text,
   p_prompt text,
   p_response text,
-  p_credits integer
+  p_credits integer,
+  p_image_data text default null,
+  p_image_mime_type text default null,
+  p_image_name text default null,
+  p_document_data text default null,
+  p_document_mime_type text default null,
+  p_document_name text default null,
+  p_voice_transcript text default null,
+  p_code_snippets jsonb default null
 )
 returns void as $$
 begin
   perform public.use_credits(p_user_id, p_credits);
 
   insert into public.chat_history (
-    user_id, mode, prompt, response
+    user_id, mode, prompt, response, credits_used,
+    image_data, image_mime_type, image_name,
+    document_data, document_mime_type, document_name,
+    voice_transcript, code_snippets
   )
   values (
-    p_user_id, p_mode, p_prompt, p_response
+    p_user_id, p_mode, p_prompt, p_response, p_credits,
+    p_image_data, p_image_mime_type, p_image_name,
+    p_document_data, p_document_mime_type, p_document_name,
+    p_voice_transcript, p_code_snippets
   );
 end;
 $$ language plpgsql security definer;

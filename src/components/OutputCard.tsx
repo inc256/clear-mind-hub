@@ -99,6 +99,7 @@ interface OutputCardProps {
   onRegenerate?: () => void;
   onNewQuery?: () => void;
   mode?: AiMode;
+  practiceQuestions?: PracticeQuestion[];
 }
 
 interface PracticeQuestion {
@@ -185,6 +186,7 @@ export function OutputCard({
   onRegenerate,
   onNewQuery,
   mode,
+  practiceQuestions: providedPracticeQuestions,
 }: OutputCardProps) {
    const { t } = useTranslation();
    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -338,7 +340,7 @@ export function OutputCard({
   if (!loading && steps.length === 0 && !content) return null;
 
   // Derive practice questions once for reuse in render
-  const practiceQuestions = mode === "tutor" ? extractPracticeQuestions(content) : [];
+  const practiceQuestions = providedPracticeQuestions || (mode === "tutor" ? extractPracticeQuestions(content) : []);
   const isTutorPracticeStep =
     mode === "tutor" &&
     currentStep === steps.length - 1 &&
