@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useHistory } from "@/store/history";
 import { useAuth } from "@/store/auth";
@@ -8,7 +8,7 @@ import { ArrowLeft, Trash2, Clock, MessageSquare, Search, Image as ImageIcon, Fi
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { generatePDF } from "@/lib/pdfGenerator";
+import { generatePDF, processContentForDisplay } from "@/lib/pdfGenerator";
 import {
   Select,
   SelectContent,
@@ -18,6 +18,13 @@ import {
 } from "@/components/ui/select";
 import { hapticLight } from "@/lib/haptic";
 
+interface PracticeQuestion {
+  question: string;
+  options?: string[];
+  correct_answer?: string;
+  explanation?: string;
+}
+
 const History = () => {
   const history = useHistory();
   const auth = useAuth();
@@ -26,6 +33,13 @@ const History = () => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<"all" | "tutor" | "research">("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (!auth.user) return;
+    void history.loadFromSupabase().catch((error) => {
+      console.warn('[History] remote history sync failed', error);
+    });
+  }, [auth.user?.id, history]);
 
   const sortedHistory = useMemo(
     () => [...history.items].sort((a, b) => b.timestamp - a.timestamp),
@@ -71,9 +85,27 @@ const History = () => {
   };
 
   const downloadEntryAsPdf = async (entry: HistoryEntry) => {
-    const success = await generatePDF(entry.input || "History Export", [
-      { title: "Response", content: entry.output }
-    ], entry.mode);
+    const steps = [{ title: "Response", content: processContentForDisplay(entry.output) }];
+    
+    // Add practice questions if available
+    if (entry.codeSnippets && entry.codeSnippets.length > 0) {
+      entry.codeSnippets.forEach(snippet => {
+        try {
+          const parsed = JSON.parse(snippet.content) as { practice_questions?: PracticeQuestion[] };
+          if (parsed.practice_questions && Array.isArray(parsed.practice_questions)) {
+            const questionsText = parsed.practice_questions.map((q: PracticeQuestion, index: number) => 
+              `Question ${index + 1}: ${q.question}\n\n${q.options ? q.options.map((opt: string, optIndex: number) => 
+                `${String.fromCharCode(65 + optIndex)}. ${opt}`).join('\n') + '\n\n' : ''}Correct Answer: ${q.correct_answer}\n\n${q.explanation ? `Explanation: ${q.explanation}\n\n` : ''}`
+            ).join('\n---\n\n');
+            steps.push({ title: "Practice Questions", content: questionsText });
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      });
+    }
+
+    const success = await generatePDF(entry.input || "History Export", steps, entry.mode);
 
     if (!success) {
       toast.error("Could not generate PDF. Please try again.");
@@ -141,14 +173,27 @@ const History = () => {
               </div>
             </div>
 
-            {/* Display code snippets if any */}
-            {entryFromRoute.codeSnippets && entryFromRoute.codeSnippets.length > 0 && (
+            {entryFromRoute.codeSnippets && entryFromRoute.codeSnippets.length > 0 && entryFromRoute.codeSnippets.some(snippet => {
+              try {
+                const parsed = JSON.parse(snippet.content) as { practice_questions?: PracticeQuestion[] };
+                return !parsed.practice_questions;
+              } catch {
+                return true;
+              }
+            }) && (
               <div className="mt-6 space-y-3">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Code size={18} />
                   Attached Code
                 </h2>
-                {entryFromRoute.codeSnippets.map((snippet, index) => (
+                {entryFromRoute.codeSnippets.filter(snippet => {
+                  try {
+                    const parsed = JSON.parse(snippet.content) as { practice_questions?: PracticeQuestion[] };
+                    return !parsed.practice_questions;
+                  } catch {
+                    return true;
+                  }
+                }).map((snippet, index) => (
                   <div key={snippet.id} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
                     <div className="mb-3">
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -167,8 +212,63 @@ const History = () => {
 
             <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert">
               <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed font-light">
-                {entryFromRoute.output}
+                {processContentForDisplay(entryFromRoute.output)}
               </div>
+              {entryFromRoute.codeSnippets && entryFromRoute.codeSnippets.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles size={18} />
+                    Practice Questions
+                  </h2>
+                  {entryFromRoute.codeSnippets.map((snippet, index) => {
+                    try {
+                      const questions = JSON.parse(snippet.content) as { practice_questions?: PracticeQuestion[] };
+                      if (Array.isArray(questions.practice_questions)) {
+                        return questions.practice_questions.map((q: PracticeQuestion, qIndex: number) => (
+                          <div key={`${index}-${qIndex}`} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
+                            <div className="mb-3">
+                              <span className="text-sm font-semibold text-foreground">
+                                Question {qIndex + 1}: {q.question}
+                              </span>
+                            </div>
+                            {q.options && q.options.length > 0 && (
+                              <div className="mb-3 space-y-1">
+                                {q.options.map((option: string, optIndex: number) => (
+                                  <div key={optIndex} className="text-sm text-muted-foreground">
+                                    {String.fromCharCode(65 + optIndex)}. {option}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {q.correct_answer && (
+                              <div className="mb-2">
+                                <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                  Correct Answer: {q.correct_answer}
+                                </span>
+                              </div>
+                            )}
+                            {q.explanation && (
+                              <div className="text-sm text-muted-foreground">
+                                <strong>Explanation:</strong> {q.explanation}
+                              </div>
+                            )}
+                          </div>
+                        ));
+                      }
+                    } catch (e) {
+                      // If parsing fails, just show the raw content
+                      return (
+                        <div key={index} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
+                          <div className="max-h-48 overflow-y-auto rounded bg-background/80 p-3 text-xs font-mono whitespace-pre-wrap border border-border/30 text-foreground/80">
+                            {snippet.content}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -208,7 +308,7 @@ const History = () => {
                 className="pl-9 border-border/50 bg-card/50 backdrop-blur-sm"
               />
             </div>
-            <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+            <Select value={filter} onValueChange={(v) => setFilter(v as "all" | "tutor" | "research")}>
               <SelectTrigger className="w-full sm:w-[180px] border-border/50 bg-card/50 backdrop-blur-sm">
                 <SelectValue />
               </SelectTrigger>

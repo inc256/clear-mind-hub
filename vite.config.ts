@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
       VitePWA({
         registerType: "autoUpdate",
         devOptions: { enabled: false },
-        includeAssets: ["favicon.ico", "icons/icon-192.png", "icons/icon-desktop-512.png", "icons/icon-512.png"],
+        includeAssets: ["favicon.ico", "icons/icon-192.png", "icons/icon-desktop-512.png", "icons/icon-512.png", "icons/icon.ico"],
         workbox: {
           navigateFallbackDenylist: [/^\/~oauth/, /^\/api/],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB

@@ -72,7 +72,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
 
   fetchProfile: async () => {
     console.warn('[userProfile] fetchProfile called');
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, profile: null, subscriptions: [] });
 
     const defaultProfile: UserProfile = {
       id: 'default',

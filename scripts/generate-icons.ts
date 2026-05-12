@@ -142,6 +142,39 @@ async function generateWebIcons() {
   updateManifest();
 }
 
+// Generate Windows desktop taskbar icon (ICO multi-resolution)
+async function generateWindowsIcons() {
+  const sizes = [16, 32, 48, 256];
+  console.log('Generating Windows taskbar icons from icon-desktop-512.png...');
+
+  // Prefer icon-desktop-512.png as source for Windows
+  const windowsSourcePath = join(publicIconsDir, 'icon-desktop-512.png');
+  let winSourceBuffer;
+  try {
+    winSourceBuffer = readFileSync(windowsSourcePath);
+    console.log('Using Windows source: icon-desktop-512.png');
+  } catch {
+    winSourceBuffer = sourceBuffer;
+    console.log('icon-desktop-512.png not found, falling back to icon-512.png');
+  }
+
+  // Generate PNG buffers for each size
+  const pngBuffers = await Promise.all(
+    sizes.map(size =>
+      sharp(winSourceBuffer)
+        .resize(size, size, { fit: 'fill' })
+        .png()
+        .toBuffer()
+    )
+  );
+
+  // Combine into multi-resolution ICO
+  await sharp(pngBuffers)
+    .toFile(join(publicIconsDir, 'icon.ico'));
+
+  console.log('Generated Windows icon: icon.ico (sizes: 16,32,48,256)');
+}
+
 function updateManifest() {
   const manifestPath = join(rootDir, 'public', 'manifest.webmanifest');
   if (existsSync(manifestPath)) {
@@ -160,6 +193,7 @@ async function main() {
     await generateIOSIcons();
     console.log('');
     await generateWebIcons();
+    await generateWindowsIcons();
     console.log('\n✅ All icons synchronized successfully!');
   } catch (error) {
     console.error('❌ Error generating icons:', error);

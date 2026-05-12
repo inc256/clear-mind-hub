@@ -120,7 +120,7 @@ const getMindsetOptions = (t: any) => [
   { value: "creative", label: t("workspace.creative") },
 ];
 
-const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSubscription?: boolean) => {
+const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSubscription?: boolean, totalCredits?: number) => {
   const allOptions = [
     { value: "beginner", label: t("workspace.beginner") },
     { value: "intermediate", label: t("workspace.intermediate") },
@@ -130,13 +130,14 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
 
   // Show all options but mark premium ones
   return allOptions.map(({ value, label }) => {
-    const cost = getAiCreditCost(mode, value, citationStyle, hasPaidSubscription);
+    const cost = getAiCreditCost(mode, value, citationStyle, hasPaidSubscription, totalCredits);
     if (!cost.label || cost.label.toString().trim() === "") {
       console.warn("[AiWorkspace] invalid cost label", {
         mode,
         depth: value,
         citationStyle,
         hasPaidSubscription,
+        totalCredits,
         cost,
       });
     }
@@ -187,9 +188,15 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
     const [showInsufficientCreditsDialog, setShowInsufficientCreditsDialog] = useState(false);
     const [insufficientCreditsMessage, setInsufficientCreditsMessage] = useState("");
 
-   const checkCreditsBeforeSubmit = async (costInfo: { cost: number; premium: boolean; label: string }) => {
+   const checkCreditsBeforeSubmit = async (costInfo: { cost: number; premium: boolean; premiumPrice: number; label: string }) => {
      console.log("[AiWorkspace] checkCreditsBeforeSubmit", { mode, costInfo, profile: useUserProfile.getState().profile });
      if (costInfo.premium) {
+       setShowPremiumDialog(true);
+       return false;
+     }
+
+     // Handle dollar-priced features
+     if (costInfo.premiumPrice > 0) {
        setShowPremiumDialog(true);
        return false;
      }
@@ -267,7 +274,7 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
       if (!hasText && !imageData && !documentData && !voiceTranscript.trim() && codeSnippets.length === 0) return;
      if (loading) return;
 
-     const costInfo = getAiCreditCost(mode, selectedDepth, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active"));
+     const costInfo = getAiCreditCost(mode, selectedDepth, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active"), profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0);
 
      if (!(await checkCreditsBeforeSubmit(costInfo))) {
        return;
@@ -276,7 +283,7 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
      await runWithCost(text, costInfo);
    };
 
-   const runWithCost = async (text: string, costInfo: any) => {
+   const runWithCost = async (text: string, costInfo: { cost: number; premium: boolean; premiumPrice: number; label: string }) => {
 
        const prompt = text.trim().length > 0
          ? text
@@ -704,7 +711,7 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
                    <SelectValue />
                  </SelectTrigger>
                  <SelectContent>
-                   {getDepthOptions(t, mode, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active")).map(({ value, label, cost }) => (
+                   {getDepthOptions(t, mode, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active"), profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0).map(({ value, label, cost }) => (
                      <SelectItem key={value} value={value}>
                        <div className="flex items-center justify-between w-full">
                          <span>{label}</span>
@@ -728,7 +735,9 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
                <div className="grid grid-cols-2 gap-2">
                  {citationStyles.map((style) => {
                    const hasPaidSubscription = subscriptions.some((s: any) => s.status === "active");
-                   const isPremiumOnly = !hasPaidSubscription && style.name !== "APA";
+                   const totalCredits = profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0;
+                   const hasPurchasedCredits = totalCredits > 10;
+                   const isPremiumOnly = !hasPaidSubscription && !hasPurchasedCredits && style.name !== "APA";
                    return (
                    <Dialog key={style.name}>
                      <DialogTrigger asChild>

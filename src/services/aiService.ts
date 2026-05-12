@@ -121,27 +121,51 @@ export function getFreeTierStatus(profile: any, subscriptions: any[]) {
   return { eligible: true, remaining: Math.max(0, 10 - usedToday) };
 }
 
-export function getAiCreditCost(mode: AiMode, depth?: string, citationStyle?: string, hasPaidSubscription?: boolean) {
-  console.log("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription });
+export function getAiCreditCost(mode: AiMode, depth?: string, citationStyle?: string, hasPaidSubscription?: boolean, totalCredits?: number) {
+  console.log("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription, totalCredits });
   // Premium users (paid subscription) get all features for free
   if (hasPaidSubscription) {
     return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
   }
+
+  // Check if user has purchased credits (credits beyond daily free 10)
+  const hasPurchasedCredits = totalCredits ? totalCredits > 10 : false;
 
   // Free users can only use specific features
   if (mode === "simplify" || mode === "hints" || mode === "rewrites" || mode === "problem") {
     return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
   }
 
-  // Free users: Tutor Beginner and Intermediate only
-  if (mode === "tutor" && (depth === "beginner" || depth === "intermediate")) {
-    const cost = depth === "beginner" ? 1 : 2;
-    return { cost, premium: false, premiumPrice: 0, label: `${cost} credit${cost === 1 ? "" : "s"}` };
+  // Tutor mode pricing based on depth
+  if (mode === "tutor") {
+    if (depth === "beginner") {
+      return { cost: 1, premium: false, premiumPrice: 0, label: "1 credit" };
+    } else if (depth === "intermediate") {
+      return { cost: 2, premium: false, premiumPrice: 0, label: "2 credits" };
+    } else if (depth === "higher") {
+      return { cost: 5, premium: false, premiumPrice: 0, label: "5 credits" };
+    } else if (depth === "advanced") {
+      // Allow advanced tutor for users with purchased credits
+      if (hasPurchasedCredits) {
+        return { cost: 10, premium: false, premiumPrice: 0, label: "10 credits" };
+      } else {
+        return { cost: 0, premium: true, premiumPrice: 0, label: "Premium required" };
+      }
+    }
   }
 
-  // Free users: Research Beginner with APA only
-  if (mode === "research" && depth === "beginner" && citationStyle === "APA") {
-    return { cost: 3, premium: false, premiumPrice: 0, label: "3 credits" };
+  // Research mode pricing based on depth
+  if (mode === "research") {
+    if (depth === "beginner") {
+      return { cost: 3, premium: false, premiumPrice: 0, label: "3 credits" };
+    } else if (depth === "intermediate") {
+      return { cost: 5, premium: false, premiumPrice: 0, label: "5 credits" };
+    } else if (depth === "higher") {
+      return { cost: 10, premium: false, premiumPrice: 0, label: "10 credits" };
+    } else if (depth === "advanced") {
+      // Research Advanced costs $5
+      return { cost: 0, premium: false, premiumPrice: 5, label: "$5" };
+    }
   }
 
   // All other features require premium subscription
@@ -176,10 +200,16 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     console.log("[streamAi] using cached profile for client-side credit check");
   }
 
-  const costInfo = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"));
+  const costInfo = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"), profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0);
 
   if (costInfo.premium) {
     onError("This feature requires a premium subscription. Please upgrade your plan to access all features.");
+    return;
+  }
+
+  // Handle dollar-priced features (like Research Advanced)
+  if (costInfo.premiumPrice > 0) {
+    onError(`This feature costs ${costInfo.label}. Please upgrade your plan to access premium features.`);
     return;
   }
 
@@ -258,7 +288,7 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     }
   }
 
-  const costInfoAfter = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"));
+  const costInfoAfter = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"), profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0);
   const creditsUsed = !costInfoAfter.premium ? costInfoAfter.cost : 0;
   const historyLogged = await withTimeout(
     logChatHistory(opts, finalOutput, practiceQuestions, creditsUsed),

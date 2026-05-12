@@ -4,6 +4,9 @@ import { jsPDF } from 'jspdf';
 export const cleanLaTeXContent = (content: string): string => {
   let cleaned = content;
 
+  // Remove unnecessary characters: / , , ] , [
+  cleaned = cleaned.replace(/[\/,\[\]]/g, '');
+
   // Convert fractions \frac{a}{b} → a/b
   cleaned = cleaned.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2');
 
@@ -76,6 +79,13 @@ export const cleanLaTeXContent = (content: string): string => {
   cleaned = cleaned.replace(/\$/g, '');
 
   return cleaned;
+};
+
+// Process content for display (removes empty sections, cleans LaTeX, etc.)
+export const processContentForDisplay = (content: string): string => {
+  let processed = cleanLaTeXContent(content);
+  processed = removeEmptyFormulasSection(processed);
+  return processed;
 };
 
 interface TableData {
