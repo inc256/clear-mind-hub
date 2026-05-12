@@ -3,6 +3,7 @@ import { Brain, History, Search, User, CreditCard } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useTranslation } from "react-i18next";
 import { hapticLight } from "@/lib/haptic";
+import { CreditNavIndicator } from "./CreditNavIndicator";
 
 const getItems = (t: any) => [
   { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
@@ -37,7 +38,11 @@ export function Sidebar() {
          ))}
        </nav>
 
-      <div className="m-4 rounded-3xl bg-slate-900/90 border border-white/10 p-4 shadow-inner">
+      <div className="m-4 rounded-3xl bg-slate-900/90 border border-white/10 p-4 shadow-inner space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-[0.24em] text-primary/70">{t('navigation.credits') || 'Credits'}</p>
+          <CreditNavIndicator compact />
+        </div>
          <NavLink
            to="/profile"
            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-white/10 transition-colors"

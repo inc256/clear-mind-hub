@@ -122,7 +122,7 @@ export function getFreeTierStatus(profile: any, subscriptions: any[]) {
 }
 
 export function getAiCreditCost(mode: AiMode, depth?: string, citationStyle?: string, hasPaidSubscription?: boolean) {
-  console.debug("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription });
+  console.log("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription });
   // Premium users (paid subscription) get all features for free
   if (hasPaidSubscription) {
     return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
@@ -269,7 +269,13 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     console.warn("[streamAi] history logging failed");
   }
 
-  if (creditsUsed > 0 && historyLogged) {
+  if (creditsUsed > 0) {
+    const deducted = await useUserProfile.getState().deductCredits(creditsUsed);
+    if (!deducted) {
+      console.error("[streamAi] failed to deduct credits");
+    } else {
+      console.warn("[streamAi] credits deducted", { creditsUsed, deducted });
+    }
     await useUserProfile.getState().fetchProfile();
   }
 
@@ -322,31 +328,40 @@ async function logChatHistory(opts: StreamOptions, response: string, practiceQue
       return false;
     }
 
-    const cleanedResponse = response.replace(/\{"practice_questions"[\s\S]*$/, "").trim();
-    
-    // Call insert_chat RPC which will return the chat ID on success
-    const { data: chatId, error } = await (supabase as any).rpc("insert_chat", {
-      p_user_id: user.id,
-      p_mode: opts.mode,
-      p_prompt: opts.input,
-      p_response: cleanedResponse,
-      p_credits: creditsUsed,
-      p_image_data: opts.imageBase64 ?? null,
-      p_image_mime_type: opts.imageMimeType ?? null,
-      p_image_name: opts.imageName ?? null,
-      p_document_data: opts.documentBase64 ?? null,
-      p_document_mime_type: opts.documentMimeType ?? null,
-      p_document_name: opts.documentName ?? null,
-      p_voice_transcript: opts.voiceTranscript ?? null,
-      p_code_snippets: practiceQuestions ? JSON.stringify(practiceQuestions) : null,
+    console.log("[aiService] logChatHistory start", {
+      userId: user.id,
+      mode: opts.mode,
+      creditsUsed,
+      hasImage: !!opts.imageBase64,
+      hasDocument: !!opts.documentBase64,
+      hasVoiceTranscript: !!opts.voiceTranscript,
     });
 
+    const cleanedResponse = response.replace(/\{"practice_questions"[\s\S]*$/, "").trim();
+    
+    // Insert into chat_history table
+    const { data: chatData, error } = await (supabase as any)
+      .from('chat_history')
+      .insert({
+        user_id: user.id,
+        mode: opts.mode,
+        prompt: opts.input,
+        response: cleanedResponse,
+        image_data: opts.imageBase64 ?? null,
+        document_data: opts.documentBase64 ?? null,
+        code_snippets: practiceQuestions ? practiceQuestions : null,
+      })
+      .select('id')
+      .single();
+
     if (error) {
-      console.error("[aiService] insert_chat RPC failed:", error);
+      console.error("[aiService] insert chat_history failed:", error);
       return false;
     }
 
-    console.log("[aiService] Chat history logged successfully, chat ID:", chatId);
+    const chatId = chatData.id;
+
+    console.log("[aiService] Chat history logged successfully", { chatId });
     
     // Add to local history store as well
     useHistory.getState().addEntry({

@@ -20,20 +20,26 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const setAuth = useAuth((state) => state.setAuth);
-  const { fetchProfile, setupRealtimeListeners } = useUserProfile();
+  const authUser = useAuth((state) => state.user);
+  const { profile, loading, fetchProfile, setupRealtimeListeners } = useUserProfile();
 
   useEffect(() => {
     let mounted = true;
     let unsubscribeRealtime: (() => void) | null = null;
+    let lastFetchedUserId: string | null = null;
 
     const initAuth = async () => {
+      console.warn("[App] initializing auth session");
       const { data } = await supabase.auth.getSession();
+      console.warn("[App] supabase session loaded", { userId: data.session?.user?.id ?? null });
       if (mounted) {
         setAuth(data.session ?? null);
-        // Load user profile if session exists
         if (data.session?.user) {
-          await fetchProfile();
-          // Set up real-time listeners for instant updates
+          lastFetchedUserId = data.session.user.id;
+          console.warn("[App] triggering fetchProfile for user", data.session.user.id);
+          console.warn("[App] fetchProfile function type", typeof fetchProfile);
+          fetchProfile().catch((error) => console.error("[App] initAuth fetchProfile failed", error));
+          console.warn("[App] auth state setting up realtime listeners for user", data.session.user.id);
           unsubscribeRealtime = setupRealtimeListeners(data.session.user.id);
         }
       }
@@ -42,17 +48,23 @@ const App = () => {
     initAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_, session) => {
+      console.warn("[App] auth state changed", { userId: session?.user?.id ?? null });
       if (mounted) {
         setAuth(session);
-        // Load or clear user profile based on session
         unsubscribeRealtime?.();
         if (session?.user) {
-          await fetchProfile();
-          // Set up real-time listeners for instant updates
+          if (session.user.id !== lastFetchedUserId) {
+            lastFetchedUserId = session.user.id;
+            console.warn("[App] auth state triggers fetchProfile for user", session.user.id);
+            console.warn("[App] fetchProfile function type", typeof fetchProfile);
+            fetchProfile().catch((error) => console.error("[App] authListener fetchProfile failed", error));
+          }
+          console.warn("[App] auth state setting up realtime listeners for user", session.user.id);
           unsubscribeRealtime = setupRealtimeListeners(session.user.id);
         } else {
-          // Clean up listeners on logout
+          console.warn("[App] auth state logout, clearing realtime listeners");
           unsubscribeRealtime = null;
+          lastFetchedUserId = null;
         }
       }
     });

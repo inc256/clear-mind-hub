@@ -4,6 +4,7 @@ import { useHistory } from "@/store/history";
 import { useUserProfile } from "@/store/userProfile";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
+import { CreditNavIndicator } from "@/components/CreditNavIndicator";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip, X, MinusCircle, Maximize2, Mic, Crown, CreditCard } from "lucide-react";
 import { toast } from "sonner";
@@ -187,6 +188,7 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
     const [insufficientCreditsMessage, setInsufficientCreditsMessage] = useState("");
 
    const checkCreditsBeforeSubmit = async (costInfo: { cost: number; premium: boolean; label: string }) => {
+     console.log("[AiWorkspace] checkCreditsBeforeSubmit", { mode, costInfo, profile: useUserProfile.getState().profile });
      if (costInfo.premium) {
        setShowPremiumDialog(true);
        return false;
@@ -609,11 +611,16 @@ const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSu
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-      <header className="space-y-2">
-        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
-          <span className="text-gradient">{title}</span>
-        </h1>
-        <p className="text-muted-foreground text-sm sm:text-base max-w-xl">{subtitle}</p>
+      <header className="space-y-4 rounded-3xl border border-border/60 bg-background/80 p-4 shadow-sm backdrop-blur-xl">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
+              <span className="text-gradient">{title}</span>
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-xl mt-1">{subtitle}</p>
+          </div>
+          <CreditNavIndicator compact />
+        </div>
       </header>
 
       {mode === "tutor" && steps.length === 0 && !loading && (

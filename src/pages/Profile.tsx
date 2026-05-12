@@ -78,10 +78,21 @@ const Profile = () => {
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
 
   const freeStatus = getFreeTierStatus(profile.profile, profile.subscriptions);
-  const totalCredits = (profile.profile?.credits ?? 0) + freeStatus.remaining;
-  const creditsLabel = freeStatus.remaining > 0
-    ? `${profile.profile?.credits ?? 0} paid + ${freeStatus.remaining} free daily`
-    : `${profile.profile?.credits ?? 0} paid credits`;
+  const hasUnlimitedSubscription = profile.subscriptions.some((s: any) =>
+    s.status === 'active' && ['monthly', 'yearly'].includes(s.plans?.billing_type)
+  );
+  const totalPaidCredits = profile.profile?.credits ?? 0;
+  const totalCredits = hasUnlimitedSubscription
+    ? 'Unlimited'
+    : totalPaidCredits + freeStatus.remaining;
+  const creditProgress = hasUnlimitedSubscription
+    ? 100
+    : Math.min((totalPaidCredits + freeStatus.remaining) / 100 * 100, 100);
+  const creditsLabel = hasUnlimitedSubscription
+    ? 'Unlimited credits with active subscription'
+    : freeStatus.remaining > 0
+      ? `${totalPaidCredits} paid + ${freeStatus.remaining} free daily`
+      : `${totalPaidCredits} paid credits`;
 
   const handleProviderSignIn = async (provider: "google" | "apple") => {
     setLoadingAuth(true);
@@ -191,11 +202,20 @@ const Profile = () => {
   }, [profile.cachedAvatarUrl, profile.cachedFullName, profile.profile?.avatar_url, profile.profile?.full_name]);
 
   const getSubscriptionBadge = () => {
-    const plan = profile.profile?.subscription_plan ?? 'free';
-    if (plan === 'pro') {
-      return { label: 'Pro Plan', color: 'bg-gradient-to-r from-amber-500 to-orange-500', icon: Crown };
+    const plan = profile.profile?.subscription_plan || 'Free';
+    const isPaidPlan = profile.subscriptions.some((s: any) =>
+      s.status === 'active' && ['monthly', 'yearly', 'trial', 'one_time'].includes(s.plans?.billing_type)
+    );
+
+    if (!isPaidPlan) {
+      return { label: 'Free Plan', color: 'bg-gradient-to-r from-gray-500 to-gray-600', icon: Star };
     }
-    return { label: 'Free Plan', color: 'bg-gradient-to-r from-gray-500 to-gray-600', icon: Star };
+
+    return {
+      label: plan ? `${plan} Active` : 'Paid Plan Active',
+      color: 'bg-gradient-to-r from-amber-500 to-orange-500',
+      icon: Crown,
+    };
   };
 
   const SubscriptionBadge = getSubscriptionBadge();
@@ -525,7 +545,7 @@ const Profile = () => {
                       </div>
                     </div>
                     <Progress 
-                      value={Math.min(totalCredits / 100 * 100, 100)} 
+                      value={creditProgress} 
                       className="mt-3 h-2" 
                     />
                     <p className="text-xs text-muted-foreground mt-2">

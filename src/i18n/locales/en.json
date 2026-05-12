@@ -9,7 +9,12 @@
     "research": "Research",
     "history": "History",
     "subscription": "Subscription",
-    "profile": "Profile"
+    "profile": "Profile",
+    "credits": "Credits"
+  },
+  "history": {
+    "title": "Chat History",
+    "subtitle": "View and manage your previous AI conversations"
   },
   "subscription": {
     "title": "Choose Your Plan",

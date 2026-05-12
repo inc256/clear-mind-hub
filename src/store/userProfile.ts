@@ -58,7 +58,7 @@ interface UserProfileState {
   refreshCredits: () => Promise<void>;
   applyPlan: (planName: string) => Promise<boolean>;
   purchaseCredits: (credits: number) => Promise<boolean>;
-  setupRealtimeListeners: (userId: string) => void;
+  setupRealtimeListeners: (userId: string) => () => void;
 }
 
 export const useUserProfile = create<UserProfileState>((set, get) => ({
@@ -71,111 +71,181 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
   error: null,
 
   fetchProfile: async () => {
+    console.warn('[userProfile] fetchProfile called');
     set({ loading: true, error: null });
+
+    const defaultProfile: UserProfile = {
+      id: 'default',
+      email: 'default@example.com',
+      full_name: null,
+      avatar_url: null,
+      credits: 10,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      daily_free_credits_used: 0,
+      daily_free_credits_reset_at: new Date().toISOString(),
+      subscription_plan: null,
+      subscription_status: null,
+      subscription_expires_at: null,
+    };
+
+    let didTimeout = false;
+    const timeoutId = window.setTimeout(() => {
+      didTimeout = true;
+      console.warn('[userProfile] fetchProfile timeout after 10s, using default profile');
+      set({
+        profile: defaultProfile,
+        cachedAvatarUrl: null,
+        cachedFullName: null,
+        subscriptions: [],
+        creditTransactions: [],
+        loading: false,
+        error: 'Using default profile due to timeout'
+      });
+    }, 10000);
+
+    const safeSet = (payload: Partial<UserProfileState>) => {
+      if (!didTimeout) {
+        set(payload);
+      }
+    };
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const user = sessionData?.session?.user;
       if (!user) throw new Error('Not authenticated');
 
-      // Reset daily free credits if needed before fetching the profile
-      try {
-        await (supabase as any).rpc('reset_daily_credits_if_needed', {
-          p_user_id: user.id
-        });
-      } catch (error: any) {
-        console.warn('[userProfile] Failed to reset daily credits:', error);
-        // Continue anyway - don't block profile fetch
+      console.warn('[userProfile] fetchProfile start', { userId: user.id, email: user.email });
+
+      let profile: UserProfile | null = null;
+      let subscriptions: any[] = [];
+
+      const { data: profileData, error: profileError } = await (supabase as any)
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.warn('[userProfile] profile fetch error', profileError);
+      } else if (profileData) {
+        profile = profileData;
       }
-
-      // Fetch profile, transactions, and subscriptions in parallel
-      const [profileResult, transactionsResult, subscriptionsResult] = await Promise.allSettled([
-        (supabase as any)
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single(),
-        (supabase as any)
-          .from('credit_transactions')
-          .select('amount')
-          .eq('user_id', user.id),
-        (supabase as any)
-          .from('subscriptions')
-          .select(`
-            *,
-            plans (*)
-          `)
-          .eq('user_id', user.id)
-      ]);
-
-      const profileData = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
-      const profileError = profileResult.status === 'fulfilled' ? profileResult.value.error : { message: 'Failed to fetch profile' };
-
-      const transactions = transactionsResult.status === 'fulfilled' && !transactionsResult.value.error ? transactionsResult.value.data || [] : [];
-      const subscriptions = subscriptionsResult.status === 'fulfilled' && !subscriptionsResult.value.error ? subscriptionsResult.value.data || [] : [];
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
-      let profile = profileData;
 
       if (!profile) {
-        // Create profile if it doesn't exist
-        const { data: newProfile, error: insertError } = await (supabase as any)
+        console.warn('[userProfile] profile row missing, creating default row');
+        const { data: createdProfile, error: insertError } = await (supabase as any)
           .from('user_profiles')
           .insert({
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || null,
             avatar_url: user.user_metadata?.avatar_url || null,
-            credits: 10 // Default credits
+            credits: 10
           })
           .select()
           .single();
 
-        if (insertError) throw insertError;
-        profile = newProfile;
+        if (insertError) {
+          console.warn('[userProfile] profile insert failed', insertError);
+        } else {
+          profile = createdProfile;
+        }
       }
 
-      // Use the transaction ledger as a fallback when the profile balance is missing or stale.
-      // Only use positive transactions (purchases/bonuses) as a fallback, not usage debits.
-      const purchaseBalance = Math.max(
-        0,
-        transactions
-          .filter((t) => (t.amount ?? 0) > 0)
-          .reduce((sum, t) => sum + (t.amount ?? 0), 0)
-      );
-      if (profile.credits == null) {
-        profile.credits = purchaseBalance;
+      if (profile) {
+        console.warn('[userProfile] resetting daily credits if needed');
+        try {
+          const { data: resetData, error: resetError } = await (supabase as any).rpc('reset_daily_credits_if_needed', {
+            p_user_id: user.id
+          });
+          if (resetError) throw resetError;
+          console.warn('[userProfile] reset_daily_credits_if_needed success', resetData);
+        } catch (error: any) {
+          console.warn('[userProfile] Failed to reset daily credits:', error);
+        }
       }
 
+      const { data: subscriptionsData, error: subscriptionsError } = await (supabase as any)
+        .from('subscriptions')
+        .select(`
+          *,
+          plans (*)
+        `)
+        .eq('user_id', user.id);
+
+      if (subscriptionsError) {
+        console.warn('[userProfile] subscriptions fetch failed', subscriptionsError);
+      } else {
+        subscriptions = subscriptionsData || [];
+      }
+
+      if (!profile) {
+        profile = {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || null,
+          avatar_url: user.user_metadata?.avatar_url || null,
+          credits: 10,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          daily_free_credits_used: 0,
+          daily_free_credits_reset_at: new Date().toISOString(),
+          subscription_plan: null,
+          subscription_status: null,
+          subscription_expires_at: null,
+        };
+      }
+
+      profile.credits = profile.credits ?? 10;
       profile.daily_free_credits_used = profile.daily_free_credits_used ?? 0;
       profile.daily_free_credits_reset_at = profile.daily_free_credits_reset_at ?? new Date().toISOString();
 
-      // Set subscription info
-      const activeSubscription = subscriptions.find(s => s.status === 'active');
+      const activeSubscription = subscriptions.find((s) => s.status === 'active');
       profile.subscription_plan = activeSubscription?.plans?.name || null;
       profile.subscription_status = activeSubscription?.status || null;
       profile.subscription_expires_at = activeSubscription?.current_period_end || null;
 
-      // Update localStorage with latest data
       setToStorage(STORAGE_KEYS.AVATAR_URL, profile.avatar_url);
       setToStorage(STORAGE_KEYS.FULL_NAME, profile.full_name);
 
-      // Set profile and cached values
-      set({
+      safeSet({
         profile,
         cachedAvatarUrl: profile.avatar_url,
         cachedFullName: profile.full_name,
         subscriptions,
-        creditTransactions: transactions,
-        loading: false
+        creditTransactions: [],
+        loading: false,
+        error: null,
       });
 
-      // Load chat history from Supabase
-      await useHistory.getState().loadFromSupabase();
+      console.warn('[userProfile] fetchProfile success', {
+        profile: {
+          id: profile.id,
+          credits: profile.credits,
+          daily_free_credits_used: profile.daily_free_credits_used,
+          daily_free_credits_reset_at: profile.daily_free_credits_reset_at,
+          subscription_plan: profile.subscription_plan,
+          subscription_status: profile.subscription_status,
+        },
+        subscriptionsCount: subscriptions.length,
+      });
 
+      void useHistory.getState().loadFromSupabase().catch((historyError) => {
+        console.warn('[userProfile] history sync failed', historyError);
+      });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
+      if (!didTimeout) {
+        const message = error?.message ?? String(error ?? 'Unknown error');
+        console.error('[userProfile] fetchProfile failed', { error, message, errorKeys: Object.keys(error || {}) });
+        set({ error: message, loading: false });
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      if (!didTimeout) {
+        set((state) => ({ loading: state.loading ? false : state.loading }));
+      }
     }
   },
 
@@ -215,6 +285,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
 
   deductCredits: async (amount) => {
     let { profile } = get();
+    console.log('[userProfile] deductCredits start', { amount, profileId: profile?.id });
     if (!profile) {
       // Fetch profile if not loaded
       await get().fetchProfile();
@@ -236,10 +307,13 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Insufficient credits');
 
+      console.log('[userProfile] deductCredits success', { amount, userId: profile.id, result: data });
+
       // Refresh profile data
       await get().fetchProfile();
       return true;
     } catch (error: any) {
+      console.error('[userProfile] deductCredits error', error);
       const message =
         error?.message?.includes('Daily free credits exhausted')
           ? 'You’ve used your 10 daily free credits. Please wait until tomorrow for the reset.'
@@ -252,6 +326,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
   },
 
   refreshCredits: async () => {
+    console.log('[userProfile] refreshCredits');
     await get().fetchProfile();
   },
 
@@ -315,6 +390,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
   },
 
   setupRealtimeListeners: (userId: string) => {
+    console.log('[userProfile] setupRealtimeListeners', { userId });
     // Subscribe to user_profiles changes to get instant credit updates
     const profileSub = supabase
       .channel(`profile_${userId}`)
@@ -327,6 +403,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
           filter: `id=eq.${userId}`,
         },
         (payload) => {
+          console.log('[userProfile] realtime profile payload', payload);
           if (payload.new && typeof payload.new === 'object') {
             const updatedProfile = payload.new as UserProfile;
             // Update localStorage with realtime changes
@@ -354,6 +431,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
+          console.log('[userProfile] realtime transaction payload', payload);
           // Refresh the entire profile when a new transaction is recorded
           get().fetchProfile();
         }
