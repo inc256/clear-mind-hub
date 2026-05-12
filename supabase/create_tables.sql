@@ -256,14 +256,15 @@ for each row execute procedure public.set_updated_at();
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.user_profiles (id, email, full_name, avatar_url)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data->>'full_name',''),
-    new.raw_user_meta_data->>'avatar_url'
-  )
-  on conflict (id) do nothing;
+   insert into public.user_profiles (id, email, full_name, avatar_url, credits)
+   values (
+     new.id,
+     new.email,
+     coalesce(new.raw_user_meta_data->>'full_name',''),
+     new.raw_user_meta_data->>'avatar_url',
+     10
+   )
+   on conflict (id) do nothing;
 
   return new;
 end;
@@ -415,26 +416,36 @@ begin
       now() + (v_plan.duration_days || ' days')::interval
     );
 
-  -- SUBSCRIPTIONS
-  else
-    insert into public.subscriptions (
-      user_id, plan_id, status,
-      current_period_start,
-      current_period_end
-    )
-    values (
-      p_user_id,
-      v_plan.id,
-      'active',
-      now(),
-      case
-        when v_plan.billing_type = 'monthly'
-          then now() + interval '1 month'
-        when v_plan.billing_type = 'yearly'
-          then now() + interval '1 year'
-      end
-    );
-  end if;
+   -- SUBSCRIPTIONS
+   else
+     insert into public.subscriptions (
+       user_id, plan_id, status,
+       current_period_start,
+       current_period_end
+     )
+     values (
+       p_user_id,
+       v_plan.id,
+       'active',
+       now(),
+       case
+         when v_plan.billing_type = 'monthly'
+           then now() + interval '1 month'
+         when v_plan.billing_type = 'yearly'
+           then now() + interval '1 year'
+       end
+     );
+
+     -- Grant subscription credits if the plan includes a credit amount
+     if v_plan.credits is not null then
+       update public.user_profiles
+       set credits = credits + v_plan.credits
+       where id = p_user_id;
+
+       insert into public.credit_transactions (user_id, amount, type)
+       values (p_user_id, v_plan.credits, 'subscription');
+     end if;
+   end if;
 end;
 $$ language plpgsql security definer;
 

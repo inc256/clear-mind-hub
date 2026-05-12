@@ -45,13 +45,14 @@ const App = () => {
       if (mounted) {
         setAuth(session);
         // Load or clear user profile based on session
+        unsubscribeRealtime?.();
         if (session?.user) {
           await fetchProfile();
           // Set up real-time listeners for instant updates
           unsubscribeRealtime = setupRealtimeListeners(session.user.id);
         } else {
           // Clean up listeners on logout
-          unsubscribeRealtime?.();
+          unsubscribeRealtime = null;
         }
       }
     });

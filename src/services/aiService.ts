@@ -2,9 +2,8 @@
 // src/services/aiService.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useSettings } from "@/store/settings";
 import { useUserProfile } from "@/store/userProfile";
-import { buildSystemPrompt } from "./ai/prompts";
+import { useHistory } from "@/store/history";
 import { consumeSseStream } from "./ai/sseParser";
 import type { AiMode, StreamOptions } from "./ai/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +16,6 @@ export type { AiMode, MindsetType, DepthLevel, StreamOptions } from "./ai/types"
 
 const SUPABASE_FN_URL     = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prompt-edge-function`;
 const SUPABASE_ANON_KEY   = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-const DEFAULT_OPENAI_BASE = "https://api.openai.com/v1";
 
 const STANDARD_MODES = new Set<AiMode>(["problem", "tutor", "research"]);
 
@@ -43,7 +41,6 @@ const TEMPERATURE: Record<AiMode, number> = {
   hints:    0.5,
   rewrites: 0.7,
 };
-
 const FETCH_TIMEOUT_MS   = 20_000;
 const PROFILE_TIMEOUT_MS = 5_000; // fetchProfile must resolve within 5 s or we skip the pre-check
 
@@ -97,28 +94,24 @@ async function promiseWithTimeout<T>(promise: Promise<T>, ms: number, msg: strin
   }
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 function isSameUtcDay(a: Date, b: Date): boolean {
   return (
     a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth()    === b.getUTCMonth()    &&
-    a.getUTCDate()     === b.getUTCDate()
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
   );
 }
 
-function getFreeTierStatus(profile: any, subscriptions: any[]) {
+export function getFreeTierStatus(profile: any, subscriptions: any[]) {
   if (!profile?.created_at) return { eligible: false, remaining: 0 };
 
-  const createdAt    = new Date(profile.created_at);
-  const within30Days = Date.now() - createdAt.getTime() <= 30 * DAY_MS;
-  const hasPaidTier  = subscriptions.some((s: any) =>
-    s.status === "active" && ["monthly", "yearly", "one_time"].includes(s.plans?.billing_type)
+  const hasActiveSubscription = subscriptions.some((s: any) =>
+    s.status === "active" && ["monthly", "yearly"].includes(s.plans?.billing_type)
   );
 
-  if (!within30Days || hasPaidTier) return { eligible: false, remaining: 0 };
+  if (hasActiveSubscription) return { eligible: false, remaining: 0 };
 
-  const resetAt  = profile.daily_free_credits_reset_at
+  const resetAt = profile.daily_free_credits_reset_at
     ? new Date(profile.daily_free_credits_reset_at)
     : new Date(0);
   const usedToday = isSameUtcDay(resetAt, new Date())
@@ -128,63 +121,90 @@ function getFreeTierStatus(profile: any, subscriptions: any[]) {
   return { eligible: true, remaining: Math.max(0, 10 - usedToday) };
 }
 
+export function getAiCreditCost(mode: AiMode, depth?: string, citationStyle?: string, hasPaidSubscription?: boolean) {
+  console.debug("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription });
+  // Premium users (paid subscription) get all features for free
+  if (hasPaidSubscription) {
+    return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
+  }
+
+  // Free users can only use specific features
+  if (mode === "simplify" || mode === "hints" || mode === "rewrites" || mode === "problem") {
+    return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
+  }
+
+  // Free users: Tutor Beginner and Intermediate only
+  if (mode === "tutor" && (depth === "beginner" || depth === "intermediate")) {
+    const cost = depth === "beginner" ? 1 : 2;
+    return { cost, premium: false, premiumPrice: 0, label: `${cost} credit${cost === 1 ? "" : "s"}` };
+  }
+
+  // Free users: Research Beginner with APA only
+  if (mode === "research" && depth === "beginner" && citationStyle === "APA") {
+    return { cost: 3, premium: false, premiumPrice: 0, label: "3 credits" };
+  }
+
+  // All other features require premium subscription
+  return { cost: 0, premium: true, premiumPrice: 0, label: "Premium required" };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API — streamAi
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function streamAi(opts: StreamOptions): Promise<void> {
   const { mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, onDelta, onDone, onError, signal } = opts;
-  const { customApiKey, customApiBase } = useSettings.getState();
 
-  console.log("[streamAi] mode:", mode, "| customApiKey:", !!customApiKey);
+  let subscriptions: any[] = [];
 
   // ── Credit pre-check (server-key path only) ────────────────────────────
   // We give fetchProfile() 5 seconds. If it hangs (e.g. no session, network
-  // issue) we skip the client-side pre-check and let the edge function decide.
-  if (!customApiKey) {
-    console.log("[streamAi] attempting credit pre-check (5 s timeout)...");
+  // issue) we skip the client-side credit check and let the edge function decide.
+  const state = useUserProfile.getState();
+  let profile = state.profile;
+  subscriptions = state.subscriptions;
 
-    const state = useUserProfile.getState();
-    let profile = state.profile;
-    let subscriptions = state.subscriptions;
-
-    if (!profile) {
-      console.log("[streamAi] no cached profile, fetching profile...");
-      const profileResult = await withTimeout(state.fetchProfile(), PROFILE_TIMEOUT_MS);
-      if (profileResult === null) {
-        console.warn("[streamAi] fetchProfile timed out — skipping client-side credit check");
-      }
-      profile = state.profile;
-      subscriptions = state.subscriptions;
-    } else {
-      console.log("[streamAi] using cached profile for client-side credit check");
+  if (!profile) {
+    console.log("[streamAi] no cached profile, fetching profile...");
+    const profileResult = await withTimeout(state.fetchProfile(), PROFILE_TIMEOUT_MS);
+    if (profileResult === null) {
+      console.warn("[streamAi] fetchProfile timed out — skipping client-side credit check");
     }
+    profile = state.profile;
+    subscriptions = state.subscriptions;
+  } else {
+    console.log("[streamAi] using cached profile for client-side credit check");
+  }
 
-    if (profile) {
-      const paidCredits = profile.credits ?? 0;
-      const freeStatus = getFreeTierStatus(profile, subscriptions);
-      const total = paidCredits + freeStatus.remaining;
+  const costInfo = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"));
 
-      console.log("[streamAi] credits available:", total);
+  if (costInfo.premium) {
+    onError("This feature requires a premium subscription. Please upgrade your plan to access all features.");
+    return;
+  }
 
-      if (total < 1) {
-        const message = freeStatus.eligible
-          ? "You've used your 10 daily free credits. Please wait until tomorrow."
-          : "Insufficient credits. Please purchase credits, upgrade your plan, or add a custom API key.";
-        onError(message);
-        return;
-      }
+  if (profile && costInfo.cost > 0) {
+    const paidCredits = profile.credits ?? 0;
+    const freeStatus = getFreeTierStatus(profile, subscriptions);
+    const total = paidCredits + freeStatus.remaining;
+
+    console.log("[streamAi] credits available:", total, "required:", costInfo.cost);
+
+    if (total < costInfo.cost) {
+      const message = freeStatus.eligible
+        ? `You need ${costInfo.cost} credits to run this feature. Your free credits are not enough. Please purchase credits or upgrade your plan.`
+        : `You need ${costInfo.cost} credits to run this feature. Please purchase credits or upgrade your plan.`;
+      onError(message);
+      return;
     }
   }
 
   // ── Fetch ──────────────────────────────────────────────────────────────
-  console.log("[streamAi] sending request to", customApiKey ? "custom API" : "Supabase edge function");
+  console.log("[streamAi] sending request to Supabase edge function");
 
   let resp: Response;
   try {
-    resp = customApiKey
-      ? await fetchFromCustomApi({ customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, signal })
-      : await fetchFromSupabase({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, signal });
+    resp = await fetchFromSupabase({ mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, documentBase64, documentMimeType, voiceTranscript, signal });
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") return;
     console.error("[streamAi] fetch threw:", error);
@@ -225,27 +245,32 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
 
   console.log("[streamAi] stream complete, total chars:", finalOutput.length);
 
-  // ── Post-completion: deduct credits + log history ──────────────────────
-  if (!customApiKey) {
-    const deducted = await withTimeout(useUserProfile.getState().deductCredits(1), PROFILE_TIMEOUT_MS);
-    if (!deducted) {
-      console.warn("[streamAi] credit deduction failed (response already delivered)");
-    }
-
-    // Extract practice questions for logging
-    let practiceQuestions = null;
-    if (opts.mode === "tutor" && finalOutput.includes('{"practice_questions"')) {
-      try {
-        const jsonMatch = finalOutput.match(/\{"practice_questions"[\s\S]*$/);
-        if (jsonMatch) {
-          practiceQuestions = JSON.parse(jsonMatch[0]);
-        }
-      } catch (e) {
-        console.warn("[streamAi] Failed to parse practice questions for logging:", e);
+  // Extract practice questions for logging
+  let practiceQuestions = null;
+  if (opts.mode === "tutor" && finalOutput.includes('{"practice_questions"')) {
+    try {
+      const jsonMatch = finalOutput.match(/\{"practice_questions"[\s\S]*$/);
+      if (jsonMatch) {
+        practiceQuestions = JSON.parse(jsonMatch[0]);
       }
+    } catch (e) {
+      console.warn("[streamAi] Failed to parse practice questions for logging:", e);
     }
+  }
 
-    void logChatHistory(opts, finalOutput, practiceQuestions);
+  const costInfoAfter = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"));
+  const creditsUsed = !costInfoAfter.premium ? costInfoAfter.cost : 0;
+  const historyLogged = await withTimeout(
+    logChatHistory(opts, finalOutput, practiceQuestions, creditsUsed),
+    PROFILE_TIMEOUT_MS
+  );
+
+  if (!historyLogged) {
+    console.warn("[streamAi] history logging failed");
+  }
+
+  if (creditsUsed > 0 && historyLogged) {
+    await useUserProfile.getState().fetchProfile();
   }
 
   onDone(finalOutput);
@@ -288,56 +313,61 @@ function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
   });
 }
 
-function fetchFromCustomApi(
-  args: BaseFetchArgs & { customApiKey: string; customApiBase?: string }
-): Promise<Response> {
-  const { customApiKey, customApiBase, mode, input, mindset, depth, citationStyle, imageBase64, imageMimeType, signal } = args;
-  const baseUrl      = (customApiBase ?? DEFAULT_OPENAI_BASE).replace(/\/$/, "");
-  const systemPrompt = buildSystemPrompt(mode, mindset, depth, citationStyle);
-  const ctrl         = createTimeoutController(signal);
 
-  return fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    signal: ctrl.signal,
-    headers: {
-      "Content-Type":  "application/json",
-      "Authorization": `Bearer ${customApiKey}`,
-    },
-    body: JSON.stringify({
-      model:       getModelForMode(mode),
-      stream:      true,
-      max_tokens:  MAX_TOKENS[mode],
-      temperature: TEMPERATURE[mode],
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: imageBase64
-            ? [
-                { type: "input_text", text: input.trim() },
-                { type: "input_image", image_url: `data:${imageMimeType};base64,${imageBase64}` },
-              ]
-            : input.trim(),
-        },
-      ],
-    }),
-  });
-}
-
-async function logChatHistory(opts: StreamOptions, response: string, practiceQuestions?: any): Promise<void> {
+async function logChatHistory(opts: StreamOptions, response: string, practiceQuestions?: any, creditsUsed: number = 0): Promise<boolean> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await (supabase as any).from("chat_history").insert({
-      user_id:      user.id,
-      mode:         opts.mode,
-      prompt:       opts.input,
-      response:     response.replace(/\{"practice_questions"[\s\S]*$/, "").trim(), // Remove practice questions from response
-      credits_used: 1,
-      code_snippets: practiceQuestions ? JSON.stringify(practiceQuestions) : null,
+    if (!user) {
+      console.warn("[aiService] Not authenticated, cannot log chat history");
+      return false;
+    }
+
+    const cleanedResponse = response.replace(/\{"practice_questions"[\s\S]*$/, "").trim();
+    
+    // Call insert_chat RPC which will return the chat ID on success
+    const { data: chatId, error } = await (supabase as any).rpc("insert_chat", {
+      p_user_id: user.id,
+      p_mode: opts.mode,
+      p_prompt: opts.input,
+      p_response: cleanedResponse,
+      p_credits: creditsUsed,
+      p_image_data: opts.imageBase64 ?? null,
+      p_image_mime_type: opts.imageMimeType ?? null,
+      p_image_name: opts.imageName ?? null,
+      p_document_data: opts.documentBase64 ?? null,
+      p_document_mime_type: opts.documentMimeType ?? null,
+      p_document_name: opts.documentName ?? null,
+      p_voice_transcript: opts.voiceTranscript ?? null,
+      p_code_snippets: practiceQuestions ? JSON.stringify(practiceQuestions) : null,
     });
+
+    if (error) {
+      console.error("[aiService] insert_chat RPC failed:", error);
+      return false;
+    }
+
+    console.log("[aiService] Chat history logged successfully, chat ID:", chatId);
+    
+    // Add to local history store as well
+    useHistory.getState().addEntry({
+      mode: opts.mode,
+      input: opts.input,
+      output: cleanedResponse,
+      imageData: opts.imageBase64 ?? null,
+      imageMimeType: opts.imageMimeType ?? null,
+      imageName: opts.imageName ?? null,
+      documentData: opts.documentBase64 ?? null,
+      documentMimeType: opts.documentMimeType ?? null,
+      documentName: opts.documentName ?? null,
+      voiceTranscript: opts.voiceTranscript ?? null,
+      codeSnippets: practiceQuestions ? [{ id: '0', content: JSON.stringify(practiceQuestions) }] : undefined,
+      remoteId: chatId
+    });
+
+    return true;
   } catch (error) {
-    console.warn("[aiService] Failed to log chat history:", error);
+    console.error("[aiService] Failed to log chat history:", error);
+    return false;
   }
 }
 

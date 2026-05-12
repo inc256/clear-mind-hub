@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useSettings } from "@/store/settings";
+
 import { supabase } from "@/integrations/supabase/client";
 import type { AiMode } from "@/services/ai/types";
 
@@ -10,6 +10,14 @@ export interface HistoryEntry {
   output: string;
   timestamp: number;
   practiceQuestions?: any; // For tutor mode practice questions
+  imageData?: string | null;
+  imageMimeType?: string | null;
+  imageName?: string | null;
+  documentData?: string | null;
+  documentMimeType?: string | null;
+  documentName?: string | null;
+  voiceTranscript?: string | null;
+  codeSnippets?: Array<{ id: string; content: string; language?: string }>;
   remoteId?: string; // For tracking Supabase records
 }
 
@@ -36,21 +44,7 @@ interface HistoryState {
 }
 
  export const useHistory = create<HistoryState>((set) => {
-   if (typeof window !== "undefined") {
-     useSettings.subscribe(
-       (state) => state.privacyMode,
-       (privacyMode) => {
-         if (privacyMode) {
-           try {
-             localStorage.removeItem(STORAGE_KEY);
-           } catch {
-             /* noop */
-           }
-           set({ items: [] });
-         }
-       },
-     );
-   }
+
 
    return {
      items: loadHistory(),
@@ -73,26 +67,22 @@ interface HistoryState {
           codeSnippets,
         };
 
-       set((state) => {
-         const next = [entry, ...state.items].slice(0, 100);
-         if (!useSettings.getState().privacyMode) {
-           try {
-             localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-           } catch {
-             /* noop */
-           }
-         }
-         return { items: next };
-       });
-     },
-      clearHistory: () => {
-        set({ items: [] });
-        if (!useSettings.getState().privacyMode) {
+        set((state) => {
+          const next = [entry, ...state.items].slice(0, 100);
           try {
-            localStorage.removeItem(STORAGE_KEY);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
           } catch {
             /* noop */
           }
+          return { items: next };
+        });
+     },
+      clearHistory: () => {
+        set({ items: [] });
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* noop */
         }
       },
       loadFromSupabase: async () => {
@@ -142,12 +132,10 @@ interface HistoryState {
             set({ items: finalItems });
 
             // Update localStorage with merged data
-            if (!useSettings.getState().privacyMode) {
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(finalItems));
-              } catch {
-                /* noop */
-              }
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(finalItems));
+            } catch {
+              /* noop */
             }
           }
         } catch (error) {

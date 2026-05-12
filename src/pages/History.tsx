@@ -4,9 +4,11 @@ import { useHistory } from "@/store/history";
 import { useAuth } from "@/store/auth";
 import type { HistoryEntry } from "@/store/history";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Clock, MessageSquare, Search, Image as ImageIcon, FileText, Mic, Code } from "lucide-react";
+import { ArrowLeft, Trash2, Clock, MessageSquare, Search, Image as ImageIcon, FileText, Mic, Code, ChevronRight, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { generatePDF } from "@/lib/pdfGenerator";
 import {
   Select,
   SelectContent,
@@ -22,7 +24,7 @@ const History = () => {
   const navigate = useNavigate();
   const { entryId } = useParams<{ entryId?: string }>();
   const { t } = useTranslation();
-  const [filter, setFilter] = useState<"all" | "tutor" | "research" | "problem" | "simplify" | "hints" | "rewrites">("all");
+  const [filter, setFilter] = useState<"all" | "tutor" | "research">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const sortedHistory = useMemo(
@@ -68,64 +70,105 @@ const History = () => {
     }
   };
 
+  const downloadEntryAsPdf = async (entry: HistoryEntry) => {
+    const success = await generatePDF(entry.input || "History Export", [
+      { title: "Response", content: entry.output }
+    ], entry.mode);
+
+    if (!success) {
+      toast.error("Could not generate PDF. Please try again.");
+    }
+  };
+
+  const getModeColor = (mode: string) => {
+    const colors: Record<string, { bg: string; text: string; icon: string }> = {
+      tutor: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', icon: 'bg-blue-500' },
+      research: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', icon: 'bg-purple-500' },
+      problem: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', icon: 'bg-green-500' },
+      simplify: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', icon: 'bg-orange-500' },
+      hints: { bg: 'bg-pink-500/10', text: 'text-pink-600 dark:text-pink-400', icon: 'bg-pink-500' },
+      rewrites: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', icon: 'bg-cyan-500' },
+    };
+    return colors[mode] || colors.tutor;
+  };
+
   if (entryFromRoute) {
     return (
-      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            navigate("/history");
-          }}
-          className="mb-4"
-        >
-          <ArrowLeft size={16} className="mr-2" /> Back to History
-        </Button>
-
-        <div className="glass-card rounded-2xl p-6 space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-1 text-xs font-semibold uppercase rounded bg-primary/10 text-primary">
-                  {entryFromRoute.mode}
-                </span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock size={12} />
-                  {new Intl.DateTimeFormat(undefined, {
-                    dateStyle: "long",
-                    timeStyle: "short",
-                  }).format(new Date(entryFromRoute.timestamp))}
-                </span>
-              </div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-                {truncateText(entryFromRoute.input, 100)}
-              </h1>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                navigate("/history");
+              }}
+              className="hover:bg-primary/10"
+            >
+              <ArrowLeft size={16} className="mr-2" /> Back to History
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => downloadEntryAsPdf(entryFromRoute)}
+              className="gap-2"
+            >
+              <FileText size={16} className="mr-2" /> Download PDF
+            </Button>
           </div>
 
-          {/* Display code snippets if any */}
-          {entryFromRoute.codeSnippets && entryFromRoute.codeSnippets.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <h2 className="text-lg font-semibold text-foreground">Attached Code</h2>
-              {entryFromRoute.codeSnippets.map((snippet, index) => (
-                <div key={snippet.id} className="rounded-lg border border-border bg-muted/30 p-3">
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Code Snippet {index + 1}{snippet.language ? ` (${snippet.language})` : ''}
+          <div className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden p-6 sm:p-8 space-y-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className={`px-3 py-1 text-xs font-semibold uppercase rounded-full ${getModeColor(entryFromRoute.mode).bg} ${getModeColor(entryFromRoute.mode).text}`}>
+                    {entryFromRoute.mode}
+                  </span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-full">
+                    <Clock size={12} />
+                    {new Intl.DateTimeFormat(undefined, {
+                      dateStyle: "long",
+                      timeStyle: "short",
+                    }).format(new Date(entryFromRoute.timestamp))}
+                  </span>
+                  {entryFromRoute.imageData && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full flex items-center gap-1">
+                      <ImageIcon size={12} /> Image
                     </span>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto rounded bg-background/50 p-2 text-xs font-mono whitespace-pre-wrap border border-border/30">
-                    {snippet.content}
-                  </div>
+                  )}
                 </div>
-              ))}
+                <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {truncateText(entryFromRoute.input, 100)}
+                </h1>
+              </div>
             </div>
-          )}
 
-          <div className="border-t border-border my-4" />
+            {/* Display code snippets if any */}
+            {entryFromRoute.codeSnippets && entryFromRoute.codeSnippets.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Code size={18} />
+                  Attached Code
+                </h2>
+                {entryFromRoute.codeSnippets.map((snippet, index) => (
+                  <div key={snippet.id} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
+                    <div className="mb-3">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Code Snippet {index + 1}{snippet.language ? ` (${snippet.language})` : ''}
+                      </span>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto rounded bg-background/80 p-3 text-xs font-mono whitespace-pre-wrap border border-border/30 text-foreground/80">
+                      {snippet.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          <div className="prose prose-sm sm:prose-base max-w-none">
-            <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
-              {entryFromRoute.output}
+            <div className="border-t border-border/50 my-4" />
+
+            <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert">
+              <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed font-light">
+                {entryFromRoute.output}
+              </div>
             </div>
           </div>
         </div>
@@ -134,111 +177,127 @@ const History = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-      <header className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+        {/* Header */}
+        <header className="space-y-4">
+          
+          
           <div>
-            <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
-              Activity History
+            <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              {t('history.title')}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Review your past conversations, questions, and AI-generated content.
+            <p className="text-muted-foreground text-sm mt-2 max-w-2xl">
+              {t('history.subtitle')}
             </p>
             {!auth.user && (
-              <p className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
+              <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-center gap-2 text-xs text-muted-foreground">
                 <MessageSquare size={14} />
                 Sign in to sync your history across devices.
-              </p>
+              </div>
             )}
           </div>
-          {history.items.length > 0 && (
-            <Button variant="secondary" size="sm" onClick={history.clearHistory}>
-              <Trash2 size={14} className="mr-2" /> Clear All
-            </Button>
-          )}
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search history..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search your history..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 border-border/50 bg-card/50 backdrop-blur-sm"
+              />
+            </div>
+            <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+              <SelectTrigger className="w-full sm:w-[180px] border-border/50 bg-card/50 backdrop-blur-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="tutor">Tutor</SelectItem>
+                <SelectItem value="research">Research</SelectItem>
+              </SelectContent>
+            </Select>
+            {history.items.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={history.clearHistory}
+                className="border-border/50"
+              >
+                <Trash2 size={14} className="mr-2" /> Clear All
+              </Button>
+            )}
           </div>
-          <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Modes</SelectItem>
-              <SelectItem value="tutor">Tutor</SelectItem>
-              <SelectItem value="research">Research</SelectItem>
-              <SelectItem value="problem">Problem Solver</SelectItem>
-              <SelectItem value="simplify">Simplify</SelectItem>
-              <SelectItem value="hints">Hints</SelectItem>
-              <SelectItem value="rewrites">Rewrites</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </header>
+        </header>
 
-      {filteredHistory.length === 0 ? (
-        <div className="glass-card rounded-2xl p-12 text-center">
-          <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Clock size={32} className="text-muted-foreground" />
+        {/* Content */}
+        {filteredHistory.length === 0 ? (
+          <div className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 p-12 text-center shadow-lg">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4 ring-1 ring-primary/20">
+              <Clock size={32} className="text-muted-foreground" />
+            </div>
+            <p className="text-foreground font-semibold text-lg">
+              {sortedHistory.length === 0 ? "No activities yet" : "No matching results"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {sortedHistory.length === 0
+                ? "Start asking questions to build your history!"
+                : "Try adjusting your search or filters"}
+            </p>
           </div>
-          <p className="text-muted-foreground font-medium">
-            {sortedHistory.length === 0 ? "No activities yet" : "No matching results"}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {sortedHistory.length === 0
-              ? "Start asking questions to build your history!"
-              : "Try adjusting your search or filters"}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredHistory.map((entry) => (
-            <button
-              key={entry.id}
-              onClick={() => {
-                hapticLight();
-                navigate(`/history/${entry.id}`);
-              }}
-              className="w-full glass-card rounded-2xl p-4 text-left transition-all hover:border-primary/50 hover:shadow-md group"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-primary/10 text-primary">
-                      {entry.mode}
-                    </span>
-                    {entry.imageData && <ImageIcon size={12} className="text-muted-foreground" />}
-                    {entry.documentData && <FileText size={12} className="text-muted-foreground" />}
-                    {entry.voiceTranscript && <Mic size={12} className="text-muted-foreground" />}
-                    {(entry.codeSnippets && entry.codeSnippets.length > 0) && <Code size={12} className="text-muted-foreground" />}
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(entry.timestamp)}
-                    </span>
+        ) : (
+          <div className="space-y-3">
+            {filteredHistory.map((entry) => {
+              const modeColor = getModeColor(entry.mode);
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => {
+                    hapticLight();
+                    navigate(`/history/${entry.id}`);
+                  }}
+                  className="w-full group backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 p-4 sm:p-5 text-left transition-all duration-200 hover:border-primary/50 hover:bg-card/80 hover:shadow-lg"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full ${modeColor.bg} ${modeColor.text} ring-1 ring-current/20`}>
+                          {entry.mode}
+                        </span>
+                        {entry.imageData && (
+                          <ImageIcon size={13} className="text-muted-foreground" />
+                        )}
+                        {entry.documentData && (
+                          <FileText size={13} className="text-muted-foreground" />
+                        )}
+                        {entry.voiceTranscript && (
+                          <Mic size={13} className="text-muted-foreground" />
+                        )}
+                        {(entry.codeSnippets && entry.codeSnippets.length > 0) && (
+                          <Code size={13} className="text-muted-foreground" />
+                        )}
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {formatDate(entry.timestamp)}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-foreground truncate text-sm sm:text-base">
+                        {truncateText(entry.input, 100)}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRight size={18} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-foreground truncate">
-                    {truncateText(entry.input, 100)}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ArrowLeft size={16} className="rotate-180" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                {truncateText(entry.output.replace(/[#*`]/g, ""), 150)}
-              </p>
-            </button>
-          ))}
-        </div>
-      )}
+                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                    {truncateText(entry.output.replace(/[#*`]/g, ""), 150)}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

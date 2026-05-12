@@ -1,9 +1,8 @@
  import { NavLink } from "@/components/NavLink";
- import { Brain, History, Search, User, Sparkles, CreditCard } from "lucide-react";
- import { Logo } from "@/components/Logo";
- import { useTranslation } from "react-i18next";
- import { useUserProfile } from "@/store/userProfile";
- import { hapticLight } from "@/lib/haptic";
+import { Brain, History, Search, User, CreditCard } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import { useTranslation } from "react-i18next";
+import { hapticLight } from "@/lib/haptic";
 
 const getItems = (t: any) => [
   { to: "/", label: t('navigation.tutor'), icon: Brain, end: true },
@@ -14,22 +13,22 @@ const getItems = (t: any) => [
 
 export function Sidebar() {
   const { t } = useTranslation();
-  const { profile } = useUserProfile();
 
   return (
-    <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen flex-col border-r border-border/60 bg-sidebar/80 backdrop-blur-xl animate-slide-in-left">
-      <div className="px-6 py-6 border-b border-border/60">
+    <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen flex-col border-r border-border/60 bg-[#131a2c]/95 backdrop-blur-xl shadow-xl">
+      <div className="px-6 py-6 border-b border-white/10">
         <Logo />
+        <p className="mt-4 text-xs uppercase tracking-[0.24em] text-primary/70">Smart learning hub</p>
       </div>
 
-       <nav className="flex-1 px-3 py-6 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-2">
          {getItems(t).map(({ to, label, icon: Icon, end }) => (
            <NavLink
              key={to}
              to={to}
              end={end}
-             className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-             activeClassName="!bg-blue-500 !text-white shadow-glow hover:!text-white"
+             className="group flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+             activeClassName="!bg-primary !text-white shadow-lg"
              onClick={hapticLight}
            >
              <Icon className="h-4.5 w-4.5" size={18} />
@@ -38,24 +37,14 @@ export function Sidebar() {
          ))}
        </nav>
 
-      {/* Credit Balance Display */}
-      <div className="m-3 rounded-2xl border border-primary/15 bg-accent/60 p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary-deep">{t('profile.credits.title')}</span>
-        </div>
-        <div className="text-2xl font-bold text-primary">{profile?.credits ?? 0}</div>
-        <p className="text-xs text-sidebar-foreground/60">{t('profile.credits.available')}</p>
-      </div>
-
-       <div className="m-3 rounded-2xl border border-primary/15 bg-accent/60 p-4">
+      <div className="m-4 rounded-3xl bg-slate-900/90 border border-white/10 p-4 shadow-inner">
          <NavLink
            to="/profile"
-           className="flex items-center gap-2 text-primary-deep hover:text-primary transition-colors"
+           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-100 hover:bg-white/10 transition-colors"
            onClick={hapticLight}
          >
-           <User size={16} />
-           <span className="text-xs font-semibold uppercase tracking-wider">{t('navigation.profile')}</span>
+           <User size={18} />
+           <span>{t('navigation.profile')}</span>
          </NavLink>
        </div>
     </aside>

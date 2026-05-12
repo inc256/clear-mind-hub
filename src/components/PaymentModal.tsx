@@ -56,6 +56,10 @@ export function PaymentModal({ isOpen, onClose, planName, price, credits, billin
         cvc: '***',
         name,
       });
+      console.debug('[PaymentModal] handlePayment', { planName, price, credits, billingPeriod });
+      if (credits == null) {
+        console.error('[PaymentModal] credits is missing or undefined', { planName, price, credits, billingPeriod });
+      }
 
       // Simulate payment processing delay
       await new Promise(resolve => setTimeout(resolve, 2000));

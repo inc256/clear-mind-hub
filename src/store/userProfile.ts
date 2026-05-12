@@ -76,6 +76,16 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Reset daily free credits if needed before fetching the profile
+      try {
+        await (supabase as any).rpc('reset_daily_credits_if_needed', {
+          p_user_id: user.id
+        });
+      } catch (error: any) {
+        console.warn('[userProfile] Failed to reset daily credits:', error);
+        // Continue anyway - don't block profile fetch
+      }
+
       // Fetch profile, transactions, and subscriptions in parallel
       const [profileResult, transactionsResult, subscriptionsResult] = await Promise.allSettled([
         (supabase as any)
@@ -126,11 +136,20 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         profile = newProfile;
       }
 
-      // Keep the current balance from the profile row.
-      // Transactions are used for history/audit and should not overwrite the authoritative credit balance.
+      // Use the transaction ledger as a fallback when the profile balance is missing or stale.
+      // Only use positive transactions (purchases/bonuses) as a fallback, not usage debits.
+      const purchaseBalance = Math.max(
+        0,
+        transactions
+          .filter((t) => (t.amount ?? 0) > 0)
+          .reduce((sum, t) => sum + (t.amount ?? 0), 0)
+      );
       if (profile.credits == null) {
-        profile.credits = transactions.reduce((sum, t) => sum + t.amount, 0);
+        profile.credits = purchaseBalance;
       }
+
+      profile.daily_free_credits_used = profile.daily_free_credits_used ?? 0;
+      profile.daily_free_credits_reset_at = profile.daily_free_credits_reset_at ?? new Date().toISOString();
 
       // Set subscription info
       const activeSubscription = subscriptions.find(s => s.status === 'active');
@@ -207,13 +226,15 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
     }
 
     try {
-      // Use the database function to deduct credits
-      const { error } = await (supabase as any).rpc('use_credits', {
+      // Use the database function to deduct credits, preferring free daily usage first.
+      const { data, error } = await (supabase as any).rpc('consume_credit', {
         p_user_id: profile.id,
-        p_amount: amount
+        p_amount: amount,
+        p_description: 'AI chat request'
       });
 
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Insufficient credits');
 
       // Refresh profile data
       await get().fetchProfile();
@@ -223,7 +244,7 @@ export const useUserProfile = create<UserProfileState>((set, get) => ({
         error?.message?.includes('Daily free credits exhausted')
           ? 'You’ve used your 10 daily free credits. Please wait until tomorrow for the reset.'
           : error?.message?.includes('Insufficient credits')
-            ? 'You do not have enough app credits. Please purchase credits, upgrade your plan, or add a custom API key.'
+            ? 'You do not have enough app credits. Please purchase credits or upgrade your plan.'
             : error?.message || 'Failed to deduct credits. Please try again.';
       set({ error: message });
       return false;

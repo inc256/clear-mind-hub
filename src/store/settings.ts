@@ -1,13 +1,7 @@
 import { create } from "zustand";
 
 interface SettingsState {
-  privacyMode: boolean;
-  customApiKey: string;
-  customApiBase: string;
   language: string;
-  setPrivacyMode: (v: boolean) => void;
-  setCustomApiKey: (k: string) => void;
-  setCustomApiBase: (k: string) => void;
   setLanguage: (l: string) => void;
 }
 
@@ -26,31 +20,7 @@ const load = () => {
 const initial = load() ?? {};
 
 export const useSettings = create<SettingsState>((set, get) => ({
-  privacyMode: initial.privacyMode ?? false,
-  customApiKey: initial.customApiKey ?? "",
-  customApiBase: initial.customApiBase ?? "",
   language: initial.language ?? "en",
-  setPrivacyMode: (v) => {
-    set({ privacyMode: v });
-    persist(get());
-    if (v) {
-      // Wipe any persisted state when enabling privacy mode
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem("organyze.history.v1");
-      } catch {
-        /* noop */
-      }
-    }
-  },
-  setCustomApiKey: (k) => {
-    set({ customApiKey: k });
-    persist(get());
-  },
-  setCustomApiBase: (k) => {
-    set({ customApiBase: k });
-    persist(get());
-  },
   setLanguage: (l) => {
     set({ language: l });
     persist(get());
@@ -58,14 +28,10 @@ export const useSettings = create<SettingsState>((set, get) => ({
 }));
 
 function persist(state: SettingsState) {
-  if (state.privacyMode) return;
   try {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        privacyMode: state.privacyMode,
-        customApiKey: state.customApiKey,
-        customApiBase: state.customApiBase,
         language: state.language,
       }),
     );

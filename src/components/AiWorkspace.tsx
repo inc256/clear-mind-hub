@@ -1,14 +1,16 @@
  import { useRef, useState } from "react";
-import { streamAi, AiMode, MindsetType, DepthLevel } from "@/services/aiService";
+import { streamAi, AiMode, MindsetType, DepthLevel, getAiCreditCost, getFreeTierStatus } from "@/services/aiService";
 import { useHistory } from "@/store/history";
 import { useUserProfile } from "@/store/userProfile";
 import { OutputCard } from "@/components/OutputCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip, X, MinusCircle, Maximize2, Mic } from "lucide-react";
+import { ArrowUp, Square, Camera, FileText, Image as ImageIcon, Paperclip, X, MinusCircle, Maximize2, Mic, Crown, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { analytics } from "@/lib/analytics";
 import {
   Select,
   SelectContent,
@@ -117,17 +119,38 @@ const getMindsetOptions = (t: any) => [
   { value: "creative", label: t("workspace.creative") },
 ];
 
-const getDepthOptions = (t: any) => [
-  { value: "beginner", label: t("workspace.beginner") },
-  { value: "intermediate", label: t("workspace.intermediate") },
-  { value: "higher", label: t("workspace.higher") },
-  { value: "advanced", label: t("workspace.advanced") },
-];
+const getDepthOptions = (t: any, mode: AiMode, citationStyle?: string, hasPaidSubscription?: boolean) => {
+  const allOptions = [
+    { value: "beginner", label: t("workspace.beginner") },
+    { value: "intermediate", label: t("workspace.intermediate") },
+    { value: "higher", label: t("workspace.higher") },
+    { value: "advanced", label: t("workspace.advanced") },
+  ];
+
+  // Show all options but mark premium ones
+  return allOptions.map(({ value, label }) => {
+    const cost = getAiCreditCost(mode, value, citationStyle, hasPaidSubscription);
+    if (!cost.label || cost.label.toString().trim() === "") {
+      console.warn("[AiWorkspace] invalid cost label", {
+        mode,
+        depth: value,
+        citationStyle,
+        hasPaidSubscription,
+        cost,
+      });
+    }
+    return {
+      value,
+      label,
+      cost,
+    };
+  });
+};
 
  export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: AiWorkspaceProps) {
    const { t } = useTranslation();
    const history = useHistory();
-   const { refreshCredits } = useUserProfile();
+   const { refreshCredits, profile, subscriptions } = useUserProfile();
    const [input, setInput] = useState("");
    const [output, setOutput] = useState("");
    const [steps, setSteps] = useState<Array<{ title: string; content: string }>>([]);
@@ -155,6 +178,52 @@ const getDepthOptions = (t: any) => [
     const [trayContent, setTrayContent] = useState("");
     const [isRecording, setIsRecording] = useState(false);
     const [recordingVisualizer, setRecordingVisualizer] = useState<number[]>([]);
+    const recognitionRef = useRef<any>(null);
+    const voiceTranscriptRef = useRef<string>("");
+    const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+    const [pendingRun, setPendingRun] = useState<(() => void) | null>(null);
+    const navigate = useNavigate();
+    const [showInsufficientCreditsDialog, setShowInsufficientCreditsDialog] = useState(false);
+    const [insufficientCreditsMessage, setInsufficientCreditsMessage] = useState("");
+
+   const checkCreditsBeforeSubmit = async (costInfo: { cost: number; premium: boolean; label: string }) => {
+     if (costInfo.premium) {
+       setShowPremiumDialog(true);
+       return false;
+     }
+
+     if (costInfo.cost <= 0) {
+       return true;
+     }
+
+     const state = useUserProfile.getState();
+     if (!state.profile) {
+       await state.fetchProfile();
+     }
+
+     const profileState = state.profile;
+     if (!profileState) {
+       toast.error("Unable to verify credits. Please sign in again.");
+       return false;
+     }
+
+     const status = getFreeTierStatus(profileState, state.subscriptions);
+     const total = (profileState.credits ?? 0) + status.remaining;
+
+     if (total < costInfo.cost) {
+       const message = status.remaining > 0
+         ? `You need ${costInfo.cost} credits to run this feature, but only have ${total} credits including ${status.remaining} free daily credits remaining.`
+         : `You need ${costInfo.cost} credits to run this feature. Your account has ${profileState.credits ?? 0} paid credits and no free daily credits left.`;
+       setInsufficientCreditsMessage(message);
+       if (total === 0) {
+         toast.error("You have zero credits right now. Visit the subscription page to get more credits.");
+       }
+       setShowInsufficientCreditsDialog(true);
+       return false;
+     }
+
+     return true;
+   };
 
   const parseSteps = (content: string, mode: AiMode) => {
     // Strip the practice questions JSON before parsing into steps so it
@@ -196,17 +265,28 @@ const getDepthOptions = (t: any) => [
       if (!hasText && !imageData && !documentData && !voiceTranscript.trim() && codeSnippets.length === 0) return;
      if (loading) return;
 
-      const prompt = hasText
-        ? text
-        : codeSnippets.length > 0
-          ? "Please analyze the attached code snippets."
-          : imageData
-          ? "Please scan the attached image and answer the question."
-          : documentData
-          ? "Please analyze the attached document and answer the question."
-          : voiceTranscript.trim()
-          ? "Please analyze the voice transcript and answer the question."
-          : "";
+     const costInfo = getAiCreditCost(mode, selectedDepth, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active"));
+
+     if (!(await checkCreditsBeforeSubmit(costInfo))) {
+       return;
+     }
+
+     await runWithCost(text, costInfo);
+   };
+
+   const runWithCost = async (text: string, costInfo: any) => {
+
+       const prompt = text.trim().length > 0
+         ? text
+         : codeSnippets.length > 0
+           ? "Please analyze the attached code snippets."
+           : imageData
+           ? "Please scan the attached image and answer the question."
+           : documentData
+           ? "Please analyze the attached document and answer the question."
+           : voiceTranscript.trim()
+           ? "Please analyze the voice transcript and answer the question."
+           : "";
 
      lastInputRef.current = prompt;
      setOutput("");
@@ -217,6 +297,9 @@ const getDepthOptions = (t: any) => [
      const ctrl = new AbortController();
      abortRef.current = ctrl;
      let finalOutput = "";
+
+     // Track AI request started
+     analytics.aiRequestStarted(mode);
 
      // Haptic feedback on send
      hapticMedium();
@@ -266,6 +349,10 @@ const getDepthOptions = (t: any) => [
             }
           }
 
+          // Track AI request completed with cost
+          const costInfo = getAiCreditCost(mode, selectedDepth, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active"));
+          analytics.aiRequestCompleted(mode, costInfo.cost);
+
           history.addEntry({
             mode,
             input: prompt, // Keep the processed prompt text
@@ -278,7 +365,13 @@ const getDepthOptions = (t: any) => [
         },
         onError: (msg) => {
           setLoading(false);
-          toast.error(msg);
+          analytics.aiRequestFailed(mode, msg);
+          if (msg.includes('Insufficient credits') || msg.includes('Daily free credits exhausted') || (msg.includes('need') && msg.includes('credits'))) {
+            setInsufficientCreditsMessage(msg);
+            setShowInsufficientCreditsDialog(true);
+          } else {
+            toast.error(msg);
+          }
         },
       });
    };
@@ -366,6 +459,7 @@ const getDepthOptions = (t: any) => [
 
     if (file.type.startsWith("image/")) {
       try {
+        analytics.imageInputUsed();
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result;
@@ -390,6 +484,7 @@ const getDepthOptions = (t: any) => [
     // Handle document files (PDF, DOCX, etc.)
     if (file.type === "application/pdf" || file.type.includes("document") || file.type === "text/plain") {
       try {
+        analytics.documentInputUsed();
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result;
@@ -440,34 +535,32 @@ const getDepthOptions = (t: any) => [
     }
 
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    voiceTranscriptRef.current = "";
+    setVoiceTranscript("");
 
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
 
-    // Create visualizer interval
     let visualizerInterval: number;
 
     recognition.onstart = () => {
       setIsRecording(true);
       setRecordingVisualizer(Array.from({ length: 20 }, () => Math.random() * 100));
 
-      // Update visualizer every 100ms
       visualizerInterval = window.setInterval(() => {
-        setRecordingVisualizer(prev =>
-          prev.map(() => Math.random() * 100)
-        );
+        setRecordingVisualizer(prev => prev.map(() => Math.random() * 100));
       }, 100);
     };
 
-    recognition.onresult = async (event: SpeechRecognitionEvent) => {
-      clearInterval(visualizerInterval);
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
+      voiceTranscriptRef.current = transcript;
       setVoiceTranscript(transcript);
+      analytics.voiceInputUsed();
+      clearInterval(visualizerInterval);
       setRecordingVisualizer([]);
-
-      // Automatically submit after recording
-      await run(transcript);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -475,6 +568,7 @@ const getDepthOptions = (t: any) => [
       console.error('Speech recognition error:', event.error);
       setIsRecording(false);
       setRecordingVisualizer([]);
+      recognitionRef.current = null;
       toast.error("Voice recognition failed. Please try again.");
     };
 
@@ -482,13 +576,34 @@ const getDepthOptions = (t: any) => [
       clearInterval(visualizerInterval);
       setIsRecording(false);
       setRecordingVisualizer([]);
+      recognitionRef.current = null;
     };
 
     recognition.start();
   };
 
+  const stopVoiceRecording = async () => {
+    if (!recognitionRef.current) {
+      return;
+    }
+
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    recognition.stop();
+    setIsRecording(false);
+    setRecordingVisualizer([]);
+
+    const transcript = voiceTranscriptRef.current.trim();
+    if (transcript) {
+      await run(transcript);
+    } else {
+      toast.error("No voice was captured. Please try again.");
+    }
+  };
+
   const clearVoiceTranscript = () => {
     setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
     hapticLight();
   };
 
@@ -510,7 +625,10 @@ const getDepthOptions = (t: any) => [
               </label>
               <Select
                 value={selectedMindset}
-                onValueChange={(value) => setSelectedMindset(value as MindsetType)}
+                onValueChange={(value) => {
+                  setSelectedMindset(value as MindsetType);
+                  analytics.tutorMindsetChanged(value);
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -531,14 +649,27 @@ const getDepthOptions = (t: any) => [
               <label className="text-sm font-medium text-foreground block mb-2">
                 {t("workspace.depth")}
               </label>
-              <Select value={selectedDepth} onValueChange={setSelectedDepth}>
+              <Select value={selectedDepth} onValueChange={(value) => {
+                setSelectedDepth(value);
+                if (mode === 'tutor') {
+                  analytics.tutorExplanationDepthChanged(value);
+                } else if (mode === 'research') {
+                  analytics.researchExplanationDepthChanged(value);
+                }
+              }}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {getDepthOptions(t).map(({ value, label }) => (
+                  {getDepthOptions(t, mode, undefined, subscriptions.some((s: any) => s.status === "active")).map(({ value, label, cost }) => (
                     <SelectItem key={value} value={value}>
-                      {label}
+                      <div className="flex items-center justify-between w-full">
+                        <span>{label}</span>
+                        <div className="flex items-center gap-1">
+                          {cost.premium && <Crown size={12} className="text-yellow-500" />}
+                          <span className="text-xs text-muted-foreground">{cost.label}</span>
+                        </div>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -558,14 +689,23 @@ const getDepthOptions = (t: any) => [
                <label className="text-sm font-medium text-foreground block mb-2">
                  {t("workspace.depth")}
                </label>
-               <Select value={selectedDepth} onValueChange={setSelectedDepth}>
+               <Select value={selectedDepth} onValueChange={(value) => {
+                 setSelectedDepth(value);
+                 analytics.researchExplanationDepthChanged(value);
+               }}>
                  <SelectTrigger className="w-full">
                    <SelectValue />
                  </SelectTrigger>
                  <SelectContent>
-                   {getDepthOptions(t).map(({ value, label }) => (
+                   {getDepthOptions(t, mode, selectedCitationStyle, subscriptions.some((s: any) => s.status === "active")).map(({ value, label, cost }) => (
                      <SelectItem key={value} value={value}>
-                       {label}
+                       <div className="flex items-center justify-between w-full">
+                         <span>{label}</span>
+                         <div className="flex items-center gap-1">
+                           {cost.premium && <Crown size={12} className="text-yellow-500" />}
+                           <span className="text-xs text-muted-foreground">{cost.label}</span>
+                         </div>
+                       </div>
                      </SelectItem>
                    ))}
                  </SelectContent>
@@ -579,22 +719,38 @@ const getDepthOptions = (t: any) => [
                  Citation Style
                </label>
                <div className="grid grid-cols-2 gap-2">
-                 {citationStyles.map((style) => (
+                 {citationStyles.map((style) => {
+                   const hasPaidSubscription = subscriptions.some((s: any) => s.status === "active");
+                   const isPremiumOnly = !hasPaidSubscription && style.name !== "APA";
+                   return (
                    <Dialog key={style.name}>
                      <DialogTrigger asChild>
                        <button
-                         onClick={() => setSelectedCitationStyle(style.name)}
-                         className={`p-2 rounded-lg border-2 transition-all duration-200 text-xs ${
+                         onClick={() => {
+                           if (isPremiumOnly) {
+                             setShowPremiumDialog(true);
+                           } else {
+                             setSelectedCitationStyle(style.name);
+                             analytics.researchCriteriaChanged(style.name);
+                           }
+                         }}
+                         disabled={isPremiumOnly && selectedCitationStyle !== style.name}
+                         className={`p-2 rounded-lg border-2 transition-all duration-200 text-xs relative ${
                            selectedCitationStyle === style.name
                              ? "border-primary bg-primary/5 shadow-sm"
+                             : isPremiumOnly
+                             ? "border-yellow-300 bg-yellow-50/50 opacity-60"
                              : "border-border hover:border-primary/50"
                          }`}
                        >
                          <div className="flex items-center justify-between">
-                           <h3 className="font-semibold text-center w-full">{style.name}</h3>
-                           {selectedCitationStyle === style.name && (
-                             <div className="w-1.5 h-1.5 bg-primary rounded-full ml-1" />
-                           )}
+                           <h3 className={`font-semibold text-center w-full ${isPremiumOnly ? 'text-yellow-700' : ''}`}>{style.name}</h3>
+                           <div className="flex items-center gap-1">
+                             {isPremiumOnly && <Crown size={10} className="text-yellow-500" />}
+                             {selectedCitationStyle === style.name && (
+                               <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                             )}
+                           </div>
                          </div>
                        </button>
                      </DialogTrigger>
@@ -667,7 +823,7 @@ const getDepthOptions = (t: any) => [
                        </div>
                      </DialogContent>
                    </Dialog>
-                 ))}
+                 )})}
                </div>
                <p className="text-xs text-muted-foreground mt-3">
                  Choose a citation style. Click any style to learn more.
@@ -889,7 +1045,12 @@ const getDepthOptions = (t: any) => [
                 accept="image/*"
                 capture="environment"
                 className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    analytics.cameraInputUsed();
+                    handleFile(e.target.files[0]);
+                  }
+                }}
               />
               <input
                 ref={documentInputRef}
@@ -923,30 +1084,23 @@ const getDepthOptions = (t: any) => [
                 </Button>
               ) : (
                 <>
-                  <Button
-                    onClick={startVoiceRecording}
-                    disabled={isRecording || loading}
-                    className={`rounded-full w-10 h-10 p-0 transition-all duration-200 ${
-                      isRecording
-                        ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                        : 'bg-secondary hover:bg-secondary/80'
-                    }`}
-                    title="Voice input"
-                  >
-                    {isRecording ? (
-                      <div className="flex items-end justify-center gap-0.5 h-4">
-                        {recordingVisualizer.slice(0, 4).map((height, i) => (
-                          <div
-                            key={i}
-                            className="w-0.5 bg-white rounded-full transition-all duration-100"
-                            style={{ height: `${Math.max(2, height * 0.15)}px` }}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <Mic size={16} className={isRecording ? 'text-white' : 'text-muted-foreground'} />
-                    )}
-                  </Button>
+                  {isRecording ? (
+                    <Button
+                      onClick={stopVoiceRecording}
+                      className="rounded-full w-10 h-10 p-0 bg-red-500 hover:bg-red-600 transition-all duration-200"
+                    >
+                      <Square size={16} className="text-white" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={startVoiceRecording}
+                      disabled={loading}
+                      className="rounded-full w-10 h-10 p-0 bg-secondary hover:bg-secondary/80 transition-all duration-200"
+                      title="Voice input"
+                    >
+                      <Mic size={16} className="text-muted-foreground" />
+                    </Button>
+                  )}
                   <Button
                     onClick={() => {
                       hapticMedium();
@@ -982,6 +1136,81 @@ const getDepthOptions = (t: any) => [
         onNewQuery={reset}
         mode={mode}
       />
-    </div>
+
+      {/* Premium Feature Dialog */}
+      <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="text-yellow-500" size={20} />
+              Premium Feature Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This feature requires a premium subscription to access all advanced capabilities.
+              Upgrade your plan to unlock the full potential of Xplainfy.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setShowPremiumDialog(false);
+                  setPendingRun(null);
+                  // TODO: Navigate to subscription page or open payment modal
+                  toast.info("Please upgrade to a premium plan to access advanced research features.");
+                }}
+                className="flex-1"
+              >
+                Upgrade Plan
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPremiumDialog(false);
+                  setPendingRun(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+       </Dialog>
+      {/* Insufficient Credits Dialog */}
+      <Dialog open={showInsufficientCreditsDialog} onOpenChange={setShowInsufficientCreditsDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="text-primary" size={20} />
+              Insufficient Credits
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {insufficientCreditsMessage || "You don't have enough credits to use this feature. Would you like to get more credits?"}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setShowInsufficientCreditsDialog(false);
+                  navigate("/subscription");
+                }}
+                className="flex-1"
+              >
+                Get Credits
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowInsufficientCreditsDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+     </div>
   );
 }

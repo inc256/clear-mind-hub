@@ -83,6 +83,19 @@ interface TableData {
   rows: string[][];
 }
 
+const stripMarkdownSeparators = (line: string) => {
+  const trimmed = line.trim();
+  return trimmed === '---' || trimmed === '***' || trimmed === '___';
+};
+
+const removeEmptyFormulasSection = (content: string): string => {
+  return content.replace(/(^|\n)#+\s*Formulas\s*&\s*Equations\s*\n([\s\S]*?)(?=(\n#+\s|$))/g, (match, prefix, sectionBody) => {
+    const body = sectionBody.trim();
+    const hasFormula = /\\frac|\\sqrt|\\\[|\\\]|\$|\^|_|=/.test(body) && !/This topic doesn’t have any formulas or equations\./i.test(body);
+    return hasFormula ? match : prefix;
+  });
+};
+
 // Parse markdown content and extract tables and text
 const parseContent = (content: string): (TextBlock | TableBlock)[] => {
   const blocks: (TextBlock | TableBlock)[] = [];
@@ -92,8 +105,8 @@ const parseContent = (content: string): (TextBlock | TableBlock)[] => {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Skip empty lines
-    if (!line.trim()) {
+    // Skip empty lines or markdown separators
+    if (!line.trim() || stripMarkdownSeparators(line)) {
       i++;
       continue;
     }
@@ -243,22 +256,41 @@ export const generatePDF = async (
 
     let currentY = margins.top;
 
-    // Add title
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    const displayTitle = mode === 'tutor' ? 'Tutor Summary' : title;
-    doc.text(displayTitle, margins.left, currentY);
-    currentY += 15;
-
-    // Add metadata
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
+    // Add title or cover page
+    const displayTitle = title;
     const now = new Date();
-    const date = now.toLocaleDateString();
-    const time = now.toLocaleTimeString();
-    doc.text(`Generated on ${date} at ${time}`, margins.left, currentY);
-    currentY += 10;
+    const dateValue = now.toLocaleDateString('en-GB');
+    const timeValue = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    if (mode === 'research') {
+      const centerX = pageWidth / 2;
+      const centerY = pageHeight / 2 - 20;
+
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text(displayTitle, centerX, centerY, { align: 'center' } as any);
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Author: Xplainfy', centerX, centerY + 18, { align: 'center' } as any);
+      doc.text('Institution: Xplainfy University', centerX, centerY + 26, { align: 'center' } as any);
+      doc.text('Course: Introduction to Biology', centerX, centerY + 34, { align: 'center' } as any);
+      doc.text(`Date: ${dateValue}`, centerX, centerY + 42, { align: 'center' } as any);
+
+      doc.addPage();
+      currentY = margins.top;
+    } else {
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(displayTitle, margins.left, currentY);
+      currentY += 15;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on ${dateValue} at ${timeValue}`, margins.left, currentY);
+      currentY += 10;
+    }
 
     const practiceQuestions = extractPracticeQuestionsFromSteps(steps);
 
@@ -282,7 +314,7 @@ export const generatePDF = async (
       currentY += 8;
 
       // Parse and add content
-      const cleanedContent = cleanLaTeXContent(step.content);
+      const cleanedContent = removeEmptyFormulasSection(cleanLaTeXContent(step.content));
       const blocks = parseContent(cleanedContent);
 
       for (const block of blocks) {
