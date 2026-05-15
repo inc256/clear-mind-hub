@@ -15,26 +15,20 @@ export function CreditsDisplay() {
     premiumAccess,
     remainingDailyCredits,
     availableCredits,
-    addDailyFreeCredits,
     refreshCredits,
   } = useCredits(user?.id);
 
   const statusLabel = useMemo(() => {
-    if (premiumAccess) {
+    if (creditBreakdown.purchased > 0 || creditBreakdown.subscription > 0) {
       return "Premium Access";
     }
-    return "Free Account";
-  }, [premiumAccess]);
 
-  const canClaimDailyCredits = remainingDailyCredits > 0 && !loading;
-
-  const onClaimFreeCredits = async () => {
-    try {
-      await addDailyFreeCredits();
-    } catch (err: any) {
-      console.error(err);
+    if (creditBreakdown.bonus > 0 || creditBreakdown.trial > 0 || remainingDailyCredits > 0) {
+      return "Credit Access";
     }
-  };
+
+    return "Free Account";
+  }, [creditBreakdown, remainingDailyCredits]);
 
   if (loading) {
     return (
@@ -122,13 +116,9 @@ export function CreditsDisplay() {
           className="mt-4 h-2"
         />
 
-        <Button
-          disabled={!canClaimDailyCredits}
-          onClick={onClaimFreeCredits}
-          className="mt-4 w-full justify-center"
-        >
-          {canClaimDailyCredits ? "Claim 10 Free Credits" : "Daily free credits claimed"}
-        </Button>
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          Daily free credits are granted automatically by Supabase and tracked here by usage.
+        </p>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

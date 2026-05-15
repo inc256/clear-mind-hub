@@ -24,7 +24,7 @@ export const analytics = {
   },
 
   // Tab navigation
-  tutorTabClicked: () => trackEvent('tutor_tab_clicked'),
+  tutorTabClicked: () => trackEvent('ask_tab_clicked'),
   researchTabClicked: () => trackEvent('research_tab_clicked'),
   historyTabClicked: () => trackEvent('history_tab_clicked'),
   profileTabClicked: () => trackEvent('profile_tab_clicked'),
@@ -34,9 +34,9 @@ export const analytics = {
   downloadButtonClicked: (mode?: string) => trackEvent('download_button_clicked', { mode }),
 
   // Settings/Configurations
-  tutorMindsetChanged: (mindset: string) => trackEvent('tutor_mindset_changed', { mindset }),
+  tutorMindsetChanged: (mindset: string) => trackEvent('ask_mindset_changed', { mindset }),
   researchCriteriaChanged: (criteria: string) => trackEvent('research_criteria_changed', { criteria }),
-  tutorExplanationDepthChanged: (depth: string) => trackEvent('tutor_explanation_depth_changed', { depth }),
+  tutorExplanationDepthChanged: (depth: string) => trackEvent('ask_explanation_depth_changed', { depth }),
   researchExplanationDepthChanged: (depth: string) => trackEvent('research_explanation_depth_changed', { depth }),
   languageChanged: (language: string) => trackEvent('language_changed', { language }),
 

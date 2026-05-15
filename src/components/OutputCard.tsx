@@ -5,8 +5,8 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import {
   Copy, RefreshCw, ChevronRight, ChevronLeft,
-  Plus, Volume2, VolumeX, Download, Loader2,
-  CheckCircle2, XCircle, Trophy, RotateCcw, BookOpen,
+  Volume2, VolumeX, Download, Loader2,
+  CheckCircle2, XCircle, Trophy, RotateCcw, BookOpen, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -18,28 +18,66 @@ import { analytics } from "@/lib/analytics";
 import { hapticSuccess, hapticLight } from "@/lib/haptic";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Styled Components matching sidebar aesthetic
+// ─────────────────────────────────────────────────────────────────────────────
+
+const StyledActionButton = ({ 
+  variant, 
+  className, 
+  children, 
+  ...props 
+}: React.ComponentProps<typeof Button> & { 
+  variant?: "primary" | "secondary" | "ghost" | "danger" 
+}) => {
+  const variantClasses = {
+    primary: "bg-primary hover:bg-primary/80 text-white shadow-md hover:shadow-primary/25 transition-all duration-200",
+    secondary: "bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-white/10 hover:border-white/20 backdrop-blur-sm",
+    ghost: "text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200",
+    danger: "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm",
+  };
+  
+  return (
+    <Button
+      className={`
+        rounded-xl px-3 py-2 text-sm font-semibold
+        transition-all duration-200
+        ${variantClasses[variant || "ghost"]}
+        ${className || ""}
+      `}
+      {...props}
+    >
+      {children}
+    </Button>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Markdown table components
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MarkdownTable = ({ children }: { children?: React.ReactNode }) => (
-  <div className="overflow-x-auto my-6 rounded-lg border border-border/50 bg-muted/30">
+  <div className="overflow-x-auto my-6 rounded-xl border border-white/10 bg-slate-800/30">
     <table className="w-full border-collapse text-sm">{children}</table>
   </div>
 );
+
 const MarkdownTableHead = ({ children }: { children?: React.ReactNode }) => (
-  <thead className="bg-primary/10 border-b border-border/50">{children}</thead>
+  <thead className="bg-primary/10 border-b border-white/10">{children}</thead>
 );
+
 const MarkdownTableBody = ({ children }: { children?: React.ReactNode }) => (
   <tbody>{children}</tbody>
 );
+
 const MarkdownTableRow = ({ children }: { children?: React.ReactNode }) => (
-  <tr className="hover:bg-muted/50 transition-colors border-b border-border/30 last:border-b-0">{children}</tr>
+  <tr className="hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0">{children}</tr>
 );
+
 const MarkdownTableCell = ({ children, isHeader }: { children?: React.ReactNode; isHeader?: boolean }) => {
   const base = "px-4 py-3 text-left align-top";
   return isHeader
-    ? <th className={`${base} font-semibold text-foreground/90 bg-primary/5`}>{children}</th>
-    : <td className={`${base} text-foreground/75`}>{children}</td>;
+    ? <th className={`${base} font-semibold text-white/90 bg-primary/5`}>{children}</th>
+    : <td className={`${base} text-slate-300`}>{children}</td>;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +183,7 @@ interface OutputCardProps {
   onPrevious: () => void;
   loading?: boolean;
   onRegenerate?: () => void;
-  onNewQuery?: () => void;
+  onEndResponse?: () => void;
   mode?: AiMode;
   practiceQuestions?: PracticeQuestion[];
   batchTotal?: number;
@@ -181,14 +219,14 @@ function CountdownRing({ timeLeft, total = TIMER_TOTAL }: { timeLeft: number; to
     <div className="relative inline-flex items-center justify-center" style={{ width: 56, height: 56 }}>
       <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: "rotate(-90deg)" }}>
         <circle cx="28" cy="28" r={RING_RADIUS} fill="none" stroke="currentColor"
-          strokeWidth="4" className="text-muted/30" />
+          strokeWidth="4" className="text-slate-700" />
         <circle cx="28" cy="28" r={RING_RADIUS} fill="none"
           stroke={color} strokeWidth="4" strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE} strokeDashoffset={offset}
           style={{ transition: "stroke-dashoffset 0.95s linear, stroke 0.3s ease" }}
         />
       </svg>
-      <span className="absolute text-sm font-bold tabular-nums"
+      <span className="absolute text-sm font-bold tabular-nums text-white"
         style={{ color, transition: "color 0.3s ease", animation: isUrgent ? "urgentPulse 0.5s ease-in-out infinite alternate" : "none" }}>
         {timeLeft}
       </span>
@@ -216,10 +254,10 @@ function OptionButton({ letter, text, isSelected, isCorrect, hasAnswered, index,
   const showWrong   = hasAnswered && isSelected && !isCorrect;
   const showDimmed  = hasAnswered && !isSelected && !isCorrect;
 
-  let cls = "bg-muted/20 hover:bg-muted/50 border-border/50 hover:border-primary/40";
+  let cls = "bg-slate-800/50 hover:bg-slate-700/50 border-white/10 hover:border-primary/40";
   if (showCorrect) cls = "bg-green-500/15 border-green-500/60";
   if (showWrong)   cls = "bg-red-500/15 border-red-500/60";
-  if (showDimmed)  cls = "bg-muted/10 border-border/20 opacity-40";
+  if (showDimmed)  cls = "bg-slate-800/30 border-white/5 opacity-40";
 
   return (
     <button onClick={onClick} disabled={hasAnswered}
@@ -228,10 +266,10 @@ function OptionButton({ letter, text, isSelected, isCorrect, hasAnswered, index,
       style={{ animation: `optionSlideIn 0.28s ease-out both`, animationDelay: `${index * 55}ms` }}
     >
       <span className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200
-        ${showCorrect ? "bg-green-500 text-white" : showWrong ? "bg-red-500 text-white" : "bg-primary/10 text-primary"}`}>
+        ${showCorrect ? "bg-green-500 text-white" : showWrong ? "bg-red-500 text-white" : "bg-primary/20 text-primary"}`}>
         {letter}
       </span>
-      <span className="flex-1 text-sm leading-snug">{text}</span>
+      <span className="flex-1 text-sm leading-snug text-slate-200">{text}</span>
       {showCorrect && <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" style={{ animation: "pop 0.25s ease-out" }} />}
       {showWrong   && <XCircle     size={16} className="text-red-500 flex-shrink-0"   style={{ animation: "pop 0.25s ease-out" }} />}
       <style>{`
@@ -243,7 +281,7 @@ function OptionButton({ letter, text, isSelected, isCorrect, hasAnswered, index,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Practice Quiz (self-contained, ref-based timer that actually counts)
+// Practice Quiz
 // ─────────────────────────────────────────────────────────────────────────────
 
 function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; onExit: () => void }) {
@@ -333,17 +371,17 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
     return (
       <div className="space-y-5" style={{ animation: "fadeSlideUp 0.4s ease-out" }}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-3">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/20 mb-3">
             <Trophy size={28} className="text-primary" />
           </div>
-          <h3 className="text-xl font-bold">Quiz Complete!</h3>
-          <p className="text-sm text-muted-foreground mt-1">Here's how you did</p>
+          <h3 className="text-xl font-bold text-white">Quiz Complete!</h3>
+          <p className="text-sm text-slate-400 mt-1">Here's how you did</p>
         </div>
 
         <div className="flex justify-center">
           <div className="relative" style={{ width: 100, height: 100 }}>
             <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: "rotate(-90deg)" }}>
-              <circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" strokeWidth="7" className="text-muted/20" />
+              <circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" strokeWidth="7" className="text-slate-700" />
               <circle cx="50" cy="50" r="36" fill="none"
                 stroke={pct === 100 ? "#22c55e" : pct >= 70 ? "#3b82f6" : "#f59e0b"}
                 strokeWidth="7" strokeLinecap="round"
@@ -353,19 +391,19 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold tabular-nums">{pct}%</span>
+              <span className="text-2xl font-bold tabular-nums text-white">{pct}%</span>
             </div>
           </div>
         </div>
 
-        <p className="text-center text-sm font-medium">
+        <p className="text-center text-sm font-medium text-slate-300">
           {correct} / {questions.length} correct &nbsp;·&nbsp;
-          <span className="text-muted-foreground">
+          <span className="text-slate-400">
             {pct === 100 ? "Perfect! 🌟" : pct >= 70 ? "Great job! 💪" : "Keep practising! 📚"}
           </span>
         </p>
 
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-primary/30">
           {questions.map((q, i) => {
             const cl   = q.correct_answer.match(/^[A-D]/)?.[0] ?? "";
             const ans  = answers[i] ?? "";
@@ -379,9 +417,9 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
                   ? <CheckCircle2 size={15} className="text-green-500 mt-0.5 flex-shrink-0" />
                   : <XCircle     size={15} className="text-red-500 mt-0.5 flex-shrink-0" />}
                 <div className="min-w-0">
-                  <p className="font-medium leading-snug line-clamp-2">{q.question}</p>
+                  <p className="font-medium leading-snug line-clamp-2 text-slate-200">{q.question}</p>
                   {!isOk && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-slate-400 mt-0.5">
                       Correct: {q.options.find(o => o.startsWith(cl)) ?? q.correct_answer}
                     </p>
                   )}
@@ -391,17 +429,17 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
           })}
         </div>
 
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex-1 gap-2" onClick={() => {
+        <div className="flex flex-col sm:flex-row gap-3">
+          <StyledActionButton variant="secondary" className="flex-1 gap-2" onClick={() => {
             setAnswers({}); answersRef.current = {};
             setQIndex(0); setTimeLeft(QUESTION_TIME);
             setShowResults(false); setEntryKey(k => k + 1);
           }}>
             <RotateCcw size={14} /> Retry
-          </Button>
-          <Button className="flex-1 gap-2" onClick={onExit}>
+          </StyledActionButton>
+          <StyledActionButton variant="primary" className="flex-1 gap-2" onClick={onExit}>
             <BookOpen size={14} /> Back to Content
-          </Button>
+          </StyledActionButton>
         </div>
 
         <style>{`
@@ -422,7 +460,7 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
       <div className="flex items-center justify-between">
         <CountdownRing timeLeft={hasAnswered ? timeLeft : timeLeft} />
         <div className="flex flex-col items-end gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-xs font-medium text-slate-400">
             Question {qIndex + 1} / {questions.length}
           </span>
           <div className="flex gap-1">
@@ -432,7 +470,7 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
               return (
                 <div key={i} className={`rounded-full transition-all duration-300
                   ${i === qIndex ? "w-3 h-2 bg-primary" : "w-2 h-2"}
-                  ${i < qIndex ? (a === cl ? "bg-green-500" : "bg-red-400") : i > qIndex ? "bg-muted/40" : ""}`}
+                  ${i < qIndex ? (a === cl ? "bg-green-500" : "bg-red-400") : i > qIndex ? "bg-slate-700" : ""}`}
                 />
               );
             })}
@@ -440,7 +478,7 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
         </div>
       </div>
 
-      <div className="h-1.5 rounded-full bg-muted/30 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-slate-700 overflow-hidden">
         <div className="h-full rounded-full"
           style={{
             width: `${(timeLeft / QUESTION_TIME) * 100}%`,
@@ -451,9 +489,9 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
       </div>
 
       <div key={`q-${entryKey}`}
-        className="p-4 rounded-2xl bg-muted/20 border border-border/40"
+        className="p-4 rounded-2xl bg-slate-800/50 border border-white/10"
         style={{ animation: "questionEnter 0.35s cubic-bezier(0.16,1,0.3,1)" }}>
-        <p className="font-semibold text-base leading-snug">{question.question}</p>
+        <p className="font-semibold text-base leading-snug text-white">{question.question}</p>
       </div>
 
       <div key={`opts-${entryKey}`} className="space-y-2.5">
@@ -476,7 +514,7 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
         <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 text-sm"
           style={{ animation: "fadeSlideUp 0.3s ease-out" }}>
           <p className="font-semibold text-primary text-xs uppercase tracking-wider mb-1">Explanation</p>
-          <p className="text-foreground/80 leading-relaxed">{question.explanation}</p>
+          <p className="text-slate-300 leading-relaxed">{question.explanation}</p>
         </div>
       )}
 
@@ -491,7 +529,7 @@ function PracticeQuiz({ questions, onExit }: { questions: PracticeQuestion[]; on
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Loading skeleton with animated dots and stage name
+// Loading skeleton
 // ─────────────────────────────────────────────────────────────────────────────
 
 function LoadingSkeleton({ stepName }: { stepName?: string }) {
@@ -507,13 +545,13 @@ function LoadingSkeleton({ stepName }: { stepName?: string }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-primary/80">
         <Loader2 size={16} className="animate-spin" />
-        <span className="text-sm font-medium">
+        <span className="text-sm font-medium text-slate-300">
           {displayName}{".".repeat(dotCount)}
         </span>
       </div>
       <div className="space-y-3">
         {[85, 92, 78, 88, 70].map((w, i) => (
-          <div key={i} className="h-3 rounded-full bg-muted animate-pulse"
+          <div key={i} className="h-3 rounded-full bg-slate-800 animate-pulse"
             style={{ width: `${w}%`, animationDelay: `${i * 100}ms` }} />
         ))}
       </div>
@@ -562,7 +600,6 @@ function SmartProgressBar({
   const batchPercent = batchTotal > 0 ? Math.round(((batchCurrent + 0.5) / batchTotal) * 100) : 0;
   const dots = ".".repeat(dotCount);
   
-  // Enhanced label mapping for tutor mode with specific stage names
   const getTutorStageLabel = (stepName?: string): string => {
     if (stepName) return `${stepName} being processed`;
     return "Building your tutorial";
@@ -582,14 +619,14 @@ function SmartProgressBar({
   if (isBatched) {
     return (
       <div className="mb-5 space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap max-h-24 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-primary/30 p-1">
           {Array.from({ length: batchTotal }).map((_, i) => {
             const done = i < batchCurrent, active = i === batchCurrent;
             return (
-              <div key={i} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-500
+              <div key={i} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-500 shrink-0
                 ${done ? "bg-primary/20 text-primary border border-primary/30"
                   : active ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30 scale-105"
-                  : "bg-muted/40 text-muted-foreground border border-border/40"}`}>
+                  : "bg-slate-800 text-slate-400 border border-white/10"}`}>
                 {done ? <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   : active ? <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                   : <span className="w-1.5 h-1.5 rounded-full bg-current opacity-30" />}
@@ -599,16 +636,16 @@ function SmartProgressBar({
           })}
         </div>
         {batchLabel && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <p className="text-xs text-slate-400 flex items-center gap-1.5">
             <Loader2 size={11} className="animate-spin shrink-0" />
             <span className="truncate">{batchLabel.replace(/^Batch \d+ — /, "")} being processed{dots}</span>
           </p>
         )}
-        <div className="relative h-1.5 bg-muted/50 rounded-full overflow-hidden">
+        <div className="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
           <div className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-700 ease-out"
             style={{ width: `${batchPercent}%` }} />
         </div>
-        <p className="text-[11px] text-muted-foreground/70">Part {Math.min(batchCurrent + 1, batchTotal)} of {batchTotal} — {batchPercent}% complete</p>
+        <p className="text-[11px] text-slate-500">Part {Math.min(batchCurrent + 1, batchTotal)} of {batchTotal} — {batchPercent}% complete</p>
       </div>
     );
   }
@@ -616,14 +653,14 @@ function SmartProgressBar({
   return (
     <div className="mb-5 space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <p className="text-xs text-slate-400 flex items-center gap-1.5">
           <Loader2 size={11} className="animate-spin shrink-0" />{label}{dots}
         </p>
-        <span className="text-[11px] text-muted-foreground/60 tabular-nums">
+        <span className="text-[11px] text-slate-500 tabular-nums">
           {fakeProgress < 100 ? `${Math.round(fakeProgress)}%` : "Done"}
         </span>
       </div>
-      <div className="relative h-1.5 bg-muted/50 rounded-full overflow-hidden">
+      <div className="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
         <div className="absolute left-0 top-0 h-full bg-primary rounded-full"
           style={{ width: `${fakeProgress}%`, transition: fakeProgress === 100 ? "width 0.3s ease-out" : "width 0.12s linear" }} />
         {loading && (
@@ -639,7 +676,7 @@ function SmartProgressBar({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section navigation with proper ordering by citation
+// Section navigation
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SectionNav({ sections, currentIndex, onGoTo, isStreaming }: {
@@ -648,19 +685,18 @@ function SectionNav({ sections, currentIndex, onGoTo, isStreaming }: {
 }) {
   if (sections.length <= 1) return null;
   
-  // Sections are already ordered by canonical order from sortResearchSections
   return (
-    <div className="flex flex-col gap-2 mt-6 pt-4 border-t border-border">
-      <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex flex-col gap-2 mt-6 pt-4 border-t border-white/10">
+      <div className="flex items-center gap-1.5 flex-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-primary/30 p-1">
         {sections.map((s, i) => {
           const isActive = i === currentIndex, isPast = i < currentIndex;
           return (
             <button key={i} onClick={() => onGoTo(i)} disabled={isActive}
               className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium
-                transition-all duration-300 truncate max-w-[140px]
+                transition-all duration-300 truncate max-w-[140px] shrink-0
                 ${isActive ? "bg-primary text-primary-foreground scale-105 shadow-sm shadow-primary/30 cursor-default"
                   : isPast ? "bg-primary/15 text-primary hover:bg-primary/25 cursor-pointer"
-                  : "bg-muted/40 text-muted-foreground hover:bg-muted/60 cursor-pointer"}`}
+                  : "bg-slate-800 text-slate-400 hover:bg-slate-700 cursor-pointer"}`}
               title={s.name}>
               {isPast && <svg className="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               {isActive && isStreaming && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse shrink-0" />}
@@ -670,16 +706,16 @@ function SectionNav({ sections, currentIndex, onGoTo, isStreaming }: {
         })}
       </div>
       <div className="flex gap-3">
-        <Button onClick={() => { hapticLight(); onGoTo(Math.max(0, currentIndex - 1)); }}
-          disabled={currentIndex === 0} variant="outline" className="flex-1 bg-background hover:bg-muted" size="sm">
+        <StyledActionButton onClick={() => { hapticLight(); onGoTo(Math.max(0, currentIndex - 1)); }}
+          disabled={currentIndex === 0} variant="secondary" className="flex-1">
           <ChevronLeft size={15} className="mr-1.5" /> Previous
-        </Button>
-        <Button onClick={() => { hapticLight(); onGoTo(Math.min(sections.length - 1, currentIndex + 1)); }}
-          disabled={currentIndex >= sections.length - 1} className="flex-1 bg-primary hover:opacity-90 btn-glow" size="sm">
+        </StyledActionButton>
+        <StyledActionButton onClick={() => { hapticLight(); onGoTo(Math.min(sections.length - 1, currentIndex + 1)); }}
+          disabled={currentIndex >= sections.length - 1} variant="primary" className="flex-1">
           Next <ChevronRight size={15} className="ml-1.5" />
-        </Button>
+        </StyledActionButton>
       </div>
-      <p className="text-[11px] text-center text-muted-foreground/60">
+      <p className="text-[11px] text-center text-slate-500">
         Section {currentIndex + 1} of {sections.length}{!sections[currentIndex]?.isComplete && " — streaming…"}
       </p>
     </div>
@@ -719,7 +755,7 @@ function normaliseQuestions(raw: any[]): PracticeQuestion[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Check if content has formulas or equations
+// Content helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 const hasFormulasOrEquations = (content: string): boolean => {
@@ -731,10 +767,6 @@ const hasFormulasOrEquations = (content: string): boolean => {
   return formulaPatterns.some(pattern => pattern.test(content)) && 
          !/This topic doesn'?t have any formulas or equations\./i.test(content);
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Remove empty formulas section marker for PDF (content cleaner)
-// ─────────────────────────────────────────────────────────────────────────────
 
 const removeEmptyFormulasSectionForDisplay = (content: string): string => {
   return content.replace(/(^|\n)#+\s*Formulas\s*&\s*Equations\s*\n([\s\S]*?)(?=(\n#+\s|$))/g, (match, prefix, sectionBody) => {
@@ -756,12 +788,12 @@ const markdownComponents = {
     const match = /language-(\w+)/.exec(className || "");
     const language = match ? match[1] : "";
     const codeString = String(children).replace(/\n$/, "");
-    if (inline) return <code className={`${className} bg-muted/60 px-1.5 py-0.5 rounded-md`} {...props}>{children}</code>;
+    if (inline) return <code className={`${className} bg-slate-800 px-1.5 py-0.5 rounded-md text-slate-300`} {...props}>{children}</code>;
     return (
       <div className="relative group my-4">
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border border-border rounded-t-lg">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{language || "code"}</span>
-          <button className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-transparent border-none text-muted-foreground hover:text-foreground"
+        <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border border-white/10 rounded-t-lg">
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{language || "code"}</span>
+          <button className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-transparent border-none text-slate-400 hover:text-white"
             onClick={async () => { try { await navigator.clipboard.writeText(codeString); toast.success("Code copied!"); } catch { toast.error("Failed to copy code"); } }}>
             <Copy className="w-3 h-3 mr-1 inline" /> Copy
           </button>
@@ -775,12 +807,12 @@ const markdownComponents = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OutputCard
+// OutputCard Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function OutputCard({
   content, steps, currentStep, onNext, onPrevious, loading,
-  onRegenerate, onNewQuery, mode,
+  onRegenerate, onEndResponse, mode,
   practiceQuestions: providedPracticeQuestions,
   batchTotal = 0, batchCurrent = 0, batchLabel = "", isBatched = false, depth,
 }: OutputCardProps) {
@@ -798,7 +830,7 @@ export function OutputCard({
   const isResearch = mode === "research";
   const isTutor    = mode === "tutor";
 
-  // ── Section parsing ──────────────────────────────────────────────────────
+  // Section parsing
   const researchSections = useMemo<ParsedSection[]>(() => {
     if (!isResearch) return [];
     let raw: ParsedSection[];
@@ -827,10 +859,10 @@ export function OutputCard({
     }
   }, [researchSections.length, loading, isResearch]);
 
-  // ── Practice questions ───────────────────────────────────────────────────
+  // Practice questions
   const practiceQuestions = providedPracticeQuestions || (isTutor ? extractPracticeQuestions(content) : []);
 
-  // ── Cleaned content with empty formulas section removal ─────────────────
+  // Cleaned content
   const cleanedContent = useMemo(() => {
     if (!content && steps.length === 0) return "";
     try {
@@ -848,7 +880,6 @@ export function OutputCard({
       const baseContent = isTutor && currentStep === steps.length - 1 && steps.length > 0
         ? steps.map(s => `## ${s.title}\n${s.content}`).join("\n\n") : stepContent || "";
       
-      // Remove empty Formulas & Equations section if no formulas present
       let processed = cleanTableContent(baseContent);
       processed = removeEmptyFormulasSectionForDisplay(processed);
       
@@ -863,14 +894,12 @@ export function OutputCard({
     return researchSections.find(s => !s.isComplete)?.name;
   }, [researchSections, isResearch, loading]);
 
-  // Enhanced skeleton label for tutor mode with proper stage names
   const skeletonLabel = useMemo(() => {
     if (!loading) return undefined;
     if (isResearch && currentStreamingSectionName) return currentStreamingSectionName;
     if (isBatched && batchLabel) return batchLabel.replace(/^Batch \d+ — /, "");
     if (isTutor) {
       const stepTitle = steps[currentStep]?.title;
-      // Map step titles to more descriptive loading labels
       if (stepTitle?.toLowerCase().includes("introduction")) return "Introduction being processed";
       if (stepTitle?.toLowerCase().includes("core concept")) return "Core Concepts being processed";
       if (stepTitle?.toLowerCase().includes("detailed")) return "Detailed Explanation being processed";
@@ -883,7 +912,7 @@ export function OutputCard({
     return m[mode as string];
   }, [loading, isResearch, currentStreamingSectionName, isBatched, batchLabel, isTutor, steps, currentStep, mode]);
 
-  // ── Render effects ───────────────────────────────────────────────────────
+  // Render effects
   useEffect(() => {
     if (!loading && cleanedContent?.trim()) {
       setIsRenderingTable(true);
@@ -893,7 +922,7 @@ export function OutputCard({
     } else if (loading) { setIsRenderingTable(false); setHasShownHaptic(false); }
   }, [cleanedContent, loading, hasShownHaptic]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // Handlers
   const parseMultipleChoice = (c: string) => {
     const opts: { letter: string; text: string; correct: boolean }[] = [];
     c.split("\n").forEach(line => {
@@ -936,16 +965,16 @@ export function OutputCard({
     finally { setIsDownloading(false); }
   }, [steps, mode]);
 
-  const handleNewQuery = useCallback(() => {
+  const handleEndResponse = useCallback(() => {
     hapticLight();
     if (speaking) {
       speechSynthesis.cancel();
       setSpeaking(false);
     }
-    if (onNewQuery) onNewQuery();
-  }, [onNewQuery, speaking]);
+    if (onEndResponse) onEndResponse();
+  }, [onEndResponse, speaking]);
 
-  // ── Early exit ───────────────────────────────────────────────────────────
+  // Early exit
   if (!loading && steps.length === 0 && !content) return null;
 
   const isTutorPracticeStep = isTutor && currentStep === steps.length - 1 && practiceQuestions.length > 0;
@@ -953,6 +982,7 @@ export function OutputCard({
   const showProgress        = loading || (isBatched && batchCurrent < batchTotal);
   const showSectionNav      = isResearch && researchSections.length > 1 && !showingPractice;
   const tutorIsLoading      = isTutor && !!loading;
+  const showEndResponseBtn  = (steps.length > 0 || content) && !loading && onEndResponse && !showingPractice;
 
   const headerLabel = (() => {
     if (loading) return t("workspace.thinking");
@@ -961,26 +991,33 @@ export function OutputCard({
     return (steps[currentStep]?.title || t("workspace.response")).replace(/[\^$]/g, "");
   })();
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="glass-card rounded-2xl p-4 sm:p-6 lg:p-7 animate-slide-up">
+    <div className="rounded-2xl p-4 sm:p-6 lg:p-7 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl animate-slide-up">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">{headerLabel}</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary/70 truncate">{headerLabel}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap shrink-0">
-          {onNewQuery && <Button size="sm" variant="ghost" onClick={handleNewQuery}><Plus size={14} className="mr-1.5" />{t("workspace.newQuery")}</Button>}
-          {onRegenerate && <Button size="sm" variant="ghost" onClick={() => { hapticLight(); onRegenerate(); }} disabled={loading}><RefreshCw size={14} className="mr-1.5" />{t("workspace.regenerate")}</Button>}
-          <Button size="sm" variant="ghost" onClick={() => { hapticLight(); handleSpeak(); }} disabled={!content || showingPractice}>
+          {onRegenerate && (
+            <StyledActionButton variant="secondary" size="sm" onClick={() => { hapticLight(); onRegenerate(); }} disabled={loading}>
+              <RefreshCw size={14} className="mr-1.5" />{t("workspace.regenerate")}
+            </StyledActionButton>
+          )}
+          <StyledActionButton variant="secondary" size="sm" onClick={handleSpeak} disabled={!content || showingPractice}>
             {speaking ? <VolumeX size={14} className="mr-1.5" /> : <Volume2 size={14} className="mr-1.5" />}
             {speaking ? t("workspace.stop") : t("workspace.speak")}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={downloadDocument} disabled={!content || loading || isDownloading}>
+          </StyledActionButton>
+          <StyledActionButton variant="secondary" size="sm" onClick={downloadDocument} disabled={!content || loading || isDownloading}>
             {isDownloading ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
-            {isDownloading ? t("workspace.downloading") || "Downloading…" : t("workspace.download")}
-          </Button>
+            {isDownloading ? "Downloading…" : t("workspace.download")}
+          </StyledActionButton>
+          {showEndResponseBtn && (
+            <StyledActionButton variant="danger" size="sm" onClick={handleEndResponse}>
+              <X size={14} className="mr-1.5" />End Response
+            </StyledActionButton>
+          )}
         </div>
       </div>
 
@@ -994,28 +1031,33 @@ export function OutputCard({
       {/* Body */}
       {tutorIsLoading ? (
         <LoadingSkeleton stepName={skeletonLabel} />
-
       ) : loading && !cleanedContent ? (
         <LoadingSkeleton stepName={skeletonLabel} />
-
       ) : loading && cleanedContent && isResearch ? (
         <LoadingSkeleton stepName={skeletonLabel ?? currentStreamingSectionName} />
-
       ) : isRenderingTable ? (
         <div className="flex items-center justify-center py-12">
           <div className="flex flex-col items-center gap-3">
             <Loader2 size={32} className="animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">{t("workspace.renderingContent") || "Rendering content…"}</p>
+            <p className="text-sm text-slate-400">Rendering content…</p>
           </div>
         </div>
-
       ) : showingPractice ? (
         <PracticeQuiz questions={practiceQuestions} onExit={() => setShowingPractice(false)} />
-
       ) : (
         <>
           {visibleContent && (
-            <article className="prose prose-sm sm:prose-base max-w-none prose-headings:font-display prose-headings:tracking-tight prose-headings:text-primary-deep prose-headings:mt-6 prose-headings:mb-2 prose-h2:text-lg prose-h3:text-base prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-code:text-foreground prose-code:bg-muted/60 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:border-none prose-pre:shadow-none">
+            <article className="prose prose-sm sm:prose-base max-w-none 
+              prose-headings:font-display prose-headings:tracking-tight 
+              prose-headings:text-white prose-headings:mt-6 prose-headings:mb-2 
+              prose-h2:text-lg prose-h3:text-base 
+              prose-p:text-slate-300 prose-li:text-slate-300 
+              prose-strong:text-white prose-code:text-slate-300 
+              prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 
+              prose-code:rounded-md prose-code:before:content-none 
+              prose-code:after:content-none prose-pre:bg-transparent 
+              prose-pre:p-0 prose-pre:border-none prose-pre:shadow-none
+              prose-a:text-primary prose-a:no-underline hover:prose-a:underline">
               <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={markdownComponents}>
                 {visibleContent}
               </ReactMarkdown>
@@ -1024,69 +1066,93 @@ export function OutputCard({
 
           {mode === "problem" && visibleContent && parseMultipleChoice(cleanedContent).length > 0 && (
             <div className="mt-6 space-y-3">
-              <h3 className="font-semibold text-base">{t("workspace.selectCorrectAnswer")}</h3>
+              <h3 className="font-semibold text-base text-white">{t("workspace.selectCorrectAnswer")}</h3>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 {parseMultipleChoice(cleanedContent).map(option => (
                   <Button key={option.letter} onClick={() => handleAnswerSelect(option.letter)}
                     variant={selectedAnswer ? (option.correct ? "default" : selectedAnswer === option.letter ? "destructive" : "outline") : "outline"}
-                    className="justify-start text-left h-auto py-2.5 px-4" disabled={selectedAnswer !== null}>
-                    <span className="font-semibold mr-2">{option.letter})</span>{option.text}
+                    className="justify-start text-left h-auto py-2.5 px-4 bg-slate-800 border-white/10 hover:bg-slate-700">
+                    <span className="font-semibold mr-2 text-primary">{option.letter})</span>
+                    <span className="text-slate-300">{option.text}</span>
                   </Button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Tutor practice CTA */}
+          {/* Tutor practice section with responsive button layout - buttons below on mobile */}
           {isTutor && isTutorPracticeStep && !showingPractice && practiceQuestions.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-border">
-              <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-4 mb-4 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
-                  <Trophy size={20} className="text-primary" />
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
+                {/* Content area - always on top */}
+                <div className="flex items-center gap-3 mb-4 sm:mb-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Trophy size={20} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm text-white mb-0.5">Ready to Test Your Knowledge?</h4>
+                    <p className="text-xs text-slate-400">{practiceQuestions.length} timed questions · 20 seconds each</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-sm mb-0.5">Ready to Test Your Knowledge?</h4>
-                  <p className="text-xs text-muted-foreground">{practiceQuestions.length} timed questions · 20 seconds each</p>
+                
+                {/* Buttons - below on mobile, side by side on desktop */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  <StyledActionButton 
+                    variant="primary" 
+                    size="sm" 
+                    className="w-full sm:w-auto"
+                    onClick={() => { 
+                      hapticLight(); 
+                      setShowingPractice(true); 
+                    }}
+                  >
+                    <Trophy size={14} className="mr-1.5" /> Start Quiz
+                  </StyledActionButton>
+                  {onEndResponse && (
+                    <StyledActionButton 
+                      variant="danger" 
+                      size="sm" 
+                      className="w-full sm:w-auto"
+                      onClick={handleEndResponse}
+                    >
+                      <X size={14} className="mr-1.5" /> End
+                    </StyledActionButton>
+                  )}
                 </div>
               </div>
-              <Button onClick={() => { hapticLight(); setShowingPractice(true); }} className="w-full gap-2">
-                <Trophy size={15} /> Start Practice Quiz ({practiceQuestions.length} questions)
-              </Button>
             </div>
           )}
 
           {showSectionNav && (
             <SectionNav sections={researchSections} currentIndex={currentSectionIndex}
               onGoTo={i => { hapticLight(); setCurrentSectionIndex(i); }}
-              isStreaming={loading && !researchSections[currentSectionIndex]?.isComplete} />
+              isStreaming={loading && !researchSections[currentIndex]?.isComplete} />
           )}
         </>
       )}
 
-      {/* Step nav */}
+      {/* Step nav - made scrollable on mobile */}
       {!loading && steps.length > 1 && !showingPractice && !showSectionNav && (
-        <div className="flex justify-center gap-3 mt-6 pt-4 border-t border-border">
-          <Button onClick={() => { hapticLight(); onPrevious(); }} disabled={currentStep === 0}
-            variant="outline" className="flex-1 bg-background hover:bg-muted">
+        <div className="flex justify-center gap-3 mt-6 pt-4 border-t border-white/10">
+          <StyledActionButton onClick={() => { hapticLight(); onPrevious(); }} disabled={currentStep === 0} variant="secondary" className="flex-1">
             <ChevronLeft size={16} className="mr-2" /> Previous
-          </Button>
-          <Button onClick={() => { hapticLight(); onNext(); }} disabled={currentStep === steps.length - 1}
-            className="flex-1 bg-primary hover:opacity-90 btn-glow">
+          </StyledActionButton>
+          <StyledActionButton onClick={() => { hapticLight(); onNext(); }} disabled={currentStep === steps.length - 1} variant="primary" className="flex-1">
             {t("workspace.nextStep")} <ChevronRight size={16} className="ml-2" />
-          </Button>
+          </StyledActionButton>
         </div>
       )}
 
-      {/* Batch part nav */}
+      {/* Batch part nav - made scrollable */}
       {isBatched && steps.length > 1 && !showingPractice && !loading && (
-        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border/50">
-          <p className="text-[11px] text-muted-foreground/60 text-center uppercase tracking-wider">Navigate Parts</p>
-          <div className="flex gap-2 flex-wrap justify-center">
+        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-white/10">
+          <p className="text-[11px] text-slate-500 text-center uppercase tracking-wider">Navigate Parts</p>
+          <div className="flex gap-2 flex-wrap justify-center max-h-32 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-primary/30 p-2">
             {steps.map((_, i) => (
               <button key={i} onClick={() => { hapticLight(); if (i < currentStep) onPrevious(); else if (i > currentStep) onNext(); }}
                 disabled={i === currentStep}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all
-                  ${i === currentStep ? "bg-primary text-primary-foreground" : "bg-muted/40 text-muted-foreground hover:bg-muted/70"}`}>
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0
+                  ${i === currentStep ? "bg-primary text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>
                 Part {i + 1}
               </button>
             ))}

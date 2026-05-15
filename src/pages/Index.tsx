@@ -5,15 +5,17 @@ const Index = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-      <AiWorkspace
-        mode="tutor"
-        title={t('tutor.title')}
-        subtitle={t('tutor.subtitle')}
-        placeholder={t('tutor.placeholder')}
-        acceptFile
-      />
-    </div>
+    <>
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+        <AiWorkspace
+          mode="tutor"
+          title={t('tutor.title')}
+          subtitle={t('tutor.subtitle')}
+          placeholder={t('tutor.placeholder')}
+          acceptFile
+        />
+      </div>
+    </>
   );
 };
 

@@ -7,6 +7,18 @@ import { useHistory } from "@/store/history";
 import { consumeSseStream } from "./ai/sseParser";
 import type { AiMode, StreamOptions } from "./ai/types";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  PLAN_FEATURES, 
+  PlanId, 
+  canAccessTutorLevel, 
+  canAccessResearchLevel,
+  canUseCitationStyle,
+  getMaxInputWords,
+  getUploadLimitMB,
+  canGenerateAIIllustrations,
+  getModelForMode as getPlanModelForMode,
+  CREDIT_COSTS
+} from "@/lib/planConstants";
 
 export type { AiMode, MindsetType, DepthLevel, StreamOptions } from "./ai/types";
 
@@ -42,7 +54,7 @@ const TEMPERATURE: Record<AiMode, number> = {
   rewrites: 0.7,
 };
 const FETCH_TIMEOUT_MS   = 20_000;
-const PROFILE_TIMEOUT_MS = 5_000; // fetchProfile must resolve within 5 s or we skip the pre-check
+const PROFILE_TIMEOUT_MS = 5_000;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -70,7 +82,6 @@ function createTimeoutController(originalSignal?: AbortSignal): AbortController 
   return controller;
 }
 
-/** Races a promise against a timeout. Returns null on timeout instead of throwing. */
 async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   let id: number;
   const timer = new Promise<null>((resolve) => { id = window.setTimeout(() => resolve(null), ms); });
@@ -103,73 +114,112 @@ function isSameUtcDay(a: Date, b: Date): boolean {
 }
 
 export function getFreeTierStatus(profile: any, subscriptions: any[]) {
-  if (!profile?.created_at) return { eligible: false, remaining: 0 };
+  if (!profile?.created_at) return { eligible: false, remaining: 0, planId: null };
 
-  const hasActiveSubscription = subscriptions.some((s: any) =>
-    s.status === "active" && ["monthly", "yearly"].includes(s.plans?.billing_type)
+  const trialSubscription = subscriptions.find((s: any) =>
+    s.status === "active" && s.plans?.name === "Trial"
   );
 
-  if (hasActiveSubscription) return { eligible: false, remaining: 0 };
+  const isTrial = trialSubscription || subscriptions.length === 0;
 
-  const resetAt = profile.daily_free_credits_reset_at
-    ? new Date(profile.daily_free_credits_reset_at)
-    : new Date(0);
-  const usedToday = isSameUtcDay(resetAt, new Date())
-    ? (profile.daily_free_credits_used ?? 0)
-    : 0;
+  if (isTrial) {
+    const resetAt = profile.daily_free_credits_reset_at
+      ? new Date(profile.daily_free_credits_reset_at)
+      : new Date(0);
+    const usedToday = isSameUtcDay(resetAt, new Date())
+      ? (profile.daily_free_credits_used ?? 0)
+      : 0;
 
-  return { eligible: true, remaining: Math.max(0, 10 - usedToday) };
-}
-
-export function getAiCreditCost(mode: AiMode, depth?: string, citationStyle?: string, hasPaidSubscription?: boolean, totalCredits?: number) {
-  console.log("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription, totalCredits });
-  // Premium users (paid subscription) get all features for free
-  if (hasPaidSubscription) {
-    return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
+    const dailyCredits = PLAN_FEATURES[PlanId.TRIAL].dailyCredits;
+    return { 
+      eligible: true, 
+      remaining: Math.max(0, dailyCredits - usedToday),
+      planId: PlanId.TRIAL
+    };
   }
 
-  // Check if user has purchased credits (credits beyond daily free 10)
-  const hasPurchasedCredits = totalCredits ? totalCredits > 10 : false;
+  return { eligible: false, remaining: 0, planId: null };
+}
 
-  // Free users can only use specific features
+export function getUserSubscriptionPlan(subscriptions: any[]): string | null {
+  const activeSubscription = subscriptions.find((s: any) => s.status === "active");
+  if (!activeSubscription) return null;
+  
+  const planName = activeSubscription.plans?.name?.toLowerCase();
+  if (planName === "trial") return PlanId.TRIAL;
+  if (planName === "basic") return PlanId.BASIC;
+  if (planName === "pro") return PlanId.PRO;
+  if (planName === "ultra") return PlanId.ULTRA;
+  
+  return null;
+}
+
+export function getAiCreditCost(
+  mode: AiMode, 
+  depth?: string, 
+  citationStyle?: string, 
+  hasPaidSubscription?: boolean, 
+  totalCredits?: number,
+  subscriptions?: any[]
+) {
+  console.log("[getAiCreditCost] input", { mode, depth, citationStyle, hasPaidSubscription, totalCredits });
+
   if (mode === "simplify" || mode === "hints" || mode === "rewrites" || mode === "problem") {
     return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
   }
 
-  // Tutor mode pricing based on depth
-  if (mode === "tutor") {
-    if (depth === "beginner") {
-      return { cost: 1, premium: false, premiumPrice: 0, label: "1 credit" };
-    } else if (depth === "intermediate") {
-      return { cost: 2, premium: false, premiumPrice: 0, label: "2 credits" };
-    } else if (depth === "higher") {
-      return { cost: 5, premium: false, premiumPrice: 0, label: "5 credits" };
-    } else if (depth === "advanced") {
-      // Allow advanced tutor for users with purchased credits
-      if (hasPurchasedCredits) {
-        return { cost: 10, premium: false, premiumPrice: 0, label: "10 credits" };
-      } else {
-        return { cost: 0, premium: true, premiumPrice: 0, label: "Premium required" };
+  const userPlan = subscriptions ? getUserSubscriptionPlan(subscriptions) : null;
+  const hasBonusCredits = totalCredits ? totalCredits > PLAN_FEATURES[PlanId.TRIAL].dailyCredits : false;
+  const effectivePlan = userPlan === null
+    ? PlanId.TRIAL
+    : userPlan === PlanId.TRIAL && hasBonusCredits
+    ? PlanId.BASIC
+    : userPlan;
+
+  if (hasPaidSubscription && (effectivePlan === PlanId.PRO || effectivePlan === PlanId.ULTRA)) {
+    return { cost: 0, premium: false, premiumPrice: 0, label: "Free" };
+  }
+
+  const resolvedDepth = depth ?? "fundamental";
+
+  if (effectivePlan === PlanId.TRIAL) {
+    if (mode === "tutor") {
+      if (resolvedDepth === "advanced") {
+        return { cost: 0, premium: true, premiumPrice: 0, label: "Upgrade required" };
       }
+      const cost = CREDIT_COSTS.tutor[resolvedDepth as keyof typeof CREDIT_COSTS.tutor] ?? 0;
+      return { cost, premium: false, premiumPrice: 0, label: cost === 0 ? "Free" : `${cost} credits` };
+    }
+
+    if (mode === "research") {
+      if (resolvedDepth === "fundamental") {
+        const cost = CREDIT_COSTS.research.fundamental;
+        return { cost, premium: false, premiumPrice: 0, label: `${cost} credits` };
+      }
+      if (resolvedDepth === "intermediate" || resolvedDepth === "higher") {
+        const cost = CREDIT_COSTS.research[resolvedDepth as keyof typeof CREDIT_COSTS.research] ?? 0;
+        return { cost, premium: false, premiumPrice: 0, label: cost === 0 ? "Free" : `${cost} credits` };
+      }
+      return { cost: 0, premium: true, premiumPrice: 0, label: "Ultra plan required" };
     }
   }
 
-  // Research mode pricing based on depth
-  if (mode === "research") {
-    if (depth === "beginner") {
-      return { cost: 3, premium: false, premiumPrice: 0, label: "3 credits" };
-    } else if (depth === "intermediate") {
-      return { cost: 5, premium: false, premiumPrice: 0, label: "5 credits" };
-    } else if (depth === "higher") {
-      return { cost: 10, premium: false, premiumPrice: 0, label: "10 credits" };
-    } else if (depth === "advanced") {
-      // Research Advanced costs $5
-      return { cost: 0, premium: false, premiumPrice: 5, label: "$5" };
+  if (effectivePlan === PlanId.BASIC) {
+    if (mode === "tutor") {
+      const cost = CREDIT_COSTS.tutor[resolvedDepth as keyof typeof CREDIT_COSTS.tutor] ?? 0;
+      return { cost, premium: false, premiumPrice: 0, label: cost === 0 ? "Free" : `${cost} credits` };
+    }
+
+    if (mode === "research") {
+      if (resolvedDepth === "advanced") {
+        return { cost: 0, premium: true, premiumPrice: 0, label: "Ultra plan required" };
+      }
+      const cost = CREDIT_COSTS.research[resolvedDepth as keyof typeof CREDIT_COSTS.research] ?? 0;
+      return { cost, premium: false, premiumPrice: 0, label: cost === 0 ? "Free" : `${cost} credits` };
     }
   }
 
-  // All other features require premium subscription
-  return { cost: 0, premium: true, premiumPrice: 0, label: "Premium required" };
+  return { cost: 0, premium: true, premiumPrice: 0, label: "Upgrade required" };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,9 +231,6 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
 
   let subscriptions: any[] = [];
 
-  // ── Credit pre-check (server-key path only) ────────────────────────────
-  // We give fetchProfile() 5 seconds. If it hangs (e.g. no session, network
-  // issue) we skip the client-side credit check and let the edge function decide.
   const state = useUserProfile.getState();
   let profile = state.profile;
   subscriptions = state.subscriptions;
@@ -200,14 +247,18 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     console.log("[streamAi] using cached profile for client-side credit check");
   }
 
-  const costInfo = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"), profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0);
+  const costInfo = getAiCreditCost(
+    mode, depth, citationStyle,
+    subscriptions.some((s: any) => s.status === "active"),
+    profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0,
+    subscriptions
+  );
 
   if (costInfo.premium) {
-    onError("This feature requires a premium subscription. Please upgrade your plan to access all features.");
+    onError("This feature requires a plan upgrade. Please visit the subscription page.");
     return;
   }
 
-  // Handle dollar-priced features (like Research Advanced)
   if (costInfo.premiumPrice > 0) {
     onError(`This feature costs ${costInfo.label}. Please upgrade your plan to access premium features.`);
     return;
@@ -229,7 +280,6 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     }
   }
 
-  // ── Fetch ──────────────────────────────────────────────────────────────
   console.log("[streamAi] sending request to Supabase edge function");
 
   let resp: Response;
@@ -242,7 +292,6 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     return;
   }
 
-  // ── HTTP errors ────────────────────────────────────────────────────────
   if (!resp.ok) {
     const msg = await extractErrorMessage(resp);
     console.error("[streamAi] HTTP error:", resp.status, msg);
@@ -255,7 +304,6 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
     return;
   }
 
-  // ── Stream ─────────────────────────────────────────────────────────────
   let finalOutput = "";
   try {
     await promiseWithTimeout(
@@ -275,23 +323,15 @@ export async function streamAi(opts: StreamOptions): Promise<void> {
 
   console.log("[streamAi] stream complete, total chars:", finalOutput.length);
 
-  // Extract practice questions for logging
-  let practiceQuestions = null;
-  if (opts.mode === "tutor" && finalOutput.includes('{"practice_questions"')) {
-    try {
-      const jsonMatch = finalOutput.match(/\{"practice_questions"[\s\S]*$/);
-      if (jsonMatch) {
-        practiceQuestions = JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      console.warn("[streamAi] Failed to parse practice questions for logging:", e);
-    }
-  }
-
-  const costInfoAfter = getAiCreditCost(mode, depth, citationStyle, subscriptions.some((s: any) => s.status === "active"), profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0);
+  const costInfoAfter = getAiCreditCost(
+    mode, depth, citationStyle,
+    subscriptions.some((s: any) => s.status === "active"),
+    profile ? (profile.credits ?? 0) + getFreeTierStatus(profile, subscriptions).remaining : 0,
+    subscriptions
+  );
   const creditsUsed = !costInfoAfter.premium ? costInfoAfter.cost : 0;
   const historyLogged = await withTimeout(
-    logChatHistory(opts, finalOutput, practiceQuestions, creditsUsed),
+    logChatHistory(opts, finalOutput, creditsUsed),
     PROFILE_TIMEOUT_MS
   );
 
@@ -349,14 +389,35 @@ function fetchFromSupabase(args: BaseFetchArgs): Promise<Response> {
   });
 }
 
-
-async function logChatHistory(opts: StreamOptions, response: string, practiceQuestions?: any, creditsUsed: number = 0): Promise<boolean> {
+/**
+ * Persists the completed AI response to Supabase AND adds it to the local
+ * history store. This is the ONLY place either of those things happens —
+ * do not call addEntry or supabase.insert for chat_history anywhere else.
+ */
+async function logChatHistory(
+  opts: StreamOptions,
+  response: string,
+  creditsUsed: number = 0,
+): Promise<boolean> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       console.warn("[aiService] Not authenticated, cannot log chat history");
       return false;
     }
+
+    // Parse practice questions out of the raw response.
+    let practiceQuestions: any = null;
+    if (opts.mode === "tutor" && response.includes('{"practice_questions"')) {
+      try {
+        const jsonMatch = response.match(/\{"practice_questions"[\s\S]*$/);
+        if (jsonMatch) practiceQuestions = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.warn("[aiService] Failed to parse practice questions:", e);
+      }
+    }
+
+    const cleanedResponse = response.replace(/\{"practice_questions"[\s\S]*$/, "").trim();
 
     console.log("[aiService] logChatHistory start", {
       userId: user.id,
@@ -365,50 +426,25 @@ async function logChatHistory(opts: StreamOptions, response: string, practiceQue
       hasImage: !!opts.imageBase64,
       hasDocument: !!opts.documentBase64,
       hasVoiceTranscript: !!opts.voiceTranscript,
+      hasPracticeQuestions: !!practiceQuestions,
     });
 
-    const cleanedResponse = response.replace(/\{"practice_questions"[\s\S]*$/, "").trim();
-    
-    // Insert into chat_history table
-    const { data: chatData, error } = await (supabase as any)
-      .from('chat_history')
-      .insert({
-        user_id: user.id,
-        mode: opts.mode,
-        prompt: opts.input,
-        response: cleanedResponse,
-        image_data: opts.imageBase64 ?? null,
-        document_data: opts.documentBase64 ?? null,
-        code_snippets: practiceQuestions ? practiceQuestions : null,
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error("[aiService] insert chat_history failed:", error);
-      return false;
-    }
-
-    const chatId = chatData.id;
-
-    console.log("[aiService] Chat history logged successfully", { chatId });
-    
-    // Add to local history store as well
-    useHistory.getState().addEntry({
+    // Single addEntry call — the store handles the Supabase upsert internally.
+    await useHistory.getState().addEntry({
       mode: opts.mode,
       input: opts.input,
       output: cleanedResponse,
-      imageData: opts.imageBase64 ?? null,
+      practiceQuestions,
+      imageData: opts.imageBase64 ? `data:${opts.imageMimeType};base64,${opts.imageBase64}` : null,
       imageMimeType: opts.imageMimeType ?? null,
       imageName: opts.imageName ?? null,
-      documentData: opts.documentBase64 ?? null,
+      documentData: opts.documentBase64 ? `data:${opts.documentMimeType};base64,${opts.documentBase64}` : null,
       documentMimeType: opts.documentMimeType ?? null,
       documentName: opts.documentName ?? null,
       voiceTranscript: opts.voiceTranscript ?? null,
-      codeSnippets: practiceQuestions ? [{ id: '0', content: JSON.stringify(practiceQuestions) }] : undefined,
-      remoteId: chatId
     });
 
+    console.log("[aiService] Chat history logged successfully");
     return true;
   } catch (error) {
     console.error("[aiService] Failed to log chat history:", error);

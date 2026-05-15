@@ -18,6 +18,37 @@ import {
 } from "@/components/ui/select";
 import { hapticLight } from "@/lib/haptic";
 
+// Styled components matching sidebar aesthetic
+const StyledSelectTrigger = ({ className, children, ...props }: React.ComponentProps<typeof SelectTrigger>) => (
+  <SelectTrigger
+    className={`
+      group flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 
+      text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white 
+      transition-all duration-200 border border-white/10 bg-slate-900/50
+      backdrop-blur-sm shadow-sm
+      ${className || ""}
+    `}
+    {...props}
+  >
+    {children}
+  </SelectTrigger>
+);
+
+const StyledSelectItem = ({ className, children, ...props }: React.ComponentProps<typeof SelectItem>) => (
+  <SelectItem
+    className={`
+      rounded-xl px-4 py-2.5 text-sm font-medium text-slate-300
+      focus:bg-white/10 focus:text-white focus:outline-none
+      data-[highlighted]:bg-white/10 data-[highlighted]:text-white
+      cursor-pointer transition-all duration-150
+      ${className || ""}
+    `}
+    {...props}
+  >
+    {children}
+  </SelectItem>
+);
+
 interface PracticeQuestion {
   question: string;
   options?: string[];
@@ -87,7 +118,6 @@ const History = () => {
   const downloadEntryAsPdf = async (entry: HistoryEntry) => {
     const steps = [{ title: "Response", content: processContentForDisplay(entry.output) }];
     
-    // Add practice questions if available
     if (entry.codeSnippets && entry.codeSnippets.length > 0) {
       entry.codeSnippets.forEach(snippet => {
         try {
@@ -114,47 +144,47 @@ const History = () => {
 
   const getModeColor = (mode: string) => {
     const colors: Record<string, { bg: string; text: string; icon: string }> = {
-      tutor: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', icon: 'bg-blue-500' },
-      research: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', icon: 'bg-purple-500' },
-      problem: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', icon: 'bg-green-500' },
-      simplify: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', icon: 'bg-orange-500' },
-      hints: { bg: 'bg-pink-500/10', text: 'text-pink-600 dark:text-pink-400', icon: 'bg-pink-500' },
-      rewrites: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', icon: 'bg-cyan-500' },
+      tutor: { bg: 'bg-blue-500/10', text: 'text-blue-400', icon: 'bg-blue-500' },
+      research: { bg: 'bg-purple-500/10', text: 'text-purple-400', icon: 'bg-purple-500' },
+      problem: { bg: 'bg-green-500/10', text: 'text-green-400', icon: 'bg-green-500' },
+      simplify: { bg: 'bg-orange-500/10', text: 'text-orange-400', icon: 'bg-orange-500' },
+      hints: { bg: 'bg-pink-500/10', text: 'text-pink-400', icon: 'bg-pink-500' },
+      rewrites: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', icon: 'bg-cyan-500' },
     };
     return colors[mode] || colors.tutor;
   };
 
   if (entryFromRoute) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <Button
               variant="ghost"
               onClick={() => {
+                hapticLight();
                 navigate("/history");
               }}
-              className="hover:bg-primary/10"
+              className="rounded-2xl text-slate-300 hover:bg-white/10 hover:text-white"
             >
               <ArrowLeft size={16} className="mr-2" /> Back to History
             </Button>
             <Button
-              variant="outline"
               onClick={() => downloadEntryAsPdf(entryFromRoute)}
-              className="gap-2"
+              className="rounded-2xl bg-primary hover:bg-primary/80 text-white shadow-md"
             >
               <FileText size={16} className="mr-2" /> Download PDF
             </Button>
           </div>
 
-          <div className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden p-6 sm:p-8 space-y-6">
+          <div className="rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl space-y-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  <span className={`px-3 py-1 text-xs font-semibold uppercase rounded-full ${getModeColor(entryFromRoute.mode).bg} ${getModeColor(entryFromRoute.mode).text}`}>
+                  <span className={`px-3 py-1 text-xs font-semibold uppercase rounded-full ${getModeColor(entryFromRoute.mode).bg} ${getModeColor(entryFromRoute.mode).text} border border-current/20`}>
                     {entryFromRoute.mode}
                   </span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-full">
+                  <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-800/50 px-2 py-1 rounded-full">
                     <Clock size={12} />
                     {new Intl.DateTimeFormat(undefined, {
                       dateStyle: "long",
@@ -167,7 +197,7 @@ const History = () => {
                     </span>
                   )}
                 </div>
-                <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                   {truncateText(entryFromRoute.input, 100)}
                 </h1>
               </div>
@@ -182,8 +212,8 @@ const History = () => {
               }
             }) && (
               <div className="mt-6 space-y-3">
-                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Code size={18} />
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Code size={18} className="text-primary" />
                   Attached Code
                 </h2>
                 {entryFromRoute.codeSnippets.filter(snippet => {
@@ -194,13 +224,13 @@ const History = () => {
                     return true;
                   }
                 }).map((snippet, index) => (
-                  <div key={snippet.id} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
+                  <div key={snippet.id} className="rounded-xl border border-white/10 bg-slate-800/50 p-4">
                     <div className="mb-3">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-primary/70 uppercase tracking-wider">
                         Code Snippet {index + 1}{snippet.language ? ` (${snippet.language})` : ''}
                       </span>
                     </div>
-                    <div className="max-h-48 overflow-y-auto rounded bg-background/80 p-3 text-xs font-mono whitespace-pre-wrap border border-border/30 text-foreground/80">
+                    <div className="max-h-48 overflow-y-auto rounded-lg bg-slate-900/50 p-3 text-xs font-mono whitespace-pre-wrap border border-white/5 text-slate-300">
                       {snippet.content}
                     </div>
                   </div>
@@ -208,67 +238,16 @@ const History = () => {
               </div>
             )}
 
-            <div className="border-t border-border/50 my-4" />
+            <div className="border-t border-white/10 my-4" />
 
-            <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert">
-              <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed font-light">
+            <div className="prose prose-sm sm:prose-base max-w-none 
+              prose-headings:text-white prose-headings:font-semibold
+              prose-p:text-slate-300 prose-li:text-slate-300
+              prose-strong:text-white prose-code:text-slate-300
+              prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md">
+              <div className="whitespace-pre-wrap text-slate-300 leading-relaxed">
                 {processContentForDisplay(entryFromRoute.output)}
               </div>
-              {entryFromRoute.codeSnippets && entryFromRoute.codeSnippets.length > 0 && (
-                <div className="mt-6 space-y-3">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                    <Sparkles size={18} />
-                    Practice Questions
-                  </h2>
-                  {entryFromRoute.codeSnippets.map((snippet, index) => {
-                    try {
-                      const questions = JSON.parse(snippet.content) as { practice_questions?: PracticeQuestion[] };
-                      if (Array.isArray(questions.practice_questions)) {
-                        return questions.practice_questions.map((q: PracticeQuestion, qIndex: number) => (
-                          <div key={`${index}-${qIndex}`} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
-                            <div className="mb-3">
-                              <span className="text-sm font-semibold text-foreground">
-                                Question {qIndex + 1}: {q.question}
-                              </span>
-                            </div>
-                            {q.options && q.options.length > 0 && (
-                              <div className="mb-3 space-y-1">
-                                {q.options.map((option: string, optIndex: number) => (
-                                  <div key={optIndex} className="text-sm text-muted-foreground">
-                                    {String.fromCharCode(65 + optIndex)}. {option}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {q.correct_answer && (
-                              <div className="mb-2">
-                                <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                  Correct Answer: {q.correct_answer}
-                                </span>
-                              </div>
-                            )}
-                            {q.explanation && (
-                              <div className="text-sm text-muted-foreground">
-                                <strong>Explanation:</strong> {q.explanation}
-                              </div>
-                            )}
-                          </div>
-                        ));
-                      }
-                    } catch (e) {
-                      // If parsing fails, just show the raw content
-                      return (
-                        <div key={index} className="rounded-lg border border-border/50 bg-gradient-to-br from-muted/50 to-muted/20 p-4 backdrop-blur-sm">
-                          <div className="max-h-48 overflow-y-auto rounded bg-background/80 p-3 text-xs font-mono whitespace-pre-wrap border border-border/30 text-foreground/80">
-                            {snippet.content}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -277,53 +256,38 @@ const History = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-        {/* Header */}
         <header className="space-y-4">
-          
-          
-          <div>
-            <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              {t('history.title')}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-2 max-w-2xl">
-              {t('history.subtitle')}
-            </p>
-            {!auth.user && (
-              <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-center gap-2 text-xs text-muted-foreground">
-                <MessageSquare size={14} />
-                Sign in to sync your history across devices.
-              </div>
-            )}
-          </div>
-
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 placeholder="Search your history..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 border-border/50 bg-card/50 backdrop-blur-sm"
+                className="pl-9 rounded-2xl border-white/10 bg-slate-900/50 backdrop-blur-sm text-slate-200 placeholder:text-slate-500 focus:border-primary/50"
               />
             </div>
             <Select value={filter} onValueChange={(v) => setFilter(v as "all" | "tutor" | "research")}>
-              <SelectTrigger className="w-full sm:w-[180px] border-border/50 bg-card/50 backdrop-blur-sm">
+              <StyledSelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="tutor">Tutor</SelectItem>
-                <SelectItem value="research">Research</SelectItem>
+              </StyledSelectTrigger>
+              <SelectContent className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl">
+                <StyledSelectItem value="all">All</StyledSelectItem>
+                <StyledSelectItem value="tutor">Ask</StyledSelectItem>
+                <StyledSelectItem value="research">Research</StyledSelectItem>
               </SelectContent>
             </Select>
             {history.items.length > 0 && (
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={history.clearHistory}
-                className="border-border/50"
+                onClick={() => {
+                  hapticLight();
+                  history.clearHistory();
+                }}
+                className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-300 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30"
               >
                 <Trash2 size={14} className="mr-2" /> Clear All
               </Button>
@@ -331,16 +295,15 @@ const History = () => {
           </div>
         </header>
 
-        {/* Content */}
         {filteredHistory.length === 0 ? (
-          <div className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 p-12 text-center shadow-lg">
+          <div className="rounded-2xl p-12 text-center bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl">
             <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4 ring-1 ring-primary/20">
-              <Clock size={32} className="text-muted-foreground" />
+              <Clock size={32} className="text-slate-400" />
             </div>
-            <p className="text-foreground font-semibold text-lg">
+            <p className="text-white font-semibold text-lg">
               {sortedHistory.length === 0 ? "No activities yet" : "No matching results"}
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-slate-400 mt-2">
               {sortedHistory.length === 0
                 ? "Start asking questions to build your history!"
                 : "Try adjusting your search or filters"}
@@ -357,7 +320,9 @@ const History = () => {
                     hapticLight();
                     navigate(`/history/${entry.id}`);
                   }}
-                  className="w-full group backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 p-4 sm:p-5 text-left transition-all duration-200 hover:border-primary/50 hover:bg-card/80 hover:shadow-lg"
+                  className="w-full group rounded-2xl p-4 sm:p-5 text-left transition-all duration-200 
+                    bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm 
+                    border border-white/10 hover:border-primary/50 hover:shadow-lg"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -366,30 +331,30 @@ const History = () => {
                           {entry.mode}
                         </span>
                         {entry.imageData && (
-                          <ImageIcon size={13} className="text-muted-foreground" />
+                          <ImageIcon size={13} className="text-slate-400" />
                         )}
                         {entry.documentData && (
-                          <FileText size={13} className="text-muted-foreground" />
+                          <FileText size={13} className="text-slate-400" />
                         )}
                         {entry.voiceTranscript && (
-                          <Mic size={13} className="text-muted-foreground" />
+                          <Mic size={13} className="text-slate-400" />
                         )}
                         {(entry.codeSnippets && entry.codeSnippets.length > 0) && (
-                          <Code size={13} className="text-muted-foreground" />
+                          <Code size={13} className="text-slate-400" />
                         )}
-                        <span className="text-xs text-muted-foreground ml-auto">
+                        <span className="text-xs text-slate-400 ml-auto">
                           {formatDate(entry.timestamp)}
                         </span>
                       </div>
-                      <h3 className="font-semibold text-foreground truncate text-sm sm:text-base">
+                      <h3 className="font-semibold text-white truncate text-sm sm:text-base">
                         {truncateText(entry.input, 100)}
                       </h3>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight size={18} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+                      <ChevronRight size={18} className="text-slate-400 group-hover:text-primary transition-colors" />
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                  <p className="mt-2 text-sm text-slate-400 line-clamp-2">
                     {truncateText(entry.output.replace(/[#*`]/g, ""), 150)}
                   </p>
                 </button>

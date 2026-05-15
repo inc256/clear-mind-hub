@@ -280,48 +280,6 @@ export const useCredits = (userIdProp?: string) => {
     await fetchProfile();
   }, [fetchProfile]);
 
-  const addDailyFreeCredits = useCallback(
-    async (amount = DAILY_FREE_LIMIT) => {
-      if (!userId || !profile) {
-        throw new Error("Unable to claim daily credits without a valid user.");
-      }
-
-      const available = DAILY_FREE_LIMIT - (profile.daily_free_credits_used ?? 0);
-      if (available <= 0) {
-        throw new Error("Daily free credits limit reached.");
-      }
-
-      const claimAmount = Math.min(amount, available);
-
-      const { error: transactionError } = await supabase.from("credit_transactions").insert({
-        user_id: userId,
-        amount: claimAmount,
-        type: "daily_free_usage",
-        description: "Daily free credits claimed",
-      });
-
-      if (transactionError) {
-        throw transactionError;
-      }
-
-      const { error: profileError } = await supabase
-        .from("user_profiles")
-        .update({
-          credits: profile.credits + claimAmount,
-          daily_free_credits_used: (profile.daily_free_credits_used ?? 0) + claimAmount,
-        })
-        .eq("id", userId);
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      await refreshCredits();
-      return claimAmount;
-    },
-    [profile, refreshCredits, userId]
-  );
-
   const consumeCredits = useCallback(
     async (amount: number, description = "Premium content access", chatId: string | null = null) => {
       if (!userId) {
@@ -408,7 +366,6 @@ export const useCredits = (userIdProp?: string) => {
     premiumAccess,
     remainingDailyCredits,
     availableCredits,
-    addDailyFreeCredits,
     consumeCredits,
     refreshCredits,
     fetchTransactions,

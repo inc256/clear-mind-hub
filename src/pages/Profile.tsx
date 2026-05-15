@@ -6,27 +6,11 @@ import { useUserProfile } from "@/store/userProfile";
 import { getFreeTierStatus } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  Globe, 
-  CreditCard, 
-  Zap, 
-  User, 
-  Mail, 
-  Calendar,
-  CheckCircle,
-  Crown,
-  Star,
-  Settings,
-  LogOut,
-  Edit2,
-  Upload,
-  RefreshCw,
-  AlertCircle,
-  X,
-  MessageCircle
+  Globe, CreditCard, Zap, User, Mail, Calendar,
+  CheckCircle, Crown, Star, Edit2, Upload, RefreshCw, LogOut, MessageCircle
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -48,8 +32,39 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
-import { FeedbackService, type Feedback } from "@/services/feedbackService";
 import { analytics } from "@/lib/analytics";
+import { hapticLight } from "@/lib/haptic";
+
+// Styled select for consistency
+const StyledSelectTrigger = ({ className, children, ...props }: React.ComponentProps<typeof SelectTrigger>) => (
+  <SelectTrigger
+    className={`
+      group flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 
+      text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white 
+      transition-all duration-200 border border-white/10 bg-slate-900/50
+      backdrop-blur-sm shadow-sm
+      ${className || ""}
+    `}
+    {...props}
+  >
+    {children}
+  </SelectTrigger>
+);
+
+const StyledSelectItem = ({ className, children, ...props }: React.ComponentProps<typeof SelectItem>) => (
+  <SelectItem
+    className={`
+      rounded-xl px-4 py-2.5 text-sm font-medium text-slate-300
+      focus:bg-white/10 focus:text-white focus:outline-none
+      data-[highlighted]:bg-white/10 data-[highlighted]:text-white
+      cursor-pointer transition-all duration-150
+      ${className || ""}
+    `}
+    {...props}
+  >
+    {children}
+  </SelectItem>
+);
 
 const languageOptions = [
   { value: "en", label: "English", flag: "🇺🇸" },
@@ -82,12 +97,8 @@ const Profile = () => {
     s.status === 'active' && ['monthly', 'yearly'].includes(s.plans?.billing_type)
   );
   const totalPaidCredits = profile.profile?.credits ?? 0;
-  const totalCredits = hasUnlimitedSubscription
-    ? 'Unlimited'
-    : totalPaidCredits + freeStatus.remaining;
-  const creditProgress = hasUnlimitedSubscription
-    ? 100
-    : Math.min((totalPaidCredits + freeStatus.remaining) / 100 * 100, 100);
+  const totalCredits = hasUnlimitedSubscription ? 'Unlimited' : totalPaidCredits + freeStatus.remaining;
+  const creditProgress = hasUnlimitedSubscription ? 100 : Math.min((totalPaidCredits + freeStatus.remaining) / 100 * 100, 100);
   const creditsLabel = hasUnlimitedSubscription
     ? 'Unlimited credits with active subscription'
     : freeStatus.remaining > 0
@@ -221,27 +232,16 @@ const Profile = () => {
   const SubscriptionBadge = getSubscriptionBadge();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
-        {/* Header with gradient */}
-        <header className="space-y-3 text-center sm:text-left">
-          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {t('profile.title')}
-          </h1>
-          <p className="text-muted-foreground text-sm max-w-2xl mx-auto sm:mx-0">
-            {t('profile.subtitle')}
-          </p>
-        </header>
-
-        {/* Main Content */}
         <div className="space-y-6">
           {/* Authentication Section */}
-          <section className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden">
+          <section className="rounded-2xl bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl overflow-hidden">
             <div className="p-6 sm:p-8">
               {auth.user ? (
                 <div className="space-y-6">
                   {/* User Info Card */}
-                  <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-transparent">
+                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-primary/5 to-transparent">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
                     <div className="relative p-6 space-y-6">
                       {/* Profile Header */}
@@ -257,17 +257,12 @@ const Profile = () => {
                                 onError={() => setAvatarError(true)}
                                 onLoad={() => setAvatarError(false)}
                               />
-                            ) : null}
-                            {(!(profile.cachedAvatarUrl || profile.profile?.avatar_url) || avatarError) && (
-                              <img
-                                src={appLogo}
-                                alt="App Logo"
-                                className="w-full h-full object-cover rounded-full"
-                              />
+                            ) : (
+                              <img src={appLogo} alt="App Logo" className="w-full h-full object-cover rounded-full" />
                             )}
                           </div>
                           {editing && (
-                            <label className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full cursor-pointer hover:bg-primary/90 transition-all shadow-lg">
+                            <label className="absolute bottom-0 right-0 p-1.5 bg-primary text-white rounded-full cursor-pointer hover:bg-primary/90 transition-all shadow-lg">
                               <Upload size={14} />
                               <input
                                 type="file"
@@ -282,7 +277,7 @@ const Profile = () => {
                         {/* User Details */}
                         <div className="flex-1 text-center sm:text-left">
                           <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
-                            <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+                            <h3 className="text-xl sm:text-2xl font-bold text-white">
                               {(profile.cachedFullName || profile.profile?.full_name) || "No name set"}
                             </h3>
                             <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${SubscriptionBadge.color} text-white shadow-sm`}>
@@ -290,7 +285,7 @@ const Profile = () => {
                               <span>{SubscriptionBadge.label}</span>
                             </div>
                           </div>
-                          <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-slate-400">
                             <Mail size={14} />
                             <span>{auth.user?.email}</span>
                           </div>
@@ -303,16 +298,16 @@ const Profile = () => {
                             variant="outline"
                             onClick={() => profile.refreshCredits()}
                             disabled={profile.loading}
-                            className="gap-2"
+                            className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10"
                           >
                             <RefreshCw size={14} className={profile.loading ? "animate-spin" : ""} />
-                            {profile.loading ? "Refreshing..." : "Refresh"}
+                            Refresh
                           </Button>
                           <Button
                             size="sm"
                             variant={editing ? "secondary" : "default"}
                             onClick={() => setEditing(!editing)}
-                            className="gap-2"
+                            className="rounded-2xl gap-2"
                           >
                             <Edit2 size={14} />
                             {editing ? "Cancel" : "Edit Profile"}
@@ -322,46 +317,32 @@ const Profile = () => {
 
                       {/* Edit Form */}
                       {editing && (
-                        <div className="border-t border-border pt-6 space-y-4 animate-in slide-in-from-top-2">
+                        <div className="border-t border-white/10 pt-6 space-y-4 animate-in slide-in-from-top-2">
                           <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                              <Label htmlFor="fullName" className="text-sm font-medium">
-                                Full Name
-                              </Label>
+                              <Label htmlFor="fullName" className="text-sm font-medium text-slate-300">Full Name</Label>
                               <Input
                                 id="fullName"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
                                 placeholder="Enter your full name"
-                                className="bg-background/50"
+                                className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="avatarUrl" className="text-sm font-medium">
-                                Avatar URL
-                              </Label>
+                              <Label htmlFor="avatarUrl" className="text-sm font-medium text-slate-300">Avatar URL</Label>
                               <Input
                                 id="avatarUrl"
                                 value={avatarUrl}
                                 onChange={(e) => setAvatarUrl(e.target.value)}
                                 placeholder="https://example.com/avatar.jpg"
-                                className="bg-background/50"
+                                className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200"
                               />
                             </div>
                           </div>
                           <div className="flex gap-3">
-                            <Button onClick={handleSaveProfile} disabled={profile.loading} className="gap-2">
-                              {profile.loading ? (
-                                <>
-                                  <RefreshCw size={16} className="animate-spin" />
-                                  Saving...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle size={16} />
-                                  Save Changes
-                                </>
-                              )}
+                            <Button onClick={handleSaveProfile} disabled={profile.loading} className="rounded-2xl gap-2">
+                              <CheckCircle size={16} /> Save Changes
                             </Button>
                             <Button
                               variant="outline"
@@ -371,6 +352,7 @@ const Profile = () => {
                                 setAvatarFile(null);
                                 setEditing(false);
                               }}
+                              className="rounded-2xl border-white/10"
                             >
                               Cancel
                             </Button>
@@ -384,7 +366,7 @@ const Profile = () => {
                   <Button 
                     variant="destructive" 
                     onClick={() => setShowSignOutDialog(true)}
-                    className="w-full gap-2"
+                    className="w-full rounded-2xl gap-2"
                   >
                     <LogOut size={16} />
                     {t('profile.signOut')}
@@ -393,11 +375,11 @@ const Profile = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
-                    <div className="inline-flex p-3 rounded-full bg-primary/10 text-primary mb-2">
+                    <div className="inline-flex p-3 rounded-full bg-primary/20 text-primary mb-2">
                       <User size={24} />
                     </div>
-                    <h3 className="text-xl font-semibold">{t('auth.welcome.title')}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="text-xl font-semibold text-white">{t('auth.welcome.title')}</h3>
+                    <p className="text-sm text-slate-400">
                       {t('auth.welcome.description')}
                     </p>
                   </div>
@@ -408,7 +390,7 @@ const Profile = () => {
                       onClick={() => handleProviderSignIn("google")}
                       disabled={loadingAuth}
                       variant="outline"
-                      className="w-full gap-2"
+                      className="w-full rounded-2xl gap-2 border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -422,7 +404,7 @@ const Profile = () => {
                       onClick={() => handleProviderSignIn("apple")}
                       disabled={loadingAuth}
                       variant="outline"
-                      className="w-full gap-2"
+                      className="w-full rounded-2xl gap-2 border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.898-1.389 2.312-1.228 3.668 1.3.104 2.624-.688 3.515-1.656z"/>
@@ -434,10 +416,10 @@ const Profile = () => {
                   {/* Divider */}
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
+                      <div className="w-full border-t border-white/10"></div>
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+                      <span className="bg-transparent px-2 text-slate-400">Or continue with email</span>
                     </div>
                   </div>
 
@@ -448,7 +430,7 @@ const Profile = () => {
                         variant={authMode === "login" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setAuthMode("login")}
-                        className="w-full"
+                        className="rounded-2xl"
                       >
                         Sign In
                       </Button>
@@ -456,7 +438,7 @@ const Profile = () => {
                         variant={authMode === "register" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setAuthMode("register")}
-                        className="w-full"
+                        className="rounded-2xl"
                       >
                         Sign Up
                       </Button>
@@ -464,7 +446,7 @@ const Profile = () => {
 
                     <div className="space-y-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="email">{t('auth.email')}</Label>
+                        <Label htmlFor="email" className="text-slate-300">{t('auth.email')}</Label>
                         <Input
                           id="email"
                           type="email"
@@ -472,11 +454,11 @@ const Profile = () => {
                           onChange={(e) => setEmail(e.target.value)}
                           disabled={loadingAuth}
                           placeholder={t('auth.emailPlaceholder')}
-                          className="bg-background/50"
+                          className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="password">{t('auth.password')}</Label>
+                        <Label htmlFor="password" className="text-slate-300">{t('auth.password')}</Label>
                         <Input
                           id="password"
                           type="password"
@@ -484,14 +466,14 @@ const Profile = () => {
                           onChange={(e) => setPassword(e.target.value)}
                           disabled={loadingAuth}
                           placeholder={t('auth.passwordPlaceholder')}
-                          className="bg-background/50"
+                          className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200"
                         />
                       </div>
-                      <Button onClick={handleEmailSubmit} disabled={loadingAuth} className="w-full gap-2">
+                      <Button onClick={handleEmailSubmit} disabled={loadingAuth} className="w-full rounded-2xl gap-2">
                         {loadingAuth && <RefreshCw size={16} className="animate-spin" />}
                         {authMode === "login" ? t('auth.signIn.title') : t('auth.signUp.title')}
                       </Button>
-                      <p className="text-xs text-muted-foreground text-center">
+                      <p className="text-xs text-slate-500 text-center">
                         {t('auth.terms')}
                       </p>
                     </div>
@@ -502,56 +484,41 @@ const Profile = () => {
           </section>
 
           {/* Credits Section */}
-          <section className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden group hover:border-primary/30 transition-all duration-300">
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start gap-5">
-                <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Zap size={22} />
+          <section className="rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl group hover:border-primary/30 transition-all duration-300">
+            <div className="flex items-start gap-5">
+              <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Zap size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">{t('profile.credits.title')}</h2>
+                    <p className="text-sm text-slate-400 mt-1">{t('profile.credits.description')}</p>
+                  </div>
+                  <Link to="/subscription">
+                    <Button variant="outline" size="sm" className="rounded-2xl gap-2 border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10">
+                      <Zap size={14} /> Get More Credits
+                    </Button>
+                  </Link>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="mt-4">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
                     <div>
-                      <h2 className="text-xl font-semibold">{t('profile.credits.title')}</h2>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {t('profile.credits.description')}
-                      </p>
-                    </div>
-                    <Link to="/subscription">
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Zap size={14} />
-                        Get More Credits
-                      </Button>
-                    </Link>
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-                      <div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                            {totalCredits}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {t('profile.credits.available')}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {creditsLabel}
-                        </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                          {totalCredits}
+                        </span>
+                        <span className="text-sm text-slate-400">{t('profile.credits.available')}</span>
                       </div>
-                      <div className="rounded-2xl bg-muted px-3 py-2 text-xs text-muted-foreground">
-                        {freeStatus.remaining > 0
-                          ? `Free daily credits remaining: ${freeStatus.remaining}`
-                          : 'Daily free credits reset each day.'}
-                      </div>
+                      <p className="text-xs text-slate-400 mt-2">{creditsLabel}</p>
                     </div>
-                    <Progress 
-                      value={creditProgress} 
-                      className="mt-3 h-2" 
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {t('profile.credits.usage')}
-                    </p>
+                    <div className="rounded-2xl bg-slate-800/50 px-3 py-2 text-xs text-slate-400 border border-white/10">
+                      {freeStatus.remaining > 0
+                        ? `Free daily credits remaining: ${freeStatus.remaining}`
+                        : 'Daily free credits reset each day.'}
+                    </div>
                   </div>
+                  <Progress value={creditProgress} className="mt-3 h-2 bg-slate-800" />
                 </div>
               </div>
             </div>
@@ -559,53 +526,29 @@ const Profile = () => {
 
           {/* Subscription Section */}
           {auth.user && (
-            <section className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden group hover:border-primary/30 transition-all duration-300">
-              <div className="p-6 sm:p-8">
-                <div className="flex items-start gap-5">
-                  <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <CreditCard size={22} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <h2 className="text-xl font-semibold">{t('profile.subscription.title')}</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {t('profile.subscription.description')}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link to="/subscription">
-                          <Button variant="outline" size="sm">
-                            Manage Plan
-                          </Button>
-                        </Link>
-                        {profile.profile?.subscription_plan !== 'pro' && (
-                          <Button
-                            size="sm"
-                            onClick={() => toast.info(t('profile.subscription.upgradeComingSoon'))}
-                            className="gap-2"
-                          >
-                            <Crown size={14} />
-                            Upgrade
-                          </Button>
-                        )}
-                      </div>
+            <section className="rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl group hover:border-primary/30 transition-all duration-300">
+              <div className="flex items-start gap-5">
+                <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <CreditCard size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-white">{t('profile.subscription.title')}</h2>
+                      <p className="text-sm text-slate-400 mt-1">{t('profile.subscription.description')}</p>
                     </div>
-                    <div className="mt-4">
-                      <div className="inline-flex items-center gap-2">
-                        <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                          profile.profile?.subscription_plan === 'pro' 
-                            ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30'
-                            : 'bg-muted/50 text-muted-foreground border border-border'
-                        }`}>
-                          {profile.profile?.subscription_plan === 'pro' ? '✨ Pro Plan Active' : 'Free Plan'}
-                        </div>
-                        {profile.profile?.subscription_expires_at && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar size={12} />
-                            Expires: {new Date(profile.profile.subscription_expires_at).toLocaleDateString()}
-                          </div>
-                        )}
+                    <div className="flex flex-wrap gap-2">
+                      <Link to="/subscription">
+                        <Button variant="outline" size="sm" className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10">
+                          Manage Plan
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <div className="inline-flex items-center gap-2">
+                      <div className="px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/20 text-primary border border-primary/30">
+                        {profile.profile?.subscription_plan === 'pro' ? '✨ Pro Plan Active' : 'Free Plan'}
                       </div>
                     </div>
                   </div>
@@ -614,30 +557,22 @@ const Profile = () => {
             </section>
           )}
 
-          {/* Feedback Card */}
+          {/* Feedback Section */}
           {auth.user && (
-            <section className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden group hover:border-primary/30 transition-all duration-300">
-              <div className="p-6 sm:p-8">
-                <div className="flex items-start gap-5">
-                  <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <MessageCircle size={22} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <h2 className="text-xl font-semibold">Feedback & Support</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Share your thoughts and help us improve
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => setShowFeedbackDialog(true)}
-                        className="gap-2"
-                      >
-                        <MessageCircle size={14} />
-                        Send Feedback
-                      </Button>
+            <section className="rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl group hover:border-primary/30 transition-all duration-300">
+              <div className="flex items-start gap-5">
+                <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <MessageCircle size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-white">Feedback & Support</h2>
+                      <p className="text-sm text-slate-400 mt-1">Share your thoughts and help us improve</p>
                     </div>
+                    <Button onClick={() => setShowFeedbackDialog(true)} className="rounded-2xl gap-2">
+                      <MessageCircle size={14} /> Send Feedback
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -645,76 +580,72 @@ const Profile = () => {
           )}
 
           {/* Language Section */}
-          <section className="backdrop-blur-xl bg-card/50 rounded-2xl border border-border/50 shadow-xl overflow-hidden group hover:border-primary/30 transition-all duration-300">
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start gap-5">
-                <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Globe size={22} />
+          <section className="rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl group hover:border-primary/30 transition-all duration-300">
+            <div className="flex items-start gap-5">
+              <div className="grid place-items-center h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Globe size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">{t('profile.language.title')}</h2>
+                  <p className="text-sm text-slate-400 mt-1">{t('profile.language.description')}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div>
-                    <h2 className="text-xl font-semibold">{t('profile.language.title')}</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t('profile.language.description')}
-                    </p>
-                  </div>
-                  <div className="mt-4">
-                    <Select value={i18n.language || "en"} onValueChange={(value) => {
-                      i18n.changeLanguage(value);
-                      s.setLanguage(value);
-                      analytics.languageChanged(value);
-                    }}>
-                      <SelectTrigger className="w-full max-w-xs bg-background/50">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {languageOptions.map(({ value, label, flag }) => (
-                          <SelectItem key={value} value={value}>
-                            <span className="flex items-center gap-2">
-                              <span>{flag}</span>
-                              <span>{label}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="mt-4">
+                  <Select value={i18n.language || "en"} onValueChange={(value) => {
+                    i18n.changeLanguage(value);
+                    s.setLanguage(value);
+                    analytics.languageChanged(value);
+                  }}>
+                    <StyledSelectTrigger className="w-full max-w-xs">
+                      <SelectValue placeholder="Select language" />
+                    </StyledSelectTrigger>
+                    <SelectContent className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl">
+                      {languageOptions.map(({ value, label, flag }) => (
+                        <StyledSelectItem key={value} value={value}>
+                          <span className="flex items-center gap-2">
+                            <span>{flag}</span>
+                            <span>{label}</span>
+                          </span>
+                        </StyledSelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
           </section>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground pt-8">
+        <p className="text-center text-xs text-slate-500 pt-8">
           {t('profile.footer')}
         </p>
       </div>
 
       {/* Sign Out Confirmation Dialog */}
       <Dialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border border-white/20 rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Sign Out</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Sign Out</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Are you sure you want to sign out? You'll need to sign in again to access your account.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-3 sm:gap-0">
-            <Button variant="outline" onClick={() => setShowSignOutDialog(false)}>
+            <Button variant="outline" onClick={() => setShowSignOutDialog(false)} className="rounded-2xl border-white/10">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleSignOut}>
+            <Button variant="destructive" onClick={handleSignOut} className="rounded-2xl">
               Sign Out
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {showFeedbackDialog && (
         <FeedbackDialog
           open={showFeedbackDialog}
           onOpenChange={setShowFeedbackDialog}
-          userId={auth.user.id}
+          userId={auth.user?.id || ""}
         />
       )}
     </div>

@@ -19,9 +19,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MessageCircle, Star, Loader2, Upload, X } from 'lucide-react';
+import { MessageCircle, Star, Loader2, Upload, X, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+
+// Styled components matching sidebar aesthetic
+const StyledSelectTrigger = ({ className, children, ...props }: React.ComponentProps<typeof SelectTrigger>) => (
+  <SelectTrigger
+    className={`
+      group flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 
+      text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white 
+      transition-all duration-200 border border-white/10 bg-slate-900/50
+      backdrop-blur-sm shadow-sm
+      ${className || ""}
+    `}
+    {...props}
+  >
+    {children}
+  </SelectTrigger>
+);
+
+const StyledSelectItem = ({ className, children, ...props }: React.ComponentProps<typeof SelectItem>) => (
+  <SelectItem
+    className={`
+      rounded-xl px-4 py-2.5 text-sm font-medium text-slate-300
+      focus:bg-white/10 focus:text-white focus:outline-none
+      data-[highlighted]:bg-white/10 data-[highlighted]:text-white
+      cursor-pointer transition-all duration-150
+      ${className || ""}
+    `}
+    {...props}
+  >
+    {children}
+  </SelectItem>
+);
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -39,23 +70,33 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [attachmentType, setAttachmentType] = useState<string | null>(null);
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
 
   const feedbackTypeOptions = [
-    { value: 'bug_report', label: '🐛 Bug Report' },
-    { value: 'feature_request', label: '✨ Feature Request' },
-    { value: 'general_feedback', label: '💬 General Feedback' },
-    { value: 'performance_issue', label: '⚡ Performance Issue' },
+    { value: 'bug_report', label: '🐛 Bug Report', icon: '🐛' },
+    { value: 'feature_request', label: '✨ Feature Request', icon: '✨' },
+    { value: 'general_feedback', label: '💬 General Feedback', icon: '💬' },
+    { value: 'performance_issue', label: '⚡ Performance Issue', icon: '⚡' },
   ];
 
+  const getFeedbackTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      bug_report: 'from-red-500 to-orange-500',
+      feature_request: 'from-purple-500 to-pink-500',
+      general_feedback: 'from-blue-500 to-cyan-500',
+      performance_issue: 'from-yellow-500 to-amber-500',
+    };
+    return colors[type] || 'from-primary to-primary/70';
+  };
+
   const handleFileSelect = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
       toast.error('File size must be less than 5MB');
       return;
     }
 
     setAttachmentFile(file);
 
-    // Upload file
     const result = await FeedbackService.uploadAttachment(file);
     if (result) {
       setAttachmentUrl(result.url);
@@ -86,7 +127,6 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
       if (result.success) {
         toast.success('Thank you for your feedback!');
         onOpenChange(false);
-        // Reset form
         setTitle('');
         setDescription('');
         setRating(null);
@@ -106,149 +146,186 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <MessageCircle className="text-primary" size={24} />
-            Send Us Your Feedback
-          </DialogTitle>
-          <DialogDescription>
-            Help us improve your experience. Your feedback is valuable and helps shape the future of Xplainfy.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-6">
-          {/* Feedback Type */}
-          <div className="space-y-2">
-            <Label htmlFor="feedback-type" className="font-semibold">
-              Feedback Type
-            </Label>
-            <Select value={feedbackType} onValueChange={(v) => setFeedbackType(v as Feedback['type'])}>
-              <SelectTrigger id="feedback-type" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {feedbackTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="feedback-title" className="font-semibold">
-              Title <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="feedback-title"
-              placeholder="Brief summary of your feedback"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border-border/50"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="feedback-description" className="font-semibold">
-              Description <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              id="feedback-description"
-              placeholder="Please provide detailed information about your feedback..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={6}
-              className="border-border/50 resize-none"
-            />
-            <p className="text-xs text-muted-foreground">{description.length}/1000 characters</p>
-          </div>
-
-          {/* Rating (only for general feedback and feature requests) */}
-          {(feedbackType === 'general_feedback' || feedbackType === 'feature_request') && (
-            <div className="space-y-3">
-              <Label className="font-semibold">How would you rate your experience?</Label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => setRating(rating === star ? null : star)}
-                    className={`transition-transform duration-200 ${
-                      rating && star <= rating ? 'scale-110' : 'scale-100'
-                    }`}
-                  >
-                    <Star
-                      size={28}
-                      className={`${
-                        rating && star <= rating
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-muted-foreground hover:text-yellow-300'
-                      }`}
-                    />
-                  </button>
-                ))}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-white/20 shadow-2xl p-0">
+        {/* Header with gradient bar */}
+        <div className={`h-1 w-full bg-gradient-to-r ${getFeedbackTypeColor(feedbackType)} rounded-t-2xl`} />
+        
+        <div className="p-6 space-y-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-white">
+              <div className={`p-2 rounded-xl bg-gradient-to-br ${getFeedbackTypeColor(feedbackType)} shadow-lg`}>
+                <MessageCircle size={20} className="text-white" />
               </div>
-            </div>
-          )}
+              Send Us Your Feedback
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-sm mt-2">
+              Help us improve your experience. Your feedback is valuable and helps shape the future of Xplainfy.
+            </DialogDescription>
+          </DialogHeader>
 
-          {/* Attachment */}
-          <div className="space-y-2">
-            <Label className="font-semibold">Attachment (Optional)</Label>
-            <div className="border-2 border-dashed border-border/50 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors">
-              <input
-                type="file"
-                id="feedback-attachment"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileSelect(file);
-                }}
-                className="hidden"
-                accept="image/*,.pdf,.txt,.log"
-              />
-              <label htmlFor="feedback-attachment" className="cursor-pointer block">
-                <Upload size={20} className="mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                <p className="text-xs text-muted-foreground">Images, PDF, or logs (Max 5MB)</p>
-              </label>
+          <div className="space-y-6">
+            {/* Feedback Type */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                <span className="text-primary">✦</span>
+                Feedback Type
+              </Label>
+              <Select value={feedbackType} onValueChange={(v) => setFeedbackType(v as Feedback['type'])}>
+                <StyledSelectTrigger className="w-full">
+                  <SelectValue />
+                </StyledSelectTrigger>
+                <SelectContent className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl">
+                  {feedbackTypeOptions.map((option) => (
+                    <StyledSelectItem key={option.value} value={option.value}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-lg">{option.icon}</span>
+                        <span>{option.label}</span>
+                      </span>
+                    </StyledSelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            {attachmentFile && (
-              <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm font-medium truncate">{attachmentFile.name}</p>
-                <button
-                  onClick={() => {
-                    setAttachmentFile(null);
-                    setAttachmentUrl(null);
-                    setAttachmentType(null);
-                  }}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X size={16} />
-                </button>
+
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="feedback-title" className="text-sm font-semibold text-slate-300">
+                Title <span className="text-red-400">*</span>
+              </Label>
+              <Input
+                id="feedback-title"
+                placeholder="Brief summary of your feedback"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200 placeholder:text-slate-500 focus:border-primary/50 transition-all duration-200"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="feedback-description" className="text-sm font-semibold text-slate-300">
+                Description <span className="text-red-400">*</span>
+              </Label>
+              <Textarea
+                id="feedback-description"
+                placeholder="Please provide detailed information about your feedback..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={6}
+                className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200 placeholder:text-slate-500 resize-none focus:border-primary/50 transition-all duration-200"
+              />
+              <p className="text-xs text-slate-500 text-right">
+                {description.length}/1000 characters
+              </p>
+            </div>
+
+            {/* Rating Section */}
+            {(feedbackType === 'general_feedback' || feedbackType === 'feature_request') && (
+              <div className="space-y-3 p-4 rounded-2xl bg-slate-800/30 border border-white/10">
+                <Label className="text-sm font-semibold text-slate-300">
+                  How would you rate your experience?
+                </Label>
+                <div className="flex gap-3 justify-center py-2">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isActive = rating && star <= rating;
+                    const isHovered = hoveredRating && star <= hoveredRating;
+                    return (
+                      <button
+                        key={star}
+                        onClick={() => setRating(rating === star ? null : star)}
+                        onMouseEnter={() => setHoveredRating(star)}
+                        onMouseLeave={() => setHoveredRating(null)}
+                        className="group transition-all duration-200 focus:outline-none"
+                      >
+                        <Star
+                          size={32}
+                          className={`
+                            transition-all duration-200
+                            ${isActive || isHovered
+                              ? 'fill-yellow-400 text-yellow-400 scale-110' 
+                              : 'text-slate-600 group-hover:text-yellow-400/50'
+                            }
+                            ${rating === star ? 'scale-110' : 'scale-100'}
+                          `}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-center text-xs text-slate-500">
+                  {rating === 5 && "🌟 Excellent! We're thrilled!"}
+                  {rating === 4 && "😊 Good! We're on the right track."}
+                  {rating === 3 && "👍 Okay - room for improvement."}
+                  {rating === 2 && "😐 Not great - we'll work on it."}
+                  {rating === 1 && "😔 Very poor - we'll fix this."}
+                </p>
               </div>
             )}
-          </div>
-        </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !title.trim() || !description.trim()}
-            className="gap-2"
-          >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            {loading ? 'Submitting...' : 'Submit Feedback'}
-          </Button>
-        </DialogFooter>
+            {/* Attachment */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-300">
+                Attachment <span className="text-xs text-slate-500 font-normal">(Optional)</span>
+              </Label>
+              <div className="border-2 border-dashed border-white/10 rounded-2xl p-6 text-center cursor-pointer hover:border-primary/50 transition-all duration-200 bg-slate-800/20 group">
+                <input
+                  type="file"
+                  id="feedback-attachment"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file);
+                  }}
+                  className="hidden"
+                  accept="image/*,.pdf,.txt,.log"
+                />
+                <label htmlFor="feedback-attachment" className="cursor-pointer block">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-all duration-200">
+                    <Upload size={20} className="text-primary" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-300">Click to upload or drag and drop</p>
+                  <p className="text-xs text-slate-500 mt-1">Images, PDF, or logs (Max 5MB)</p>
+                </label>
+              </div>
+              {attachmentFile && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-500" />
+                    <p className="text-sm font-medium text-slate-300 truncate">{attachmentFile.name}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAttachmentFile(null);
+                      setAttachmentUrl(null);
+                      setAttachmentType(null);
+                    }}
+                    className="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-3 pt-4 border-t border-white/10">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="rounded-2xl border-white/10 bg-slate-800/50 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !title.trim() || !description.trim()}
+              className={`rounded-2xl gap-2 bg-gradient-to-r ${getFeedbackTypeColor(feedbackType)} text-white shadow-md hover:shadow-lg transition-all duration-200`}
+            >
+              {loading && <Loader2 size={16} className="animate-spin" />}
+              {loading ? 'Submitting...' : 'Submit Feedback'}
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

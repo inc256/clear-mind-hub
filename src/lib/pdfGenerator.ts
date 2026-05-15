@@ -89,7 +89,7 @@ export const processContentForDisplay = (content: string): string => {
 };
 
 // Remove marker comments from research PDF content
-const removeMarkerComments = (content: string): string => {
+export const removeMarkerComments = (content: string): string => {
   // Remove all SECTION_START and SECTION_END markers
   let cleaned = content.replace(/<!--\s*SECTION_(START|END):[^>]+-->/g, '');
   // Also remove any HTML-style comments that might contain markers
