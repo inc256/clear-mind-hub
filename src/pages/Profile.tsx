@@ -100,10 +100,10 @@ const Profile = () => {
   const totalCredits = hasUnlimitedSubscription ? 'Unlimited' : totalPaidCredits + freeStatus.remaining;
   const creditProgress = hasUnlimitedSubscription ? 100 : Math.min((totalPaidCredits + freeStatus.remaining) / 100 * 100, 100);
   const creditsLabel = hasUnlimitedSubscription
-    ? 'Unlimited credits with active subscription'
+    ? t('profile.credits.unlimitedLabel', { fallback: 'Unlimited credits with active subscription' })
     : freeStatus.remaining > 0
-      ? `${totalPaidCredits} paid + ${freeStatus.remaining} free daily`
-      : `${totalPaidCredits} paid credits`;
+      ? t('profile.credits.paidFreeDaily', { paid: totalPaidCredits, free: freeStatus.remaining })
+      : t('profile.credits.paidLabel', { paid: totalPaidCredits, fallback: `${totalPaidCredits} paid credits` });
 
   const handleProviderSignIn = async (provider: "google" | "apple") => {
     setLoadingAuth(true);
@@ -144,7 +144,7 @@ const Profile = () => {
       navigate("/");
       setShowSignOutDialog(false);
     } catch (error: any) {
-      toast.error(error?.message ?? "Failed to sign out.");
+      toast.error(error?.message ?? t('profile.messages.signOutFailed'));
     }
   };
 
@@ -219,11 +219,11 @@ const Profile = () => {
     );
 
     if (!isPaidPlan) {
-      return { label: 'Free Plan', color: 'bg-gradient-to-r from-gray-500 to-gray-600', icon: Star };
+      return { label: t('profile.subscription.freePlan'), color: 'bg-gradient-to-r from-gray-500 to-gray-600', icon: Star };
     }
 
     return {
-      label: plan ? `${plan} Active` : 'Paid Plan Active',
+      label: `${plan} ${t('profile.subscription.paidPlanActive')}`,
       color: 'bg-gradient-to-r from-amber-500 to-orange-500',
       icon: Crown,
     };
@@ -301,7 +301,7 @@ const Profile = () => {
                             className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10"
                           >
                             <RefreshCw size={14} className={profile.loading ? "animate-spin" : ""} />
-                            Refresh
+                            {t('common.refresh')}
                           </Button>
                           <Button
                             size="sm"
@@ -310,7 +310,7 @@ const Profile = () => {
                             className="rounded-2xl gap-2"
                           >
                             <Edit2 size={14} />
-                            {editing ? "Cancel" : "Edit Profile"}
+                            {editing ? t('common.cancel') : t('profile.editProfile')}
                           </Button>
                         </div>
                       </div>
@@ -320,29 +320,29 @@ const Profile = () => {
                         <div className="border-t border-white/10 pt-6 space-y-4 animate-in slide-in-from-top-2">
                           <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                              <Label htmlFor="fullName" className="text-sm font-medium text-slate-300">Full Name</Label>
+                              <label className="text-sm font-medium text-slate-300">{t('profile.fullNameLabel')}</label>
                               <Input
                                 id="fullName"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Enter your full name"
+                                placeholder={t('profile.fullNamePlaceholder')}
                                 className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="avatarUrl" className="text-sm font-medium text-slate-300">Avatar URL</Label>
+                              <label className="text-sm font-medium text-slate-300">{t('profile.avatarUrlLabel')}</label>
                               <Input
                                 id="avatarUrl"
                                 value={avatarUrl}
                                 onChange={(e) => setAvatarUrl(e.target.value)}
-                                placeholder="https://example.com/avatar.jpg"
+                                placeholder={t('profile.avatarUrlPlaceholder')}
                                 className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200"
                               />
                             </div>
                           </div>
                           <div className="flex gap-3">
                             <Button onClick={handleSaveProfile} disabled={profile.loading} className="rounded-2xl gap-2">
-                              <CheckCircle size={16} /> Save Changes
+                              <CheckCircle size={16} /> {t('profile.saveChanges')}
                             </Button>
                             <Button
                               variant="outline"
@@ -354,7 +354,7 @@ const Profile = () => {
                               }}
                               className="rounded-2xl border-white/10"
                             >
-                              Cancel
+                              {t('profile.cancelEdit')}
                             </Button>
                           </div>
                         </div>
@@ -369,7 +369,7 @@ const Profile = () => {
                     className="w-full rounded-2xl gap-2"
                   >
                     <LogOut size={16} />
-                    {t('profile.signOut')}
+                    {t('profile.signOut.confirm')}
                   </Button>
                 </div>
               ) : (
@@ -497,7 +497,7 @@ const Profile = () => {
                   </div>
                   <Link to="/subscription">
                     <Button variant="outline" size="sm" className="rounded-2xl gap-2 border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10">
-                      <Zap size={14} /> Get More Credits
+                      <Zap size={14} /> {t('profile.credits.getMoreCredits')}
                     </Button>
                   </Link>
                 </div>
@@ -514,8 +514,8 @@ const Profile = () => {
                     </div>
                     <div className="rounded-2xl bg-slate-800/50 px-3 py-2 text-xs text-slate-400 border border-white/10">
                       {freeStatus.remaining > 0
-                        ? `Free daily credits remaining: ${freeStatus.remaining}`
-                        : 'Daily free credits reset each day.'}
+                        ? t('profile.subscription.freeDailyCreditsValue', { remaining: freeStatus.remaining })
+                        : t('profile.subscription.dailyCreditsReset')}
                     </div>
                   </div>
                   <Progress value={creditProgress} className="mt-3 h-2 bg-slate-800" />
@@ -540,15 +540,17 @@ const Profile = () => {
                     <div className="flex flex-wrap gap-2">
                       <Link to="/subscription">
                         <Button variant="outline" size="sm" className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-300 hover:bg-white/10">
-                          Manage Plan
-                        </Button>
+                            {t('profile.subscription.managePlan')}
+                          </Button>
                       </Link>
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="inline-flex items-center gap-2">
                       <div className="px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/20 text-primary border border-primary/30">
-                        {profile.profile?.subscription_plan === 'pro' ? '✨ Pro Plan Active' : 'Free Plan'}
+                        {profile.profile?.subscription_plan === 'pro'
+                          ? t('profile.subscription.proActive')
+                          : t('profile.subscription.freePlan')}
                       </div>
                     </div>
                   </div>
@@ -567,11 +569,11 @@ const Profile = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-xl font-semibold text-white">Feedback & Support</h2>
-                      <p className="text-sm text-slate-400 mt-1">Share your thoughts and help us improve</p>
+                      <h2 className="text-xl font-semibold text-white">{t('profile.feedback.title')}</h2>
+                      <p className="text-sm text-slate-400 mt-1">{t('profile.feedback.description')}</p>
                     </div>
                     <Button onClick={() => setShowFeedbackDialog(true)} className="rounded-2xl gap-2">
-                      <MessageCircle size={14} /> Send Feedback
+                      <MessageCircle size={14} /> {t('profile.feedback.button')}
                     </Button>
                   </div>
                 </div>
@@ -625,17 +627,17 @@ const Profile = () => {
       <Dialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
         <DialogContent className="sm:max-w-md bg-slate-900 border border-white/20 rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Sign Out</DialogTitle>
+            <DialogTitle className="text-white">{t('profile.signOut.title')}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Are you sure you want to sign out? You'll need to sign in again to access your account.
+              {t('profile.signOut.description')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-3 sm:gap-0">
             <Button variant="outline" onClick={() => setShowSignOutDialog(false)} className="rounded-2xl border-white/10">
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleSignOut} className="rounded-2xl">
-              Sign Out
+              {t('profile.signOut.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

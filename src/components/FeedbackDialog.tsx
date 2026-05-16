@@ -73,10 +73,10 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
 
   const feedbackTypeOptions = [
-    { value: 'bug_report', label: '🐛 Bug Report', icon: '🐛' },
-    { value: 'feature_request', label: '✨ Feature Request', icon: '✨' },
-    { value: 'general_feedback', label: '💬 General Feedback', icon: '💬' },
-    { value: 'performance_issue', label: '⚡ Performance Issue', icon: '⚡' },
+    { value: 'bug_report', label: `${t('feedback.typeOptions.bugReport')} 🐛`, icon: '🐛' },
+    { value: 'feature_request', label: `${t('feedback.typeOptions.featureRequest')} ✨`, icon: '✨' },
+    { value: 'general_feedback', label: `${t('feedback.typeOptions.generalFeedback')} 💬`, icon: '💬' },
+    { value: 'performance_issue', label: `${t('feedback.typeOptions.performanceIssue')} ⚡`, icon: '⚡' },
   ];
 
   const getFeedbackTypeColor = (type: string) => {
@@ -91,7 +91,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
 
   const handleFileSelect = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+      toast.error(t('feedback.messages.fileTooLarge'));
       return;
     }
 
@@ -101,15 +101,15 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
     if (result) {
       setAttachmentUrl(result.url);
       setAttachmentType(result.type);
-      toast.success('Attachment uploaded successfully');
+      toast.success(t('feedback.messages.attachmentUploaded'));
     } else {
-      toast.error('Failed to upload attachment');
+      toast.error(t('feedback.messages.attachmentUploadFailed'));
     }
   };
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('feedback.messages.missingFields'));
       return;
     }
 
@@ -125,7 +125,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
       });
 
       if (result.success) {
-        toast.success('Thank you for your feedback!');
+        toast.success(t('feedback.messages.success'));
         onOpenChange(false);
         setTitle('');
         setDescription('');
@@ -135,10 +135,10 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
         setAttachmentType(null);
         setFeedbackType('general_feedback');
       } else {
-        toast.error(result.error || 'Failed to submit feedback');
+        toast.error(result.error || t('feedback.messages.submitFailed'));
       }
     } catch (error: any) {
-      toast.error('An error occurred while submitting feedback');
+      toast.error(t('feedback.messages.submitError'));
     } finally {
       setLoading(false);
     }
@@ -156,10 +156,10 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
               <div className={`p-2 rounded-xl bg-gradient-to-br ${getFeedbackTypeColor(feedbackType)} shadow-lg`}>
                 <MessageCircle size={20} className="text-white" />
               </div>
-              Send Us Your Feedback
+              {t('feedback.title')}
             </DialogTitle>
             <DialogDescription className="text-slate-400 text-sm mt-2">
-              Help us improve your experience. Your feedback is valuable and helps shape the future of Xplainfy.
+              {t('feedback.subtitle')}
             </DialogDescription>
           </DialogHeader>
 
@@ -168,7 +168,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
                 <span className="text-primary">✦</span>
-                Feedback Type
+                {t('feedback.type')}
               </Label>
               <Select value={feedbackType} onValueChange={(v) => setFeedbackType(v as Feedback['type'])}>
                 <StyledSelectTrigger className="w-full">
@@ -190,11 +190,11 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="feedback-title" className="text-sm font-semibold text-slate-300">
-                Title <span className="text-red-400">*</span>
+                {t('feedback.input.title')} <span className="text-red-400">*</span>
               </Label>
               <Input
                 id="feedback-title"
-                placeholder="Brief summary of your feedback"
+                placeholder={t('feedback.input.titlePlaceholder')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-200 placeholder:text-slate-500 focus:border-primary/50 transition-all duration-200"
@@ -204,11 +204,11 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="feedback-description" className="text-sm font-semibold text-slate-300">
-                Description <span className="text-red-400">*</span>
+                {t('feedback.input.description')} <span className="text-red-400">*</span>
               </Label>
               <Textarea
                 id="feedback-description"
-                placeholder="Please provide detailed information about your feedback..."
+                placeholder={t('feedback.input.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
@@ -223,7 +223,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
             {(feedbackType === 'general_feedback' || feedbackType === 'feature_request') && (
               <div className="space-y-3 p-4 rounded-2xl bg-slate-800/30 border border-white/10">
                 <Label className="text-sm font-semibold text-slate-300">
-                  How would you rate your experience?
+                  {t('feedback.rating.question')}
                 </Label>
                 <div className="flex gap-3 justify-center py-2">
                   {[1, 2, 3, 4, 5].map((star) => {
@@ -253,11 +253,11 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
                   })}
                 </div>
                 <p className="text-center text-xs text-slate-500">
-                  {rating === 5 && "🌟 Excellent! We're thrilled!"}
-                  {rating === 4 && "😊 Good! We're on the right track."}
-                  {rating === 3 && "👍 Okay - room for improvement."}
-                  {rating === 2 && "😐 Not great - we'll work on it."}
-                  {rating === 1 && "😔 Very poor - we'll fix this."}
+                  {rating === 5 && t('feedback.rating.messages.excellent')}
+                  {rating === 4 && t('feedback.rating.messages.good')}
+                  {rating === 3 && t('feedback.rating.messages.okay')}
+                  {rating === 2 && t('feedback.rating.messages.notGreat')}
+                  {rating === 1 && t('feedback.rating.messages.veryPoor')}
                 </p>
               </div>
             )}
@@ -282,8 +282,8 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
                   <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-all duration-200">
                     <Upload size={20} className="text-primary" />
                   </div>
-                  <p className="text-sm font-medium text-slate-300">Click to upload or drag and drop</p>
-                  <p className="text-xs text-slate-500 mt-1">Images, PDF, or logs (Max 5MB)</p>
+                  <p className="text-sm font-medium text-slate-300">{t('feedback.attachment.prompt')}</p>
+                  <p className="text-xs text-slate-500 mt-1">{t('feedback.attachment.hint')}</p>
                 </label>
               </div>
               {attachmentFile && (
@@ -314,7 +314,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
               disabled={loading}
               className="rounded-2xl border-white/10 bg-slate-800/50 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-200"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -322,7 +322,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
               className={`rounded-2xl gap-2 bg-gradient-to-r ${getFeedbackTypeColor(feedbackType)} text-white shadow-md hover:shadow-lg transition-all duration-200`}
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? 'Submitting...' : 'Submit Feedback'}
+              {loading ? t('feedback.submitting') : t('feedback.submit')}
             </Button>
           </DialogFooter>
         </div>

@@ -5,11 +5,156 @@
     "description": "Outil d'apprentissage alimenté par IA. Transformez les questions, textes et documents en solutions structurées, recherches et notes."
   },
   "navigation": {
-    "tutor": "Tuteur",
+    "tutor": "Poser",
     "research": "Recherche",
     "history": "Historique",
     "subscription": "Abonnement",
-    "profile": "Profil"
+    "profile": "Profil",
+    "credits": "Crédits"
+  },
+  "history": {
+    "title": "Historique des discussions",
+    "subtitle": "Voir et gérer vos conversations IA précédentes",
+    "searchPlaceholder": "Recherchez votre historique...",
+    "filters": {
+      "all": "Tout",
+      "ask": "Poser",
+      "research": "Rechercher"
+    },
+    "back": "Retour à l'historique",
+    "downloadPdf": "Télécharger PDF",
+    "clearAll": "Tout effacer",
+    "attachedCode": "Code joint",
+    "codeSnippet": "Extrait de code {{index}}{{language}}",
+    "dates": {
+      "yesterday": "Hier"
+    },
+    "empty": {
+      "noActivities": "Aucune activité pour l'instant",
+      "noResults": "Aucun résultat correspondant",
+      "startPrompt": "Commencez à poser des questions pour créer votre historique!",
+      "adjustFilters": "Essayez d'ajuster votre recherche ou vos filtres"
+    },
+    "mode": {
+      "tutor": "Poser",
+      "ask": "Poser",
+      "research": "Rechercher",
+      "problem": "Problème",
+      "simplify": "Simplifier",
+      "hints": "Conseils",
+      "rewrites": "Rédactions"
+    }
+  },
+  "subscription": {
+    "title": "Choisissez votre formule",
+    "subtitle": "Sélectionnez le plan d'abonnement idéal pour votre parcours d'apprentissage IA",
+    "plans": {
+      "popular": "Le plus populaire",
+      "button": {
+        "startTrial": "Commencer l'essai gratuit",
+        "getPlan": "Obtenir {{plan}}"
+      },
+      "features": {
+        "askLevels": "Demander (Fondamental, Intermédiaire, Supérieur)",
+        "askAllLevels": "Demander (Tous les niveaux)",
+        "researchFundamental": "Rechercher (Fondamental uniquement)",
+        "researchAllButAdvanced": "Rechercher (Fondamental, Intermédiaire, Supérieur)",
+        "researchAllLevels": "Rechercher (Tous les niveaux)",
+        "allCitationStyles": "Tous les styles de citation"
+      },
+      "limitations": {
+        "askAdvancedRequiresPremium": "Demander Avancé nécessite la version premium",
+        "researchIntermediatePremium": "Rechercher Intermédiaire+ nécessite la version premium sans crédits supplémentaires",
+        "researchAdvancedUltraOnly": "Rechercher Avancé est réservé à la version Ultra",
+        "researchAdvancedRequiresPremium": "Rechercher Avancé nécessite la version premium",
+        "noAiImageGeneration": "Pas de génération d'images IA",
+        "creditsConsumedWithUsage": "Les crédits sont consommés avec l'utilisation"
+      },
+      "faq": {
+        "noSetupFees": "Pas de frais de configuration",
+        "cancelAnytime": "Annulez à tout moment",
+        "emailSupport": "Support par e-mail",
+        "tagline": "Créé pour xplainfy.net — Explications intelligentes, recherche avancée et productivité alimentée par l'IA."
+      }
+    },
+    "comparison": {
+      "title": "Comparer toutes les fonctionnalités",
+      "subtitle": "Voyez exactement ce que vous obtenez avec chaque formule",
+      "footer": "Tous les plans incluent des explications IA essentielles et une assistance de base. Mettez à niveau à tout moment pour débloquer plus de puissance.",
+      "dailyCredits": "Crédits quotidiens",
+      "totalCredits": "Crédits totaux",
+      "askFundamental": "Demander Fondamental",
+      "askIntermediate": "Demander Intermédiaire",
+      "askHigher": "Demander Supérieur",
+      "askAdvanced": "Demander Avancé",
+      "researchFundamental": "Rechercher Fondamental",
+      "researchIntermediate": "Rechercher Intermédiaire",
+      "researchHigher": "Rechercher Supérieur",
+      "researchAdvanced": "Rechercher Avancé",
+      "fileUploadSize": "Taille de téléchargement de fichier",
+      "maxInputWords": "Nombre maximal de mots d'entrée",
+      "citationStyles": "Styles de citation",
+      "citationStylesBasic": "Tous (APA, MLA, IEEE, AMA)",
+      "aiIllustrations": "Illustrations IA",
+      "advancedModels": "Modèles avancés",
+      "imageGeneration": "Génération d'images",
+      "tooltips": {
+        "dailyCredits": "Crédits gratuits quotidiens inclus",
+        "totalCredits": "Total des crédits disponibles",
+        "askFundamental": "Accès au niveau Demander Fondamental",
+        "askIntermediate": "Accès au niveau Demander Intermédiaire",
+        "askHigher": "Accès au niveau Demander Supérieur",
+        "askAdvanced": "Accès au niveau Demander Avancé",
+        "researchFundamental": "Accès au niveau Rechercher Fondamental",
+        "researchIntermediate": "Accès au niveau Rechercher Intermédiaire",
+        "researchHigher": "Accès au niveau Rechercher Supérieur",
+        "researchAdvanced": "Accès au niveau Rechercher Avancé",
+        "fileUploadSize": "Taille maximale du fichier par téléchargement",
+        "maxInputWords": "Nombre maximum de mots d'entrée",
+        "citationStyles": "Formats de citation disponibles",
+        "aiIllustrations": "Générez des illustrations IA dans les réponses",
+        "advancedModels": "GPT-5.5 pour les tâches complexes",
+        "imageGeneration": "Générez des images avec GPT Image 2"
+      }
+    },
+    "credits": "crédits",
+    "billing": {
+      "monthly": "Mensuel",
+      "yearly": "Annuel"
+    }
+  },
+  "payment": {
+    "title": "Terminer le paiement",
+    "description": "Inscrivez-vous à {{plan}} pour {{price}}/{{period}}",
+    "cardName": "Nom du titulaire",
+    "cardNamePlaceholder": "Jean Dupont",
+    "cardNumber": "Numéro de carte",
+    "expiry": "Date d'expiration",
+    "cvc": "CVC",
+    "secure": "Vos informations de paiement sont sécurisées et chiffrées",
+    "processing": "Traitement en cours...",
+    "pay": "Payer {{amount}}",
+    "success": {
+      "subscription": "Abonnement à {{plan}} réussi !",
+      "credits": "Achat de {{credits}} crédits réussi !",
+      "trial": "Démarrage de {{plan}} réussi !",
+      "initiated": "Paiement initié. Vous recevrez une confirmation une fois terminé."
+    },
+    "errors": {
+      "missingFields": "Veuillez remplir tous les champs de paiement",
+      "missingPhone": "Veuillez entrer un numéro de téléphone mobile",
+      "failed": "Le paiement a échoué. Veuillez réessayer."
+    },
+    "rateLoading": "Récupération du taux de change...",
+    "rateUnavailable": "Taux de change indisponible",
+    "rateFallbackSuffix": " (secours)",
+    "operator": "Opérateur",
+    "chooseOperator": "Choisir l'opérateur",
+    "operatorMtn": "MTN Mobile Money",
+    "operatorAirtel": "Airtel Money",
+    "phoneNumber": "Numéro de téléphone",
+    "phonePlaceholder": "07XXXXXXXX ou +2567XXXXXXXX",
+    "mobileMoneyNotice": "Le paiement sera traité via mobile money ({{operator}}). Vous serez débité du montant équivalent en UGX indiqué ci-dessus."
   },
   "profile": {
     "title": "Profil et Paramètres",
@@ -39,21 +184,51 @@
     },
     "signedInAs": "Connecté en tant que",
     "user": "Utilisateur",
-    "signOut": "Se déconnecter",
+    "signOut": {
+      "title": "Se déconnecter",
+      "description": "Êtes-vous sûr de vouloir vous déconnecter ? Vous devrez vous reconnecter pour accéder à votre compte.",
+      "confirm": "Se déconnecter"
+    },
+    "messages": {
+      "signOutFailed": "Échec de la déconnexion. Veuillez réessayer."
+    },
+    "editProfile": "Modifier le profil",
+    "fullNameLabel": "Nom complet",
+    "fullNamePlaceholder": "Entrez votre nom complet",
+    "avatarUrlLabel": "URL de l'avatar",
+    "avatarUrlPlaceholder": "https://example.com/avatar.jpg",
+    "saveChanges": "Sauvegarder les modifications",
+    "cancelEdit": "Annuler",
     "credits": {
-      "title": "Crédits",
-      "description": "Vos crédits disponibles pour les interactions IA",
-      "available": "crédits disponibles",
-      "usage": "Chaque réponse IA coûte 1 crédit"
+      "remainingDailyFree": "Crédits gratuits quotidiens restants",
+      "premiumSource": "Source premium",
+      "activeStatus": "Actif",
+      "inactiveStatus": "Inactif",
+      "dailyUsage": "Utilisation quotidienne des crédits gratuits",
+      "usedLabel": "/10 utilisés",
+      "freeLeft": "restants gratuits",
+      "unlimitedLabel": "Crédits illimités",
+      "paidLabel": "{{paid}} crédits payés",
+      "dailyAutoGrant": "Les crédits gratuits quotidiens sont accordés automatiquement par Supabase et suivis ici par l'utilisation.",
+      "bonusLabel": "Crédits bonus",
+      "subscriptionCredits": "Crédits d'abonnement",
+      "premiumAccess": "Accès Premium",
+      "creditAccess": "Accès aux crédits",
+      "freeAccount": "Compte gratuit"
     },
     "subscription": {
-      "title": "Plans d'abonnement",
-      "subtitle": "Choisissez le plan parfait pour votre parcours d'apprentissage IA",
+      "title": "Abonnement",
+      "subtitle": "Gérez votre plan d'abonnement et facturation",
       "billing": {
         "monthly": "Mensuel",
         "yearly": "Annuel",
         "save": "Économisez 17%"
       },
+      "creditsLabel": "crédits",
+      "creditsAmount": "{{credits}} crédits",
+      "freeDailyCreditsLabel": "Crédits gratuits restants",
+      "freeDailyCreditsValue": "Crédits gratuits quotidiens restants : {{remaining}}",
+      "dailyCreditsReset": "Les crédits gratuits quotidiens sont réinitialisés chaque jour.",
       "credits": "crédits",
       "plans": {
         "popular": "Le plus populaire",
@@ -62,7 +237,7 @@
           "description": "Parfait pour commencer",
           "period": "pour toujours",
           "features": {
-            "1": "10 crédits IA",
+            "1": "10 crédits IA gratuits",
             "2": "Résolution de problèmes basique",
             "3": "Support communautaire"
           },
@@ -95,9 +270,13 @@
         },
         "subscribe": "S'abonner à {{plan}}"
       },
+      "managePlan": "Gérer le plan",
+      "proActive": "✨ Plan Pro actif",
+      "freePlan": "Plan gratuit",
       "description": "Gérer votre plan d'abonnement et facturation",
       "expires": "Expire",
       "upgrade": "Mettre à niveau",
+      "paidPlanActive": "Active",
       "upgradeComingSoon": "Options de mise à niveau bientôt disponibles !",
       "viewPlans": "Voir les plans",
       "footer": "Tous les plans incluent un accès illimité à notre plateforme d'apprentissage. Annulez à tout moment."
@@ -112,9 +291,65 @@
       "cvc": "CVC",
       "secure": "Vos informations de paiement sont sécurisées et chiffrées",
       "processing": "Traitement en cours...",
-      "pay": "Payer {{amount}}"
+      "pay": "Payer {{amount}}",
+      "success": {
+        "subscription": "Abonnement à {{plan}} réussi !",
+        "credits": "Achat de {{credits}} crédits réussi !",
+        "trial": "Démarrage de {{plan}} réussi !"
+      },
+      "errors": {
+        "missingFields": "Veuillez remplir tous les champs de paiement",
+        "failed": "Le paiement a échoué. Veuillez réessayer."
+      }
+    },
+    "feedback": {
+      "title": "Votre avis compte",
+      "description": "Partagez vos réflexions ou signalez un problème pour nous aider à améliorer Xplainfy.",
+      "button": "Envoyer des commentaires"
     },
     "footer": "Xplainfy · N'importe quoi expliqué"
+  },
+  "feedback": {
+    "title": "Envoyez-nous vos commentaires",
+    "subtitle": "Aidez-nous à améliorer votre expérience. Vos commentaires sont précieux et aident à façonner l'avenir de Xplainfy.",
+    "type": "Type de commentaire",
+    "typeOptions": {
+      "bugReport": "Signalement de bogue",
+      "featureRequest": "Demande de fonctionnalité",
+      "generalFeedback": "Commentaires généraux",
+      "performanceIssue": "Problème de performance"
+    },
+    "input": {
+      "title": "Titre",
+      "titlePlaceholder": "Résumé bref de vos commentaires",
+      "description": "Description",
+      "descriptionPlaceholder": "Veuillez fournir des informations détaillées sur vos commentaires..."
+    },
+    "rating": {
+      "question": "Comment évalueriez-vous votre expérience?",
+      "messages": {
+        "excellent": "🌟 Excellent! Nous sommes ravis!",
+        "good": "😊 Bien! Nous sommes sur la bonne voie.",
+        "okay": "👍 D'accord - place pour l'amélioration.",
+        "notGreat": "😐 Pas terrible - nous allons travailler dessus.",
+        "veryPoor": "😔 Très mauvais - nous allons corriger cela."
+      }
+    },
+    "attachment": {
+      "prompt": "Cliquez pour télécharger ou glissez-déposez",
+      "hint": "Images, PDF ou journaux (Max 5 MB)"
+    },
+    "submitting": "Soumission en cours...",
+    "submit": "Soumettre les commentaires",
+    "messages": {
+      "fileTooLarge": "La taille du fichier doit être inférieure à 5 MB",
+      "attachmentUploaded": "Pièce jointe téléchargée avec succès",
+      "attachmentUploadFailed": "Échec du téléchargement de la pièce jointe",
+      "missingFields": "Veuillez remplir tous les champs requis",
+      "success": "Merci pour vos commentaires!",
+      "submitFailed": "Échec de la soumission des commentaires",
+      "submitError": "Une erreur s'est produite lors de la soumission des commentaires"
+    }
   },
   "workspace": {
     "thinking": "Réflexion…",
@@ -145,72 +380,101 @@
     "solve": "Résoudre",
     "mindset": "Style d'apprentissage",
     "mindsetDescription": "L'IA adaptera les explications en fonction de votre style d'apprentissage choisi.",
+    "researchMindset": "Mindset de Recherche",
+    "researchMindsetDescription": "L'IA adaptera la recherche en fonction du mindset que vous avez choisi.",
     "general": "Général",
     "medical": "Médical",
     "engineering": "Ingénierie",
     "lecturer": "Conférencier",
     "scientific": "Scientifique",
-     "creative": "Créatif",
-     "depth": "Niveau d'explication",
-     "depthDescription": "Choisissez le niveau de détail des explications.",
-     "beginner": "Débutant",
-     "intermediate": "Intermédiaire",
-     "higher": "Supérieur",
-     "advanced": "Avancé",
-     "renderingContent": "Rendu du contenu en cours..."
-  },
-  "tutor": {
-    "title": "Tuteur IA",
-    "subtitle": "Obtenez un tutorat personnalisé avec des explications étape par étape adaptées à votre style d'apprentissage.",
-    "placeholder": "Demandez-moi n'importe quoi... Quel sujet aimeriez-vous que je vous aide ?"
-  },
-  "research": {
-    "title": "Assistant de recherche",
-    "subtitle": "Plongez profondément dans n'importe quel sujet avec une recherche complète et des insights structurés.",
-    "placeholder": "Que souhaitez-vous rechercher ? Entrez un sujet ou une question..."
-  },
-  "problem": {
-    "title": "Résolveur de problèmes",
-    "subtitle": "Résolvez des problèmes complexes avec des solutions détaillées étape par étape.",
-    "placeholder": "Décrivez votre problème... Je le décomposerai et le résoudrai étape par étape."
-  },
-  "auth": {
-    "welcome": {
-      "title": "Bienvenue sur Xplainfy",
-      "subtitle": "Apprentissage alimenté par IA simplifié",
-      "description": "Connectez-vous pour accéder au tutorat IA personnalisé, à l'assistance de recherche et à la résolution de problèmes."
+    "creative": "Créatif",
+    "fundamentalLabel": "Fondamental",
+    "chooseCategory": "Choisissez la catégorie",
+    "chooseLevel": "Choisissez le niveau",
+    "chooseCitationStyle": "Choisissez le style de citation",
+    "depth": "Niveau d'explication",
+    "depthDescription": "Choisissez le niveau de détail des explications.",
+    "beginner": "Fondamental",
+    "intermediate": "Intermédiaire",
+    "higher": "Supérieur",
+    "advanced": "Avancé",
+    "renderingContent": "Rendu du contenu en cours...",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "codeCopied": "Code copié !",
+    "codeCopyFailed": "Échec de la copie du code",
+    "processing": "En traitement",
+    "done": "Terminé",
+    "part": "Partie {{part}}",
+    "beingProcessed": "{{title}} en traitement",
+    "buildingTutorial": "Construction de votre tutoriel",
+    "researchingTopic": "Recherche sur votre sujet",
+    "pdfDownloaded": "PDF téléchargé avec succès",
+    "pdfGenerateFailed": "Échec de la génération du PDF",
+    "pdfDownloadFailed": "Échec du téléchargement du document",
+    "pdfTitles": {
+      "tutor": "Tutoriel",
+      "research": "Rapport de recherche",
+      "problem": "Solution du problème",
+      "default": "Document"
     },
-    "signIn": {
-      "title": "Se connecter",
-      "google": "Continuer avec Google",
-      "apple": "Continuer avec Apple"
+    "premiumRequired": {
+      "title": "Fonctionnalité Premium Requise",
+      "message": "Cette fonctionnalité nécessite un abonnement Premium pour accéder à toutes les capacités avancées. Mettez à niveau votre plan pour débloquer tout le potentiel de Xplainfy."
     },
-    "signUp": {
-      "title": "S'inscrire"
+    "prompt": {
+      "attachedCode": "Veuillez analyser les extraits de code joints.",
+      "scanImage": "Veuillez scanner l'image jointe et répondre à la question.",
+      "analyzeDocument": "Veuillez analyser le document joint et répondre à la question.",
+      "analyzeVoiceTranscript": "Veuillez analyser la transcription vocale et répondre à la question."
     },
-    "email": "Email",
-    "password": "Mot de passe",
-    "emailPlaceholder": "Entrez votre email",
-    "passwordPlaceholder": "Entrez votre mot de passe",
-    "divider": "ou continuer avec",
-    "terms": "En vous connectant, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité.",
-    "success": {
-      "signIn": "Connexion réussie !",
-      "signUp": "Compte créé avec succès ! Veuillez vérifier votre email pour vérifier votre compte."
+    "messages": {
+      "codeSnippetAdded": "Extrait de code ajouté",
+      "noVoiceCaptured": "Aucune voix n'a été capturée. Veuillez réessayer.",
+      "responseEnded": "Réponse terminée. Vous pouvez commencer une nouvelle requête.",
+      "unableToVerifyCredits": "Impossible de vérifier les crédits. Veuillez vous reconnecter.",
+      "zeroCredits": "Vous n'avez pas de crédits actuellement. Visitez la page d'abonnement pour obtenir plus de crédits.",
+      "inputExceedsWordLimit": "L'entrée dépasse la limite de {{maxWords}} mots de votre plan. Actuel : {{currentWords}} mots",
+      "fileTooLarge": "Fichier trop volumineux (max {{limit}} Mo pour votre plan). Taille du fichier : {{size}} Mo",
+      "loadedImageForScanning": "Image {{name}} chargée pour analyse",
+      "couldntReadImage": "Impossible de lire le fichier image",
+      "loadedDocumentForAnalysis": "Document {{name}} chargé pour analyse",
+      "couldntReadDocument": "Impossible de lire le fichier document",
+      "loadedFile": "Chargé {{name}}",
+      "couldntReadFile": "Impossible de lire le fichier",
+      "configErrorExtractImageText": "Erreur de configuration - impossible d'extraire le texte de l'image",
+      "textExtractedFromImage": "Texte extrait de l'image et défini comme saisie",
+      "failedToExtractImageText": "Échec de l'extraction du texte de l'image",
+      "noTextFoundInImage": "Aucun texte trouvé dans l'image",
+      "voiceRecognitionUnsupported": "Reconnaissance vocale non prise en charge dans ce navigateur",
+      "voiceRecognitionFailed": "Échec de la reconnaissance vocale. Veuillez réessayer."
     },
-    "errors": {
-      "oauthFailed": "La connexion {{provider}} a échoué. Veuillez réessayer.",
-      "providerNotConfigured": "La connexion {{provider}} n'est pas configurée. Veuillez utiliser email/mot de passe à la place.",
-      "missingFields": "Veuillez saisir l'email et le mot de passe.",
-      "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
-      "generic": "Authentification échouée. Veuillez réessayer."
-    }
+    "imageScanHint": "Image jointe pour analyse. Cliquez sur extraire pour scanner le texte ou envoyez pour demander à l'IA de l'interpréter.",
+    "documentAnalysisHint": "Document joint pour analyse. Envoyez pour demander à l'IA de l'analyser.",
+    "voiceTranscriptHint": "Transcription vocale enregistrée. Envoyez pour demander à l'IA de l'analyser."
+  },
+  "transactions": {
+    "title": "Credit Transactions",
+    "subtitle": "Recent activity by credit type",
+    "noTransactions": "No credit transactions yet.",
+    "loadMore": "Load more",
+    "fetchError": "Unable to load transaction history."
+  },
+  "notFound": {
+    "subtitle": "Oups! Page non trouvée",
+    "returnHome": "Retour à l'accueil"
+  },
+  "sidebar": {
+    "tagline": "Hub d'apprentissage intelligent",
+    "taglineAmount": "{{amount}} Crédits"
   },
   "common": {
     "loading": "Chargement...",
     "error": "Quelque chose s'est mal passé. Veuillez réessayer.",
     "success": "Succès !",
     "cancel": "Annuler",
-    "ok": "OK"
+    "ok": "OK",
+    "refresh": "Actualiser",
+    "loadMore": "Charger plus"
   }
 }

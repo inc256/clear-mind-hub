@@ -107,7 +107,7 @@ const History = () => {
     if (diffDays === 0) {
       return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     } else if (diffDays === 1) {
-      return "Yesterday";
+      return t('history.dates.yesterday');
     } else if (diffDays < 7) {
       return date.toLocaleDateString(undefined, { weekday: "long" });
     } else {
@@ -167,13 +167,13 @@ const History = () => {
               }}
               className="rounded-2xl text-slate-300 hover:bg-white/10 hover:text-white"
             >
-              <ArrowLeft size={16} className="mr-2" /> Back to History
+              <ArrowLeft size={16} className="mr-2" /> {t('history.back')}
             </Button>
             <Button
               onClick={() => downloadEntryAsPdf(entryFromRoute)}
               className="rounded-2xl bg-primary hover:bg-primary/80 text-white shadow-md"
             >
-              <FileText size={16} className="mr-2" /> Download PDF
+              <FileText size={16} className="mr-2" /> {t('history.downloadPdf')}
             </Button>
           </div>
 
@@ -182,7 +182,7 @@ const History = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <span className={`px-3 py-1 text-xs font-semibold uppercase rounded-full ${getModeColor(entryFromRoute.mode).bg} ${getModeColor(entryFromRoute.mode).text} border border-current/20`}>
-                    {entryFromRoute.mode}
+                    {t(`history.mode.${entryFromRoute.mode}`)}
                   </span>
                   <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-800/50 px-2 py-1 rounded-full">
                     <Clock size={12} />
@@ -214,7 +214,7 @@ const History = () => {
               <div className="mt-6 space-y-3">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                   <Code size={18} className="text-primary" />
-                  Attached Code
+                  {t('history.attachedCode')}
                 </h2>
                 {entryFromRoute.codeSnippets.filter(snippet => {
                   try {
@@ -227,7 +227,7 @@ const History = () => {
                   <div key={snippet.id} className="rounded-xl border border-white/10 bg-slate-800/50 p-4">
                     <div className="mb-3">
                       <span className="text-xs font-semibold text-primary/70 uppercase tracking-wider">
-                        Code Snippet {index + 1}{snippet.language ? ` (${snippet.language})` : ''}
+                        {t('history.codeSnippet', { index: index + 1, language: snippet.language ? ` (${snippet.language})` : '' })}
                       </span>
                     </div>
                     <div className="max-h-48 overflow-y-auto rounded-lg bg-slate-900/50 p-3 text-xs font-mono whitespace-pre-wrap border border-white/5 text-slate-300">
@@ -263,7 +263,7 @@ const History = () => {
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
-                placeholder="Search your history..."
+                placeholder={t('history.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 rounded-2xl border-white/10 bg-slate-900/50 backdrop-blur-sm text-slate-200 placeholder:text-slate-500 focus:border-primary/50"
@@ -274,9 +274,9 @@ const History = () => {
                 <SelectValue />
               </StyledSelectTrigger>
               <SelectContent className="bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl">
-                <StyledSelectItem value="all">All</StyledSelectItem>
-                <StyledSelectItem value="tutor">Ask</StyledSelectItem>
-                <StyledSelectItem value="research">Research</StyledSelectItem>
+                <StyledSelectItem value="all">{t('history.filters.all')}</StyledSelectItem>
+                <StyledSelectItem value="tutor">{t('history.filters.ask')}</StyledSelectItem>
+                <StyledSelectItem value="research">{t('history.filters.research')}</StyledSelectItem>
               </SelectContent>
             </Select>
             {history.items.length > 0 && (
@@ -289,7 +289,7 @@ const History = () => {
                 }}
                 className="rounded-2xl border-white/10 bg-slate-900/50 text-slate-300 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30"
               >
-                <Trash2 size={14} className="mr-2" /> Clear All
+                <Trash2 size={14} className="mr-2" /> {t('history.clearAll')}
               </Button>
             )}
           </div>
@@ -301,12 +301,12 @@ const History = () => {
               <Clock size={32} className="text-slate-400" />
             </div>
             <p className="text-white font-semibold text-lg">
-              {sortedHistory.length === 0 ? "No activities yet" : "No matching results"}
+              {sortedHistory.length === 0 ? t('history.empty.noActivities') : t('history.empty.noResults')}
             </p>
             <p className="text-sm text-slate-400 mt-2">
               {sortedHistory.length === 0
-                ? "Start asking questions to build your history!"
-                : "Try adjusting your search or filters"}
+                ? t('history.empty.startPrompt')
+                : t('history.empty.adjustFilters')}
             </p>
           </div>
         ) : (
@@ -328,7 +328,7 @@ const History = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full ${modeColor.bg} ${modeColor.text} ring-1 ring-current/20`}>
-                          {entry.mode}
+                          {t(`history.mode.${entry.mode}`)}
                         </span>
                         {entry.imageData && (
                           <ImageIcon size={13} className="text-slate-400" />

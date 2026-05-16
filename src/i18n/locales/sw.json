@@ -5,11 +5,156 @@
     "description": "Zana ya kujifunza inayotegemea AI. Badilisha maswali, maandishi, na hati kuwa suluhisho za kimuundo, utafiti, na maelezo."
   },
   "navigation": {
-    "tutor": "Mwalimu",
+    "tutor": "Uliza",
     "research": "Utafiti",
     "history": "Historia",
     "subscription": "Usajili",
-    "profile": "Wasifu"
+    "profile": "Wasifu",
+    "credits": "Mikopo"
+  },
+  "history": {
+    "title": "Historia ya Mazungumzo",
+    "subtitle": "Angalia na kusimamia mazungumzo yako ya hapo awali ya AI",
+    "searchPlaceholder": "Tafuta historia yako...",
+    "filters": {
+      "all": "Zote",
+      "ask": "Uliza",
+      "research": "Utaftaji"
+    },
+    "back": "Rudi kwenye Historia",
+    "downloadPdf": "Pakua PDF",
+    "clearAll": "Futa Zote",
+    "attachedCode": "Kod uliounganishwa",
+    "codeSnippet": "Kipande cha Kod {{index}}{{language}}",
+    "dates": {
+      "yesterday": "Jana"
+    },
+    "empty": {
+      "noActivities": "Hakuna shughuli bado",
+      "noResults": "Hakuna matokeo yanayofanana",
+      "startPrompt": "Anza kuuliza maswali kujenga historia yako!",
+      "adjustFilters": "Jaribu kubadilisha utaftaji au kichujio"
+    },
+    "mode": {
+      "tutor": "Uliza",
+      "ask": "Uliza",
+      "research": "Utaftaji",
+      "problem": "Tatizo",
+      "simplify": "Rahisisha",
+      "hints": "Vidokezo",
+      "rewrites": "Andika upya"
+    }
+  },
+  "subscription": {
+    "title": "Chagua Mpango Wako",
+    "subtitle": "Chagua mpango bora wa usajili kwa safari yako ya kujifunza AI",
+    "plans": {
+      "popular": "Maarufu zaidi",
+      "button": {
+        "startTrial": "Anza Uzoefu wa Bure",
+        "getPlan": "Pata {{plan}}"
+      },
+      "features": {
+        "askLevels": "Uliza (Msingi, Kati, Juu)",
+        "askAllLevels": "Uliza (Viwango vyote)",
+        "researchFundamental": "Utaftaji (Msingi tu)",
+        "researchAllButAdvanced": "Utaftaji (Msingi, Kati, Juu)",
+        "researchAllLevels": "Utaftaji (Viwango vyote)",
+        "allCitationStyles": "Mitindo yote ya nukuu"
+      },
+      "limitations": {
+        "askAdvancedRequiresPremium": "Uliza Juu zaidi inahitaji kwa dakika",
+        "researchIntermediatePremium": "Utaftaji wa Kati+ inahitaji kwa dakika bila mikopo ya ziada",
+        "researchAdvancedUltraOnly": "Utaftaji Juu zaidi ni Ultra tu",
+        "researchAdvancedRequiresPremium": "Utaftaji Juu zaidi inahitaji kwa dakika",
+        "noAiImageGeneration": "Hakuna uzalishaji wa picha ya AI",
+        "creditsConsumedWithUsage": "Mikopo inastahiliwa na matumizi"
+      },
+      "faq": {
+        "noSetupFees": "Hakuna ada za kuandaa",
+        "cancelAnytime": "Ghairi wakati wowote",
+        "emailSupport": "Msaada wa barua pepe",
+        "tagline": "Imejengwa kwa xplainfy.net — Maelezo yenye akili, utaftaji juu zaidi, na uzalishaji unaouhamiwa na AI."
+      }
+    },
+    "comparison": {
+      "title": "Linganisha Vipengele vyote",
+      "subtitle": "Angalia haswa kile unachopata na kila mpango",
+      "footer": "Mipango yote inajumuisha maelezo ya AI na msaada wa kimsingi. Boresha wakati wowote ili kufungua nguvu zaidi.",
+      "dailyCredits": "Mikopo ya Kila Siku",
+      "totalCredits": "Jumla ya Mikopo",
+      "askFundamental": "Uliza Msingi",
+      "askIntermediate": "Uliza Kati",
+      "askHigher": "Uliza Juu",
+      "askAdvanced": "Uliza Juu zaidi",
+      "researchFundamental": "Utaftaji Msingi",
+      "researchIntermediate": "Utaftaji Kati",
+      "researchHigher": "Utaftaji Juu",
+      "researchAdvanced": "Utaftaji Juu zaidi",
+      "fileUploadSize": "Ukubwa wa Kupakulia Faili",
+      "maxInputWords": "Maneno Mengi ya Ingizo",
+      "citationStyles": "Mitindo ya Nukuu",
+      "citationStylesBasic": "Zote (APA, MLA, IEEE, AMA)",
+      "aiIllustrations": "Vielelezo vya AI",
+      "advancedModels": "Miundombinu ya Juu zaidi",
+      "imageGeneration": "Uzalishaji wa Picha",
+      "tooltips": {
+        "dailyCredits": "Mikopo ya kila siku ya bure iliyojumuishwa",
+        "totalCredits": "Jumla ya mikopo inayopatikana",
+        "askFundamental": "Kufikia kiwango cha Uliza Msingi",
+        "askIntermediate": "Kufikia kiwango cha Uliza Kati",
+        "askHigher": "Kufikia kiwango cha Uliza Juu",
+        "askAdvanced": "Kufikia kiwango cha Uliza Juu zaidi",
+        "researchFundamental": "Kufikia kiwango cha Utaftaji Msingi",
+        "researchIntermediate": "Kufikia kiwango cha Utaftaji Kati",
+        "researchHigher": "Kufikia kiwango cha Utaftaji Juu",
+        "researchAdvanced": "Kufikia kiwango cha Utaftaji Juu zaidi",
+        "fileUploadSize": "Ukubwa wa faili wa juu sana kwa kupakulia",
+        "maxInputWords": "Idadi ya juu sana ya maneno ya ingizo",
+        "citationStyles": "Miundo ya nukuu inayopatikana",
+        "aiIllustrations": "Zalisha vielelezo vya AI katika majibu",
+        "advancedModels": "GPT-5.5 kwa kazi tata",
+        "imageGeneration": "Zalisha picha na GPT Image 2"
+      }
+    },
+    "credits": "mikopo",
+    "billing": {
+      "monthly": "Kila mwezi",
+      "yearly": "Kila mwaka"
+    }
+  },
+  "payment": {
+    "title": "Kamilisha Malipo",
+    "description": "Jisajili kwa {{plan}} kwa {{price}}/{{period}}",
+    "cardName": "Jina la Mmiliki wa Kadi",
+    "cardNamePlaceholder": "Jina Kamili",
+    "cardNumber": "Nambari ya Kadi",
+    "expiry": "Tarehe ya Mwisho",
+    "cvc": "CVC",
+    "secure": "Taarifa zako za malipo ziko salama na zimefichwa",
+    "processing": "Inachakata...",
+    "pay": "Lipa {{amount}}",
+    "success": {
+      "subscription": "Jisajili kwa {{plan}} kumfanikisha!",
+      "credits": "Kununua {{credits}} mikopo kumfanikisha!",
+      "trial": "Anza {{plan}} kumfanikisha!",
+      "initiated": "Malipo yalibadilishwa. Utapokea uthibitisho baada ya kumalizia."
+    },
+    "errors": {
+      "missingFields": "Tafadhali jaza sehemu zote za malipo",
+      "missingPhone": "Tafadhali ingiza namba ya simu",
+      "failed": "Malipo yalishindwa. Tafadhali jaribu tena."
+    },
+    "rateLoading": "Inakusanya kiwango cha ubadilishanaji...",
+    "rateUnavailable": "Kiwango cha ubadilishanaji hakipatikani",
+    "rateFallbackSuffix": " (kipengele)",
+    "operator": "Opereita",
+    "chooseOperator": "Chagua opereita",
+    "operatorMtn": "MTN Mobile Money",
+    "operatorAirtel": "Airtel Money",
+    "phoneNumber": "Namba ya simu",
+    "phonePlaceholder": "07XXXXXXXX au +2567XXXXXXXX",
+    "mobileMoneyNotice": "Malipo yatachakatia kwa njia ya pesa za simu ({{operator}}). Utachakatwa kwa kiasi kinachofanana katika UGX kilichoonyeshwa hapo juu."
   },
   "profile": {
     "title": "Wasifu & Mipangilio",
@@ -39,12 +184,36 @@
     },
     "signedInAs": "Umeingia kama",
     "user": "Mtumiaji",
-    "signOut": "Toka",
+    "signOut": {
+      "title": "Toka",
+      "description": "Je, una uhakika unataka kutoka? Utahitaji kuingia tena ili kufikia akaunti yako.",
+      "confirm": "Toka"
+    },
+    "messages": {
+      "signOutFailed": "Imeshindwa kutoka. Tafadhali jaribu tena."
+    },
+    "editProfile": "Hariri Wasifu",
+    "fullNameLabel": "Jina Kamili",
+    "fullNamePlaceholder": "Ingiza jina lako kamili",
+    "avatarUrlLabel": "URL ya Avatar",
+    "avatarUrlPlaceholder": "https://example.com/avatar.jpg",
+    "saveChanges": "Hifadhi Mabadiliko",
+    "cancelEdit": "Ghairi",
     "credits": {
-      "title": "Mikopo",
-      "description": "Mikopo yako inayopatikana kwa mwingiliano na AI",
-      "available": "mikopo inayopatikana",
-      "usage": "Kila jibu la AI linagharimu mkopo 1"
+      "premiumSource": "Chanzo cha premio",
+      "activeStatus": "Inafanya kazi",
+      "inactiveStatus": "Haifanyi kazi",
+      "dailyUsage": "Matumizi ya kila siku ya mikopo ya bure",
+      "usedLabel": "/10 iliyotumika",
+      "freeLeft": "bure zilizobaki",
+      "unlimitedLabel": "mikopo isiyo na kikomo",
+      "paidLabel": "mikopo {{paid}} iliyolipiwa",
+      "dailyAutoGrant": "Mikopo ya kila siku ya bure hutolewa kiotomatiki na Supabase na kufuatiliwa hapa kwa matumizi.",
+      "bonusLabel": "Mikopo ya zawadi",
+      "subscriptionCredits": "Mikopo ya usajili",
+      "premiumAccess": "Ufikiaji wa Premium",
+      "creditAccess": "Ufikiaji wa Mikopo",
+      "freeAccount": "Akaunti ya Bure"
     },
     "subscription": {
       "title": "Mipango ya Usajili",
@@ -54,6 +223,11 @@
         "yearly": "Kila mwaka",
         "save": "Okoa 17%"
       },
+      "creditsLabel": "mikopo",
+      "creditsAmount": "mikopo {{credits}}",
+      "freeDailyCreditsLabel": "mikopo ya kila siku ya bure iliyobaki",
+      "freeDailyCreditsValue": "mikopo ya kila siku ya bure iliyobaki: {{remaining}}",
+      "dailyCreditsReset": "mikopo ya kila siku ya bure hurekebishwa kila siku.",
       "credits": "mikopo",
       "plans": {
         "popular": "Maarufu zaidi",
@@ -95,9 +269,13 @@
         },
         "subscribe": "Jisajili kwa {{plan}}"
       },
+      "managePlan": "Dhibiti Mpango",
+      "proActive": "✨ Mpango wa Pro unaofanya kazi",
+      "freePlan": "Mpango wa Bure",
       "description": "Dhibiti mpango wako wa usajili na malipo",
       "expires": "Unaisha",
       "upgrade": "Boresha",
+      "paidPlanActive": "Inafanya kazi",
       "upgradeComingSoon": "Chaguo za kuboresha zinakuja hivi karibuni!",
       "viewPlans": "Tazama Mipango",
       "footer": "Mipango yote inajumuisha ufikiaji usio na kikomo wa jukwaa letu la kujifunza. Ghairi wakati wowote."
@@ -107,14 +285,70 @@
       "description": "Jisajili kwa {{plan}} kwa {{price}}/{{period}}",
       "cardName": "Jina la Mmiliki wa Kadi",
       "cardNamePlaceholder": "Jina Kamili",
-      "cardNumber": "Nambari ya Kadi",
-      "expiry": "Tarehe ya Mwisho",
+      "cardNumber": "Namba ya Kadi",
+      "expiry": "Tarehe ya Kumalizia",
       "cvc": "CVC",
-      "secure": "Taarifa zako za malipo ziko salama na zimefichwa",
-      "processing": "Inachakata...",
-      "pay": "Lipa {{amount}}"
+      "secure": "Taarifa yako ya malipo ni salama na iliyofungwa",
+      "processing": "Inachakatia...",
+      "pay": "Lipa {{amount}}",
+      "success": {
+        "subscription": "Jisajili kwa {{plan}} kumfanikisha!",
+        "credits": "Kununua {{credits}} mikopo kumfanikisha!",
+        "trial": "Anza {{plan}} kumfanikisha!"
+      },
+      "errors": {
+        "missingFields": "Tafadhali jaza sehemu zote za malipo",
+        "failed": "Malipo yalishindwa. Tafadhali jaribu tena."
+      }
+    },
+    "feedback": {
+      "title": "Maoni yako ni muhimu",
+      "description": "Shiriki mawazo yako au ripoti tatizo ili kutusaidia kuboresha Xplainfy.",
+      "button": "Tuma Maoni"
     },
     "footer": "Xplainfy · Kitu chochote kimeelezwa"
+  },
+  "feedback": {
+    "title": "Tuma Maoni Yako Kwetu",
+    "subtitle": "Tunatusaidia kuboresha majibu yako. Maoni yako yanafaa na yanasaidia kutengeneza sasa ya Xplainfy.",
+    "type": "Aina ya Maoni",
+    "typeOptions": {
+      "bugReport": "Ripoti ya Hitilafu",
+      "featureRequest": "Ombi la Kipengele",
+      "generalFeedback": "Maoni ya Kawaida",
+      "performanceIssue": "Tatizo la Utendaji"
+    },
+    "input": {
+      "title": "Kichwa",
+      "titlePlaceholder": "Muhtasari mfupi wa maoni yako",
+      "description": "Maelezo",
+      "descriptionPlaceholder": "Tafadhali toa taarifa kina kuhusu maoni yako..."
+    },
+    "rating": {
+      "question": "Je, ungatepungieza mahesabu yako?",
+      "messages": {
+        "excellent": "🌟 Sana! Tunafurah!",
+        "good": "😊 Nzuri! Tupo katika njia sahihi.",
+        "okay": "👍 Sawa - mahali pa kuboresha.",
+        "notGreat": "😐 Si nzuri - tutakazi kuhusu hilo.",
+        "veryPoor": "😔 Mbaya sana - tutasuluhisha hilo."
+      }
+    },
+    "attachment": {
+      "prompt": "Bofya kupakia au buruta na kuangusha",
+      "hint": "Picha, PDF, au kumbukumbu (Juu sana 5 MB)"
+    },
+    "submitting": "Inatuma...",
+    "submit": "Tuma Maoni",
+    "messages": {
+      "fileTooLarge": "Ukubwa wa faili lazima uwe chini ya 5 MB",
+      "attachmentUploaded": "Kiambatanishi kilipakwa kumfanikisha",
+      "attachmentUploadFailed": "Kupakia kiambatanishi kulishindwa",
+      "missingFields": "Tafadhali jaza sehemu zote zilizohitajika",
+      "success": "Asante kwa maoni yako!",
+      "submitFailed": "Kutuma maoni kulishindwa",
+      "submitError": "Hitilafu iliyotokea wakati wa kutuma maoni"
+    }
   },
   "workspace": {
     "thinking": "Fikiria…",
@@ -145,72 +379,101 @@
     "solve": "Suluhisha",
     "mindset": "Mtazamo wa Kujifunza",
     "mindsetDescription": "AI itaboresha maelezo kulingana na mtazamo uliochagua.",
+    "researchMindset": "Mtazamo wa Utafiti",
+    "researchMindsetDescription": "AI itaboresha utafiti kulingana na mtazamo uliochagua.",
     "general": "Kwa ujumla",
     "medical": "Matibabu",
     "engineering": "Uhandisi",
     "lecturer": "Mhadhiri",
     "scientific": "Kisayansi",
-     "creative": "Ubunifu",
-     "depth": "Uwiano wa Ufafanuzi",
-     "depthDescription": "Chagua jinsi maelezo yanavyopaswa kufafanuliwa.",
-     "beginner": "Mwanzo",
-     "intermediate": "Kati",
-     "higher": "Juu",
-     "advanced": "Juu Kuliko",
-     "renderingContent": "Inatoa maudhui..."
-  },
-  "tutor": {
-    "title": "Mwalimu wa AI",
-    "subtitle": "Pata mafunzo ya kibinafsi na maelezo ya hatua kwa hatua yanayolingana na mtindo wako wa kujifunza.",
-    "placeholder": "Niulize chochote... Unataka msaada katika mada gani?"
-  },
-  "research": {
-    "title": "Msaidizi wa Utafiti",
-    "subtitle": "Ingia ndani katika mada yoyote kwa utafiti kamili na ufahamu uliostraktura.",
-    "placeholder": "Unataka kutafiti nini? Ingiza mada au swali..."
-  },
-  "problem": {
-    "title": "Msuluhishi wa Matatizo",
-    "subtitle": "Suluhisha matatizo magumu kwa suluhisho za kina za hatua kwa hatua.",
-    "placeholder": "Eleza tatizo lako... Nitagawanya na kulisuluhisha hatua kwa hatua."
-  },
-  "auth": {
-    "welcome": {
-      "title": "Karibu kwenye Xplainfy",
-      "subtitle": "Kujifunza kwa AI kwa urahisi",
-      "description": "Ingia ili kupata mafunzo ya kibinafsi ya AI, usaidizi wa utafiti, na utatuzi wa matatizo."
+    "creative": "Ubunifu",
+    "fundamentalLabel": "Msingi",
+    "chooseCategory": "Chagua Kategory",
+    "chooseLevel": "Chagua Kiwango",
+    "chooseCitationStyle": "Chagua Mtindo wa Nukuu",
+    "depth": "Kiwango cha Maelezo",
+    "depthDescription": "Chagua jinsi maelezo yanavyopaswa kufafanuliwa.",
+    "beginner": "Msingi",
+    "intermediate": "Kati",
+    "higher": "Juu",
+    "advanced": "Juu Kuliko",
+    "renderingContent": "Inatoa maudhui...",
+    "previous": "Iliyopita",
+    "next": "Inayofuata",
+    "codeCopied": "Kod imenakiliwa!",
+    "codeCopyFailed": "Imeshindwa kunakili kodi",
+    "processing": "Inasindikwa",
+    "done": "Imekamilika",
+    "part": "Sehemu {{part}}",
+    "beingProcessed": "{{title}} inasindikwa",
+    "buildingTutorial": "Inajenga somo lako",
+    "researchingTopic": "Inatafiti kuhusu mada yako",
+    "pdfDownloaded": "PDF imepakuliwa kwa mafanikio",
+    "pdfGenerateFailed": "Imeshindwa kutoa PDF",
+    "pdfDownloadFailed": "Imeshindwa kupakua hati",
+    "pdfTitles": {
+      "tutor": "Mafunzo",
+      "research": "Ripoti ya Utafiti",
+      "problem": "Suluhisho la Tatizo",
+      "default": "Hati"
     },
-    "signIn": {
-      "title": "Ingia",
-      "google": "Endelea na Google",
-      "apple": "Endelea na Apple"
+    "premiumRequired": {
+      "title": "Kipengele cha Premium kinahitajika",
+      "message": "Kipengele hiki kinahitaji usajili wa Premium ili kufikia uwezo wote wa hali ya juu. Boresha mpango wako ili kufungua uwiano wote wa Xplainfy."
     },
-    "signUp": {
-      "title": "Jisajili"
+    "prompt": {
+      "attachedCode": "Tafadhali changanua vipande vya kodi vilivyounganishwa.",
+      "scanImage": "Tafadhali skanii picha iliyoungishwa na jibu swali.",
+      "analyzeDocument": "Tafadhali changanua hati iliyoungishwa na jibu swali.",
+      "analyzeVoiceTranscript": "Tafadhali changanua waraka wa sauti iliyorekodiwa na jibu swali."
     },
-    "email": "Barua pepe",
-    "password": "Nenosiri",
-    "emailPlaceholder": "Ingiza barua pepe yako",
-    "passwordPlaceholder": "Ingiza nenosiri lako",
-    "divider": "au endelea na",
-    "terms": "Kwa kuingia, unakubali Sheria zetu za Huduma na Sera ya Faragha.",
-    "success": {
-      "signIn": "Umeingia kwa mafanikio!",
-      "signUp": "Akaunti imeundwa kwa mafanikio! Tafadhali angalia barua pepe yako ili kuthibitisha akaunti yako."
+    "messages": {
+      "codeSnippetAdded": "Kipande cha kodi kimeongeza",
+      "noVoiceCaptured": "Hakuna sauti iliyorekodiwa. Tafadhali jaribu tena.",
+      "responseEnded": "Jibu limekamilika. Unaweza kuanza hoja mpya.",
+      "unableToVerifyCredits": "Imeshindwa kuthibitisha mikopo. Tafadhali ingia tena.",
+      "zeroCredits": "Huna mikopo sasa hivi. Tembelea ukurasa wa usajili ili kupata mikopo zaidi.",
+      "inputExceedsWordLimit": "Maswali yamezidi kikomo cha maneno {{maxWords}} cha mpango wako. Chini ya: {{currentWords}} maneno",
+      "fileTooLarge": "Faili kubwa sana (kiasi cha juu {{limit}}Mb kwa mpango wako). Ukubwa wa faili: {{size}}Mb",
+      "loadedImageForScanning": "Imepakua picha {{name}} kwa ajili ya usimamizi",
+      "couldntReadImage": "Haikuweza kusoma faili ya picha",
+      "loadedDocumentForAnalysis": "Imepakua hati {{name}} kwa ajili ya uchambuzi",
+      "couldntReadDocument": "Haikuweza kusoma faili ya hati",
+      "loadedFile": "Imepakua {{name}}",
+      "couldntReadFile": "Haikuweza kusoma faili",
+      "configErrorExtractImageText": "Kosa la usanidi - hawezi kutoa maandishi ya picha",
+      "textExtractedFromImage": "Maandishi yamepatikana kutoka kwa picha na kuwekwa kama ulizo",
+      "failedToExtractImageText": "Imeshindwa kutoa maandishi kutoka kwa picha",
+      "noTextFoundInImage": "Hakuna maandishi yaliyopatikana kwenye picha",
+      "voiceRecognitionUnsupported": "Utambuzi wa sauti haujashauriwa katika kivinjari hiki",
+      "voiceRecognitionFailed": "Kutambua sauti kumeshindwa. Tafadhali jaribu tena."
     },
-    "errors": {
-      "oauthFailed": "Kuingia kwa {{provider}} kumeshindwa. Jaribu tena.",
-      "providerNotConfigured": "Kuingia kwa {{provider}} hakujasimbwa. Tafadhali tumia barua pepe/nenosiri badala yake.",
-      "missingFields": "Tafadhali ingiza barua pepe na nenosiri.",
-      "passwordTooShort": "Nenosiri lazima liwe angalau vibambo 6.",
-      "generic": "Uthibitishaji umeshindwa. Jaribu tena."
-    }
+    "imageScanHint": "Picha imeambatishwa kwa ajili ya usimamizi. Bonyeza kuchukua ili kusoma maandishi au tumia ili kumuuliza AI kueleza.",
+    "documentAnalysisHint": "Hati imeambatishwa kwa ajili ya uchambuzi. Tumia ili kumuuliza AI kuichambua.",
+    "voiceTranscriptHint": "Ufunguo wa sauti umerekodiwa. Tumia ili kumuuliza AI kuuchambua."
+  },
+  "transactions": {
+    "title": "Credit Transactions",
+    "subtitle": "Recent activity by credit type",
+    "noTransactions": "No credit transactions yet.",
+    "loadMore": "Load more",
+    "fetchError": "Unable to load transaction history."
+  },
+  "notFound": {
+    "subtitle": "Owoi! Kurasa haikupatikana",
+    "returnHome": "Rudi Nyumbani"
+  },
+  "sidebar": {
+    "tagline": "Kitovu cha kujifunza kwa busara",
+    "taglineAmount": "{{amount}} Mikopo"
   },
   "common": {
     "loading": "Inapakia...",
     "error": "Kuna kitu kimekwenda vibaya. Jaribu tena.",
     "success": "Mafanikio!",
     "cancel": "Ghairi",
-    "ok": "Sawa"
+    "ok": "Sawa",
+    "refresh": "Sasisha",
+    "loadMore": "Pakua Zaidi"
   }
 }

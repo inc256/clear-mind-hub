@@ -1,21 +1,12 @@
 import { useMemo } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { useAuth } from "@/store/auth";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-const iconByType: Record<string, string> = {
-  purchase: "💰",
-  usage: "⚡",
-  subscription: "🔄",
-  bonus: "🎁",
-  trial: "🎯",
-  daily_free_usage: "🌅",
-  refund: "↩️",
-  admin_adjustment: "⚙️",
-};
-
 export function CreditTransactions() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     transactions,
@@ -48,36 +39,36 @@ export function CreditTransactions() {
   if (error) {
     return (
       <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
-        <p className="text-sm font-semibold text-red-700">Unable to load transaction history.</p>
+        <p className="text-sm font-semibold text-red-700">{t('transactions.fetchError')}</p>
         <p className="mt-2 text-sm text-red-600">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-border/70 bg-card p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold">Credit Transactions</h3>
-          <p className="text-sm text-muted-foreground">Recent activity by credit type</p>
+      <div className="rounded-3xl border border-border/70 bg-card p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">{t('transactions.title')}</h3>
+            <p className="text-sm text-muted-foreground">{t('transactions.subtitle')}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (user?.id) {
+                fetchTransactions(user.id, 1);
+              }
+            }}
+          >
+            {t('common.refresh')}
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (user?.id) {
-              fetchTransactions(user.id, 1);
-            }
-          }}
-        >
-          Refresh
-        </Button>
-      </div>
 
-      {emptyState ? (
-        <div className="mt-8 rounded-3xl border border-dashed border-border/60 bg-background/80 p-8 text-center text-sm text-muted-foreground">
-          No credit transactions yet.
-        </div>
+        {emptyState ? (
+          <div className="mt-8 rounded-3xl border border-dashed border-border/60 bg-background/80 p-8 text-center text-sm text-muted-foreground">
+            {t('transactions.noTransactions')}
+          </div>
       ) : (
         <div className="mt-6 space-y-3">
           {transactions.map((transaction) => (
@@ -107,7 +98,7 @@ export function CreditTransactions() {
         <div className="mt-6 text-center">
           <Button onClick={loadMore} className="gap-2">
             <Loader2 size={16} className="animate-spin" />
-            Load more
+            {t('common.loadMore')}
           </Button>
         </div>
       )}

@@ -45,15 +45,15 @@ export function SubscriptionPlans() {
       period: PLAN_FEATURES[PlanId.TRIAL].period,
       credits: PLAN_FEATURES[PlanId.TRIAL].credits,
       features: [
-        "Ask (Fundamental, Intermediate, Higher)",
-        "Research (Fundamental only)",
-        "All citation styles",
+        t('subscription.plans.features.askLevels'),
+        t('subscription.plans.features.researchFundamental'),
+        t('subscription.plans.features.allCitationStyles'),
       ],
       limitations: [
-        "Ask Advanced requires premium",
-        "Research Intermediate+ requires premium without extra credits",
-        "Research Advanced is Ultra-only",
-        "No AI image generation",
+        t('subscription.plans.limitations.askAdvancedRequiresPremium'),
+        t('subscription.plans.limitations.researchIntermediatePremium'),
+        t('subscription.plans.limitations.researchAdvancedUltraOnly'),
+        t('subscription.plans.limitations.noAiImageGeneration'),
       ],
       icon: <Zap className="w-6 h-6" />,
       color: "from-blue-500 to-cyan-500",
@@ -66,14 +66,14 @@ export function SubscriptionPlans() {
       period: PLAN_FEATURES[PlanId.BASIC].period,
       credits: PLAN_FEATURES[PlanId.BASIC].credits,
       features: [
-        "Ask (All Levels)",
-        "Research (Fundamental, Intermediate, Higher)",
-        "All citation styles",
+        t('subscription.plans.features.askAllLevels'),
+        t('subscription.plans.features.researchAllButAdvanced'),
+        t('subscription.plans.features.allCitationStyles'),
       ],
       limitations: [
-        "Research Advanced requires premium",
-        "No AI image generation",
-        "Credits are consumed with usage",
+        t('subscription.plans.limitations.researchAdvancedRequiresPremium'),
+        t('subscription.plans.limitations.noAiImageGeneration'),
+        t('subscription.plans.limitations.creditsConsumedWithUsage'),
       ],
       icon: <Sparkles className="w-6 h-6" />,
       color: "from-purple-500 to-pink-500",
@@ -86,13 +86,13 @@ export function SubscriptionPlans() {
       period: PLAN_FEATURES[PlanId.PRO].period,
       credits: PLAN_FEATURES[PlanId.PRO].credits,
       features: [
-        "Ask (All Levels)",
-        "Research (Fundamental, Intermediate, Higher)",
-        "All citation styles",
+        t('subscription.plans.features.askAllLevels'),
+        t('subscription.plans.features.researchAllButAdvanced'),
+        t('subscription.plans.features.allCitationStyles'),
       ],
       limitations: [
-        "Research Advanced is Ultra-only",
-        "No AI image generation",
+        t('subscription.plans.limitations.researchAdvancedUltraOnly'),
+        t('subscription.plans.limitations.noAiImageGeneration'),
       ],
       popular: true,
       icon: <Rocket className="w-6 h-6" />,
@@ -106,9 +106,9 @@ export function SubscriptionPlans() {
       period: PLAN_FEATURES[PlanId.ULTRA].period,
       credits: PLAN_FEATURES[PlanId.ULTRA].credits,
       features: [
-        "Ask (All Levels)",
-        "Research (All Levels)",
-        "All citation styles",
+        t('subscription.plans.features.askAllLevels'),
+        t('subscription.plans.features.researchAllLevels'),
+        t('subscription.plans.features.allCitationStyles'),
       ],
       icon: <Crown className="w-6 h-6" />,
       color: "from-violet-500 to-fuchsia-500",
@@ -116,22 +116,22 @@ export function SubscriptionPlans() {
   ];
 
   const comparisonFeatures = [
-    { name: "Daily Credits", tooltip: "Free daily credits included", trial: "10/day (30 days)", basic: "—", pro: "Unlimited", ultra: "Unlimited" },
-    { name: "Total Credits", tooltip: "Total available credits", trial: "300", basic: "1,000", pro: "Unlimited", ultra: "Unlimited" },
-    { name: "Ask Fundamental", tooltip: "Access to Ask Fundamental level", trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Ask Intermediate", tooltip: "Access to Ask Intermediate level", trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Ask Higher", tooltip: "Access to Ask Higher level", trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Ask Advanced", tooltip: "Access to Ask Advanced level", trial: "✗", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Research Fundamental", tooltip: "Access to Research Fundamental level", trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Research Intermediate", tooltip: "Access to Research Intermediate level", trial: "Credits", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Research Higher", tooltip: "Access to Research Higher level", trial: "Credits", basic: "✓", pro: "✓", ultra: "✓" },
-    { name: "Research Advanced", tooltip: "Access to Research Advanced level", trial: "✗", basic: "✗", pro: "✗", ultra: "✓" },
-    { name: "File Upload Size", tooltip: "Maximum file size per upload", trial: "1 MB", basic: "1 MB", pro: "5 MB", ultra: "Unlimited" },
-    { name: "Max Input Words", tooltip: "Maximum input word count", trial: "250", basic: "500", pro: "1000", ultra: "Unlimited" },
-    { name: "Citation Styles", tooltip: "Available citation formats", trial: "APA", basic: "All (APA, MLA, IEEE, AMA)", pro: "All", ultra: "All" },
-    { name: "AI Illustrations", tooltip: "Generate AI illustrations in responses", trial: "✗", basic: "✗", pro: "✗", ultra: "✓" },
-    { name: "Advanced Models", tooltip: "GPT-5.5 for complex tasks", trial: "✗", basic: "✗", pro: "✓", ultra: "✓" },
-    { name: "Image Generation", tooltip: "Generate images with GPT Image 2", trial: "✗", basic: "✗", pro: "✗", ultra: "✓" },
+    { name: t('subscription.comparison.dailyCredits'), tooltip: t('subscription.comparison.tooltips.dailyCredits'), trial: "10/day (30 days)", basic: "—", pro: "Unlimited", ultra: "Unlimited" },
+    { name: t('subscription.comparison.totalCredits'), tooltip: t('subscription.comparison.tooltips.totalCredits'), trial: "300", basic: "1,000", pro: "Unlimited", ultra: "Unlimited" },
+    { name: t('subscription.comparison.askFundamental'), tooltip: t('subscription.comparison.tooltips.askFundamental'), trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.askIntermediate'), tooltip: t('subscription.comparison.tooltips.askIntermediate'), trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.askHigher'), tooltip: t('subscription.comparison.tooltips.askHigher'), trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.askAdvanced'), tooltip: t('subscription.comparison.tooltips.askAdvanced'), trial: "✗", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.researchFundamental'), tooltip: t('subscription.comparison.tooltips.researchFundamental'), trial: "✓", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.researchIntermediate'), tooltip: t('subscription.comparison.tooltips.researchIntermediate'), trial: "Credits", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.researchHigher'), tooltip: t('subscription.comparison.tooltips.researchHigher'), trial: "Credits", basic: "✓", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.researchAdvanced'), tooltip: t('subscription.comparison.tooltips.researchAdvanced'), trial: "✗", basic: "✗", pro: "✗", ultra: "✓" },
+    { name: t('subscription.comparison.fileUploadSize'), tooltip: t('subscription.comparison.tooltips.fileUploadSize'), trial: "1 MB", basic: "1 MB", pro: "5 MB", ultra: "Unlimited" },
+    { name: t('subscription.comparison.maxInputWords'), tooltip: t('subscription.comparison.tooltips.maxInputWords'), trial: "250", basic: "500", pro: "1000", ultra: "Unlimited" },
+    { name: t('subscription.comparison.citationStyles'), tooltip: t('subscription.comparison.tooltips.citationStyles'), trial: "APA", basic: t('subscription.comparison.citationStylesBasic'), pro: "All", ultra: "All" },
+    { name: t('subscription.comparison.aiIllustrations'), tooltip: t('subscription.comparison.tooltips.aiIllustrations'), trial: "✗", basic: "✗", pro: "✗", ultra: "✓" },
+    { name: t('subscription.comparison.advancedModels'), tooltip: t('subscription.comparison.tooltips.advancedModels'), trial: "✗", basic: "✗", pro: "✓", ultra: "✓" },
+    { name: t('subscription.comparison.imageGeneration'), tooltip: t('subscription.comparison.tooltips.imageGeneration'), trial: "✗", basic: "✗", pro: "✗", ultra: "✓" },
   ];
 
   const handleSubscribe = (planId: string) => {
@@ -178,7 +178,7 @@ export function SubscriptionPlans() {
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
                   <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white border-0 shadow-lg rounded-full px-3 py-1">
                     <Sparkles className="w-3 h-3 mr-1" />
-                    Most Popular
+                    {t('subscription.plans.popular')}
                   </Badge>
                 </div>
               )}
@@ -195,14 +195,14 @@ export function SubscriptionPlans() {
                 <div className="text-center">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl font-bold text-white">
-                      {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                      {plan.price === 0 ? t('subscription.plans.free.name') : `$${plan.price}`}
                     </span>
                     {plan.period && plan.period !== 'one-time' && (
                       <span className="text-sm text-slate-400">{plan.period}</span>
                     )}
                   </div>
                   <div className="text-sm text-slate-400 mt-1">
-                    {plan.credits} credits
+                    {plan.credits} {t('subscription.credits')}
                   </div>
                 </div>
 
@@ -236,7 +236,7 @@ export function SubscriptionPlans() {
                   variant={plan.id === PlanId.TRIAL ? 'outline' : plan.popular ? 'default' : 'secondary'}
                   onClick={() => handleSubscribe(plan.id)}
                 >
-                  {plan.id === PlanId.TRIAL ? 'Start Free Trial' : `Get ${plan.name}`}
+                  {plan.id === PlanId.TRIAL ? t('subscription.plans.button.startTrial') : t('subscription.plans.button.getPlan', { plan: plan.name })}
                 </Button>
               </CardFooter>
             </Card>
@@ -246,8 +246,8 @@ export function SubscriptionPlans() {
         {/* Feature Comparison Table */}
         <div className="mt-16">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-2">Compare All Features</h3>
-            <p className="text-slate-400">See exactly what you get with each plan</p>
+            <h3 className="text-2xl font-bold text-white mb-2">{t('subscription.comparison.title')}</h3>
+            <p className="text-slate-400">{t('subscription.comparison.subtitle')}</p>
           </div>
 
           <div className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm overflow-hidden shadow-xl">
@@ -269,11 +269,11 @@ export function SubscriptionPlans() {
                           </div>
                           <div className="font-semibold text-lg text-white">{plan.name}</div>
                           <div className="text-xs text-slate-400">
-                            {plan.price === 0 ? 'Free' : `$${plan.price}${plan.period}`}
+                            {plan.price === 0 ? t('subscription.plans.free.name') : `$${plan.price}${plan.period}`}
                           </div>
                           {plan.popular && (
                             <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border-primary/30">
-                              Popular
+                              {t('subscription.plans.popular')}
                             </Badge>
                           )}
                         </div>
@@ -316,8 +316,7 @@ export function SubscriptionPlans() {
 
             <div className="p-6 bg-primary/5 border-t border-white/10 text-center">
               <p className="text-sm text-slate-400">
-                All plans include core AI explanations and basic assistance. 
-                Upgrade anytime to unlock more power.
+                {t('subscription.comparison.footer')}
               </p>
             </div>
           </div>
@@ -328,19 +327,19 @@ export function SubscriptionPlans() {
           <div className="flex justify-center gap-8 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <Check className="w-4 h-4 text-green-500" />
-              <span>No setup fees</span>
+              <span>{t('subscription.plans.faq.noSetupFees')}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <Check className="w-4 h-4 text-green-500" />
-              <span>Cancel anytime</span>
+              <span>{t('subscription.plans.faq.cancelAnytime')}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <Check className="w-4 h-4 text-green-500" />
-              <span>Email support</span>
+              <span>{t('subscription.plans.faq.emailSupport')}</span>
             </div>
           </div>
           <p className="text-xs text-slate-500">
-            Built for xplainfy.net — Intelligent explanations, advanced research, and AI-powered productivity.
+            {t('subscription.plans.faq.tagline')}
           </p>
         </div>
 

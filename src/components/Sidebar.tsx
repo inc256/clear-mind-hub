@@ -19,7 +19,7 @@ export function Sidebar() {
     <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen flex-col border-r border-border/60 bg-[#131a2c]/95 backdrop-blur-xl shadow-xl">
       <div className="px-6 py-6 border-b border-white/10">
         <Logo />
-        <p className="mt-4 text-xs uppercase tracking-[0.24em] text-primary/70">Smart learning hub</p>
+        <p className="mt-4 text-xs uppercase tracking-[0.24em] text-primary/70">{t('sidebar.tagline')}</p>
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2">

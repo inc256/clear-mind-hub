@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CreditCard, Lock } from "lucide-react";
+import { Lock, CreditCard } from "lucide-react";
+import { createZabureClient } from "@/integrations/zabure/zabureClient";
+import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from "react-i18next";
 import { useUserProfile } from "@/store/userProfile";
 import { toast } from "sonner";
@@ -11,11 +14,14 @@ import { toast } from "sonner";
 // Map plan display names to database plan names
 const planNameMapping: Record<string, string> = {
   'Free Trial': 'Free Trial',
-  'Starter': 'Starter',
-  'Standard': 'Standard',
+  'Trial': 'Trial',
+  'Starter': 'Basic',
+  'Standard': 'Basic',
+  'Basic': 'Basic',
   'Pro': 'Pro',
-  'Pro+ Monthly': 'Pro+ Monthly',
-  'Pro+ Yearly': 'Pro+ Yearly',
+  'Ultra': 'Ultra',
+  'Pro+ Monthly': 'Pro',
+  'Pro+ Yearly': 'Pro',
 };
 
 interface PaymentModalProps {
@@ -30,79 +36,66 @@ interface PaymentModalProps {
 export function PaymentModal({ isOpen, onClose, planName, price, credits, billingPeriod }: PaymentModalProps) {
   const { t } = useTranslation();
   const { applyPlan, purchaseCredits } = useUserProfile();
+  const { profile } = useUserProfile();
   const [loading, setLoading] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
-  const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [operator, setOperator] = useState<'MTN'|'Airtel'>('MTN');
+  const [rate, setRate] = useState<number | null>(null);
+  const [rateLoading, setRateLoading] = useState(false);
+  const [rateIsFallback, setRateIsFallback] = useState(false);
+  const DEFAULT_RATE = Number(import.meta.env.VITE_USD_TO_UGX_RATE || 3800);
 
   const handlePayment = async () => {
-    if (!cardNumber || !expiry || !cvc || !name) {
-      toast.error(t('payment.errors.missingFields'));
+    if (!phoneNumber) {
+      toast.error(t('payment.errors.missingPhone'));
       return;
     }
 
+    // compute UGX equivalent (use live rate, env fallback, or DEFAULT_RATE)
+    const envRate = parseFloat(String(import.meta.env.VITE_USD_TO_UGX_RATE || '0')) || 0;
+    const usedRate = rate ?? envRate ?? DEFAULT_RATE;
+    if (!rate && !envRate) {
+      toast.warning(`Using fallback exchange rate ${DEFAULT_RATE} UGX / USD`);
+    }
+
+    const ugxAmount = Math.round(price * usedRate);
+
     setLoading(true);
     try {
-      // TODO: Integrate with actual payment processor (Stripe, PayPal, etc.)
-      // For now, simulate payment processing
-      console.log('Processing payment:', {
-        planName,
-        price,
-        credits,
-        billingPeriod,
-        cardNumber: cardNumber.replace(/\d(?=\d{4})/g, '*'),
-        expiry,
-        cvc: '***',
-        name,
-      });
-      console.debug('[PaymentModal] handlePayment', { planName, price, credits, billingPeriod });
-      if (credits == null) {
-        console.error('[PaymentModal] credits is missing or undefined', { planName, price, credits, billingPeriod });
+      const supabaseBase = import.meta.env.VITE_SUPABASE_URL as string;
+      // prefer the user's session access token so Supabase Function receives an auth header
+      let token = import.meta.env.VITE_SUPABASE_FUNCTIONS_KEY as string | undefined;
+      try {
+        const { data } = await supabase.auth.getSession();
+        const sessionToken = data?.session?.access_token;
+        if (sessionToken) token = sessionToken;
+      } catch (e) {
+        console.warn('Failed to read supabase session token', e);
       }
 
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const client = createZabureClient(supabaseBase, token);
 
-      // Determine plan type and update user profile accordingly
-      const planId = getPlanIdFromName(planName);
+      const dbPlanName = planNameMapping[planName] || planName;
 
-      let success = false;
-      const dbPlanName = planNameMapping[planName];
+      const metadata: Record<string,string> = {};
+      if (profile?.id) metadata.userId = profile.id;
+      metadata.planName = dbPlanName;
 
-      if (dbPlanName) {
-        // Apply the plan using the database function
-        success = await applyPlan(dbPlanName);
-        if (success) {
-          if (dbPlanName === 'Free Trial') {
-            toast.success(t('payment.success.trial', { plan: planName }));
-          } else if (dbPlanName.includes('Monthly') || dbPlanName.includes('Yearly')) {
-            toast.success(t('payment.success.subscription', { plan: planName }));
-          } else {
-            toast.success(t('payment.success.credits', { credits }));
-          }
-        }
-      } else {
-        // Fallback for direct credit purchases
-        success = await purchaseCredits(credits);
-        if (success) {
-          toast.success(t('payment.success.credits', { credits }));
-        }
-      }
+      const payload = {
+        amount: ugxAmount,
+        currency: 'UGX',
+        phoneNumber: formatLocalPhone(phoneNumber),
+        description: `Purchase ${planName}`,
+        operator: operator.toLowerCase(),
+        metadata,
+      };
 
-      if (!success) {
-        throw new Error('Failed to update user profile');
-      }
+      const res = await client.collect(payload as any);
 
-      // Close modal
+      console.debug('[PaymentModal] zabure collect response', res);
+
+      toast.success(t('payment.success.initiated'));
       onClose();
-
-      // Clear form
-      setCardNumber('');
-      setExpiry('');
-      setCvc('');
-      setName('');
-
     } catch (error: any) {
       console.error('Payment failed:', error);
       toast.error(error?.message || t('payment.errors.failed'));
@@ -146,6 +139,66 @@ export function PaymentModal({ isOpen, onClose, planName, price, credits, billin
     return v;
   };
 
+  const formatLocalPhone = (value: string) => {
+    // normalize to E.164 for Uganda (country code 256)
+    const digits = value.replace(/[^0-9]/g, '');
+    if (digits.startsWith('0')) {
+      return '256' + digits.substring(1);
+    }
+    if (digits.startsWith('7') || digits.startsWith('3') || digits.startsWith('2')) {
+      return '256' + digits;
+    }
+    if (digits.startsWith('256')) return digits;
+    return digits;
+  };
+
+  // Fetch USD -> UGX rate when modal opens
+  useEffect(() => {
+    let mounted = true;
+    async function fetchRate() {
+      setRateLoading(true);
+      try {
+        const envRate = parseFloat(String(import.meta.env.VITE_USD_TO_UGX_RATE || '0')) || 0;
+        if (envRate) {
+          if (mounted) {
+            setRate(envRate);
+            setRateIsFallback(false);
+          }
+          return;
+        }
+
+        try {
+          const r = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=UGX');
+          const json = await r.json();
+          const fetched = Number(json?.rates?.UGX) || null;
+          if (fetched && mounted) {
+            setRate(fetched);
+            setRateIsFallback(false);
+            return;
+          }
+        } catch (err) {
+          console.warn('Exchange rate fetch failed:', err);
+        }
+
+        // fallback default
+        if (mounted) {
+          setRate(DEFAULT_RATE);
+          setRateIsFallback(true);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch exchange rate', e);
+      } finally {
+        if (mounted) setRateLoading(false);
+      }
+    }
+    if (isOpen) fetchRate();
+    return () => { mounted = false; };
+  }, [isOpen]);
+
+  // Optional: expose a simple converter component in modal footer for debugging
+  // import dynamically to avoid increasing bundle for all users
+  const showConverter = false;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -169,52 +222,46 @@ export function PaymentModal({ isOpen, onClose, planName, price, credits, billin
             <div className="text-sm text-muted-foreground mt-1">
               {credits} {t('subscription.credits')} • {billingPeriod === 'monthly' ? t('subscription.billing.monthly') : t('subscription.billing.yearly')}
             </div>
+            <div className="text-sm text-muted-foreground mt-2">
+              {rateLoading ? t('payment.rateLoading') : (
+                rate ? (
+                  <>
+                    {new Intl.NumberFormat('en-US').format(Math.round(price * rate))} UGX • 1 USD = {new Intl.NumberFormat('en-US').format(rate)} UGX{rateIsFallback ? t('payment.rateFallbackSuffix') : ''}
+                  </>
+                ) : (
+                  <> {t('payment.rateUnavailable')} </>
+                )
+              )}
+            </div>
           </div>
 
-          {/* Payment Form */}
+          {/* Mobile Money Form */}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">{t('payment.cardName')}</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('payment.cardNamePlaceholder')}
-              />
+              <Label htmlFor="operator">{t('payment.operator')}</Label>
+              <Select onValueChange={(v) => setOperator(v === 'MTN' ? 'MTN' : 'Airtel')} value={operator}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('payment.chooseOperator')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MTN">{t('payment.operatorMtn')}</SelectItem>
+                  <SelectItem value="Airtel">{t('payment.operatorAirtel')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <Label htmlFor="cardNumber">{t('payment.cardNumber')}</Label>
+              <Label htmlFor="phone">{t('payment.phoneNumber')}</Label>
               <Input
-                id="cardNumber"
-                value={cardNumber}
-                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                placeholder="1234 5678 9012 3456"
-                maxLength={19}
+                id="phone"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder={t('payment.phonePlaceholder')}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="expiry">{t('payment.expiry')}</Label>
-                <Input
-                  id="expiry"
-                  value={expiry}
-                  onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                  placeholder="MM/YY"
-                  maxLength={5}
-                />
-              </div>
-              <div>
-                <Label htmlFor="cvc">{t('payment.cvc')}</Label>
-                <Input
-                  id="cvc"
-                  value={cvc}
-                  onChange={(e) => setCvc(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="123"
-                  maxLength={4}
-                />
-              </div>
+            <div className="text-sm text-muted-foreground">
+              {t('payment.mobileMoneyNotice', { operator })}
             </div>
           </div>
 

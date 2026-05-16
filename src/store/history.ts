@@ -25,7 +25,7 @@ export interface HistoryEntry {
   remoteId?: string;
 }
 
-type DbMode = "tutor" | "research";
+type DbMode = "ask" | "research";
 
 // ---------------------------------------------------------------------------
 // localStorage helpers
@@ -57,7 +57,8 @@ function clearLocalHistory(): void {
 // ---------------------------------------------------------------------------
 
 function toDbMode(mode: AiMode): DbMode | null {
-  if (mode === "tutor" || mode === "research") return mode;
+  if (mode === "tutor") return "ask";
+  if (mode === "research") return "research";
   console.warn(`[history] mode "${mode}" is not supported by the DB — entry will be local-only.`);
   return null;
 }
@@ -299,7 +300,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
         return {
           id: item.id,
           remoteId: item.id,
-          mode: item.mode as AiMode,
+          mode: item.mode === 'ask' ? 'tutor' : (item.mode as AiMode),
           input: item.prompt,
           output: item.response.replace(/\{"practice_questions"[\s\S]*$/, "").trim(),
           timestamp: new Date(item.created_at).getTime(),

@@ -154,7 +154,7 @@ create table if not exists public.chat_history (
   constraint chat_history_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade,
   constraint chat_history_mode_check check (
     (
-      mode = any (array['problem'::text, 'tutor'::text, 'research'::text, 'simplify'::text, 'hints'::text, 'rewrites'::text])
+      mode = any (array['problem'::text, 'ask'::text, 'research'::text, 'simplify'::text, 'hints'::text, 'rewrites'::text])
     )
   )
 ) TABLESPACE pg_default;

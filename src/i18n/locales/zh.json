@@ -9,7 +9,152 @@
     "research": "研究",
     "history": "历史",
     "subscription": "订阅",
-    "profile": "个人资料"
+    "profile": "个人资料",
+    "credits": "积分"
+  },
+  "history": {
+    "title": "聊天历史",
+    "subtitle": "查看和管理您之前的AI对话",
+    "searchPlaceholder": "搜索您的历史...",
+    "filters": {
+      "all": "全部",
+      "ask": "提问",
+      "research": "研究"
+    },
+    "back": "返回历史",
+    "downloadPdf": "下载PDF",
+    "clearAll": "全部清除",
+    "attachedCode": "附加代码",
+    "codeSnippet": "代码片段 {{index}}{{language}}",
+    "dates": {
+      "yesterday": "昨天"
+    },
+    "empty": {
+      "noActivities": "暂无活动",
+      "noResults": "无匹配结果",
+      "startPrompt": "开始提问以构建您的历史！",
+      "adjustFilters": "尝试调整您的搜索或筛选器"
+    },
+    "mode": {
+      "tutor": "提问",
+      "ask": "提问",
+      "research": "研究",
+      "problem": "问题",
+      "simplify": "简化",
+      "hints": "提示",
+      "rewrites": "重新写作"
+    }
+  },
+  "subscription": {
+    "title": "选择您的计划",
+    "subtitle": "为您的AI学习之旅选择完美的订阅计划",
+    "plans": {
+      "popular": "最受欢迎",
+      "button": {
+        "startTrial": "开始免费试用",
+        "getPlan": "获取 {{plan}}"
+      },
+      "features": {
+        "askLevels": "提问（Fundamental、Intermediate、Higher）",
+        "askAllLevels": "提问（所有级别）",
+        "researchFundamental": "研究（仅Fundamental）",
+        "researchAllButAdvanced": "研究（Fundamental、Intermediate、Higher）",
+        "researchAllLevels": "研究（所有级别）",
+        "allCitationStyles": "所有引用格式"
+      },
+      "limitations": {
+        "askAdvancedRequiresPremium": "提问高级需要高级版本",
+        "researchIntermediatePremium": "研究中等及以上不需额外积分需要高级版本",
+        "researchAdvancedUltraOnly": "研究高级仅限超级版本",
+        "researchAdvancedRequiresPremium": "研究高级需要高级版本",
+        "noAiImageGeneration": "无AI图像生成",
+        "creditsConsumedWithUsage": "积分随使用而消耗"
+      },
+      "faq": {
+        "noSetupFees": "无设置费用",
+        "cancelAnytime": "随时取消",
+        "emailSupport": "电子邮件支持",
+        "tagline": "为 xplainfy.net 构建 — 智能解释、高级研究和AI驱动的生产力。"
+      }
+    },
+    "comparison": {
+      "title": "比较所有功能",
+      "subtitle": "准确了解每个计划包含的内容",
+      "footer": "所有计划都包括核心AI解释和基本协助。随时升级以获得更多功能。",
+      "dailyCredits": "每日积分",
+      "totalCredits": "总积分",
+      "askFundamental": "提问 Fundamental",
+      "askIntermediate": "提问 Intermediate",
+      "askHigher": "提问 Higher",
+      "askAdvanced": "提问 Advanced",
+      "researchFundamental": "研究 Fundamental",
+      "researchIntermediate": "研究 Intermediate",
+      "researchHigher": "研究 Higher",
+      "researchAdvanced": "研究 Advanced",
+      "fileUploadSize": "文件上传大小",
+      "maxInputWords": "最大输入字数",
+      "citationStyles": "引用格式",
+      "citationStylesBasic": "全部（APA、MLA、IEEE、AMA）",
+      "aiIllustrations": "AI插图",
+      "advancedModels": "高级模型",
+      "imageGeneration": "图像生成",
+      "tooltips": {
+        "dailyCredits": "包含免费每日积分",
+        "totalCredits": "总可用积分",
+        "askFundamental": "访问提问 Fundamental 级别",
+        "askIntermediate": "访问提问 Intermediate 级别",
+        "askHigher": "访问提问 Higher 级别",
+        "askAdvanced": "访问提问 Advanced 级别",
+        "researchFundamental": "访问研究 Fundamental 级别",
+        "researchIntermediate": "访问研究 Intermediate 级别",
+        "researchHigher": "访问研究 Higher 级别",
+        "researchAdvanced": "访问研究 Advanced 级别",
+        "fileUploadSize": "每次上传的最大文件大小",
+        "maxInputWords": "最大输入字数",
+        "citationStyles": "可用引用格式",
+        "aiIllustrations": "在回复中生成AI插图",
+        "advancedModels": "用于复杂任务的GPT-5.5",
+        "imageGeneration": "使用GPT Image 2生成图像"
+      }
+    },
+    "credits": "积分",
+    "billing": {
+      "monthly": "每月",
+      "yearly": "每年"
+    }
+  },
+  "payment": {
+    "title": "完成付款",
+    "description": "订阅 {{plan}} 价格 {{price}}/{{period}}",
+    "cardName": "持卡人名称",
+    "cardNamePlaceholder": "张三",
+    "cardNumber": "卡号",
+    "expiry": "有效期",
+    "cvc": "CVC",
+    "secure": "您的付款信息是安全和加密的",
+    "processing": "处理中...",
+    "pay": "支付 {{amount}}",
+    "success": {
+      "subscription": "成功订阅 {{plan}}！",
+      "credits": "成功购买 {{credits}} 积分！",
+      "trial": "成功开始 {{plan}}！",
+      "initiated": "付款已启动。完成后您将收到确认。"
+    },
+    "errors": {
+      "missingFields": "请填写所有付款字段",
+      "missingPhone": "请输入手机号码",
+      "failed": "付款失败。请重试。"
+    },
+    "rateLoading": "正在获取汇率...",
+    "rateUnavailable": "汇率不可用",
+    "rateFallbackSuffix": "（备用）",
+    "operator": "运营商",
+    "chooseOperator": "选择运营商",
+    "operatorMtn": "MTN Mobile Money",
+    "operatorAirtel": "Airtel Money",
+    "phoneNumber": "电话号码",
+    "phonePlaceholder": "07XXXXXXXX 或 +2567XXXXXXXX",
+    "mobileMoneyNotice": "付款将通过移动货币（{{operator}}）处理。您将被收取上述UGX等值金额。"
   },
   "profile": {
     "title": "个人资料和设置",
@@ -39,12 +184,46 @@
     },
     "signedInAs": "登录为",
     "user": "用户",
-    "signOut": "退出登录",
+    "signOut": {
+      "title": "退出登录",
+      "description": "您确定要退出登录吗？您需要重新登录才能访问您的账户。",
+      "confirm": "退出登录"
+    },
+    "messages": {
+      "signOutFailed": "退出登录失败。请重试。"
+    },
+    "editProfile": "编辑个人资料",
+    "fullNameLabel": "全名",
+    "fullNamePlaceholder": "输入您的全名",
+    "avatarUrlLabel": "头像 URL",
+    "avatarUrlPlaceholder": "https://example.com/avatar.jpg",
+    "saveChanges": "保存更改",
+    "cancelEdit": "取消",
     "credits": {
       "title": "积分",
       "description": "您可用于AI交互的可用积分",
       "available": "积分可用",
-      "usage": "每次AI回复消耗1积分"
+      "usage": "每次AI回复消耗1积分",
+      "paidFreeDaily": "{{paid}} 付费 + {{free}} 每日免费",
+      "freeDailyRemaining": "每日免费积分剩余",
+      "getMoreCredits": "获取更多积分",
+      "totalLabel": "积分余额总计",
+      "paidLabel": "付费积分",
+      "remainingDailyFree": "剩余每日免费积分",
+      "premiumSource": "高级来源",
+      "activeStatus": "有效",
+      "inactiveStatus": "无效",
+      "dailyUsage": "每日免费积分使用情况",
+      "usedLabel": "/10 已使用",
+      "freeLeft": "剩余免费",
+      "unlimitedLabel": "无限积分",
+      "paidLabel": "{{paid}} 付费积分",
+      "dailyAutoGrant": "每日免费积分由Supabase自动授予，并在此处跟踪使用情况。",
+      "bonusLabel": "奖励积分",
+      "subscriptionCredits": "订阅积分",
+      "premiumAccess": "高级账户",
+      "creditAccess": "积分访问",
+      "freeAccount": "免费账户"
     },
     "subscription": {
       "title": "订阅计划",
@@ -54,6 +233,11 @@
         "yearly": "每年",
         "save": "节省17%"
       },
+      "creditsLabel": "积分",
+      "creditsAmount": "{{credits}} 积分",
+      "freeDailyCreditsLabel": "每日免费积分剩余",
+      "freeDailyCreditsValue": "每日免费积分剩余：{{remaining}}",
+      "dailyCreditsReset": "每日免费积分每天重置。",
       "credits": "积分",
       "plans": {
         "popular": "最受欢迎",
@@ -95,26 +279,86 @@
         },
         "subscribe": "订阅{{plan}}"
       },
+      "managePlan": "管理计划",
+      "proActive": "✨ 专业版计划激活",
+      "freePlan": "免费计划",
       "description": "管理您的订阅计划和账单",
       "expires": "到期",
       "upgrade": "升级",
+      "paidPlanActive": "有效",
       "upgradeComingSoon": "升级选项即将推出！",
       "viewPlans": "查看计划",
       "footer": "所有计划均包含对我们学习平台的无限访问权。可随时取消。"
     },
     "payment": {
       "title": "完成付款",
-      "description": "以{{price}}/{{period}}订阅{{plan}}",
+      "description": "订阅 {{plan}} 价格 {{price}}/{{period}}",
       "cardName": "持卡人姓名",
       "cardNamePlaceholder": "张三",
       "cardNumber": "卡号",
-      "expiry": "到期日期",
+      "expiry": "有效期",
       "cvc": "CVC",
       "secure": "您的付款信息是安全和加密的",
       "processing": "处理中...",
-      "pay": "支付{{amount}}"
+      "pay": "支付 {{amount}}",
+      "success": {
+        "subscription": "成功订阅 {{plan}}！",
+        "credits": "成功购买 {{credits}} 积分！",
+        "trial": "成功开始 {{plan}}！"
+      },
+      "errors": {
+        "missingFields": "请填写所有付款字段",
+        "failed": "付款失败。请重试。"
+      }
+    },
+    "feedback": {
+      "title": "您的反馈很重要",
+      "description": "分享您的想法或报告问题，以帮助我们改进 Xplainfy。",
+      "button": "发送反馈"
     },
     "footer": "Xplainfy · 任何事物都解释"
+  },
+  "feedback": {
+    "title": "向我们发送反馈",
+    "subtitle": "帮助我们改进您的体验。您的反馈宝贵，有助于塑造Xplainfy的未来。",
+    "type": "反馈类型",
+    "typeOptions": {
+      "bugReport": "错误报告",
+      "featureRequest": "功能请求",
+      "generalFeedback": "一般反馈",
+      "performanceIssue": "性能问题"
+    },
+    "input": {
+      "title": "标题",
+      "titlePlaceholder": "您的反馈的简要总结",
+      "description": "描述",
+      "descriptionPlaceholder": "请提供有关您的反馈的详细信息..."
+    },
+    "rating": {
+      "question": "您如何评价您的体验？",
+      "messages": {
+        "excellent": "🌟 非常好！我们很高兴！",
+        "good": "😊 很好！我们在正确的轨道上。",
+        "okay": "👍 还好 - 有改进的空间。",
+        "notGreat": "😐 不太好 - 我们会改进。",
+        "veryPoor": "😔 很差 - 我们会解决这个问题。"
+      }
+    },
+    "attachment": {
+      "prompt": "点击上传或拖放",
+      "hint": "图像、PDF或日志（最大5MB）"
+    },
+    "submitting": "提交中...",
+    "submit": "提交反馈",
+    "messages": {
+      "fileTooLarge": "文件大小必须小于5MB",
+      "attachmentUploaded": "附件上传成功",
+      "attachmentUploadFailed": "附件上传失败",
+      "missingFields": "请填写所有必填字段",
+      "success": "感谢您的反馈！",
+      "submitFailed": "提交反馈失败",
+      "submitError": "提交反馈时发生错误"
+    }
   },
   "workspace": {
     "thinking": "思考中…",
@@ -152,67 +396,94 @@
     "engineering": "工程",
     "lecturer": "讲师",
     "scientific": "科学",
-     "creative": "创意",
-     "depth": "解释深度",
-     "depthDescription": "选择解释的详细程度。",
-     "beginner": "初学者",
-     "intermediate": "中等",
-     "higher": "中高级",
-     "advanced": "高级",
-     "renderingContent": "正在渲染内容..."
-  },
-  "tutor": {
-    "title": "AI 导师",
-    "subtitle": "获得个性化辅导，包含根据您的学习风格定制的逐步解释。",
-    "placeholder": "问我任何事情... 您想在哪个主题上获得帮助？"
-  },
-  "research": {
-    "title": "研究助手",
-    "subtitle": "深入研究任何主题，包含全面研究和结构化见解。",
-    "placeholder": "您想研究什么？输入主题或问题..."
-  },
-  "problem": {
-    "title": "问题解决者",
-    "subtitle": "使用详细的逐步解决方案解决复杂问题。",
-    "placeholder": "描述您的问题... 我会逐步分解并解决它。"
-  },
-  "auth": {
-    "welcome": {
-      "title": "欢迎来到 Xplainfy",
-      "subtitle": "AI 驱动的学习变得简单",
-      "description": "登录以访问个性化的 AI 辅导、研究协助和问题解决。"
+    "creative": "创意",
+    "fundamentalLabel": "Fundamental",
+    "chooseCategory": "Choose Category",
+    "chooseLevel": "Choose Level",
+    "chooseCitationStyle": "Choose Citation Style",
+    "depth": "解释深度",
+    "depthDescription": "选择解释的详细程度。",
+    "beginner": "基础",
+    "intermediate": "中等",
+    "higher": "中高级",
+    "advanced": "高级",
+    "renderingContent": "正在渲染内容...",
+    "previous": "上一个",
+    "next": "下一个",
+    "codeCopied": "代码已复制！",
+    "codeCopyFailed": "复制代码失败",
+    "processing": "处理中",
+    "done": "完成",
+    "part": "第 {{part}} 部分",
+    "beingProcessed": "{{title}} 正在处理",
+    "buildingTutorial": "正在构建您的教程",
+    "researchingTopic": "正在研究您的主题",
+    "pdfDownloaded": "PDF 下载成功",
+    "pdfGenerateFailed": "生成 PDF 失败",
+    "pdfDownloadFailed": "下载文档失败",
+    "pdfTitles": {
+      "tutor": "教程",
+      "research": "研究报告",
+      "problem": "问题解决方案",
+      "default": "文档"
     },
-    "signIn": {
-      "title": "登录",
-      "google": "继续使用 Google",
-      "apple": "继续使用 Apple"
+    "premiumRequired": {
+      "title": "需要高级功能",
+      "message": "此功能需要高级订阅才能访问所有高级功能。升级您的计划以解锁 Xplainfy 的全部潜力。"
     },
-    "signUp": {
-      "title": "注册"
+    "prompt": {
+      "attachedCode": "请分析附加的代码片段。",
+      "scanImage": "请扫描附加的图像并回答问题。",
+      "analyzeDocument": "请分析附加的文档并回答问题。",
+      "analyzeVoiceTranscript": "请分析语音记录并回答问题。"
     },
-    "email": "邮箱",
-    "password": "密码",
-    "emailPlaceholder": "输入您的邮箱",
-    "passwordPlaceholder": "输入您的密码",
-    "divider": "或继续使用",
-    "terms": "登录即表示您同意我们的服务条款和隐私政策。",
-    "success": {
-      "signIn": "登录成功！",
-      "signUp": "账户创建成功！请检查您的邮箱以验证账户。"
+    "messages": {
+      "codeSnippetAdded": "代码片段已添加",
+      "noVoiceCaptured": "未捕获任何语音。请重试。",
+      "responseEnded": "响应已结束。您可以开始新查询。",
+      "unableToVerifyCredits": "无法验证积分，请重新登录。",
+      "zeroCredits": "您现在没有积分。访问订阅页面以获取更多积分。",
+      "inputExceedsWordLimit": "输入超过您计划的 {{maxWords}} 字限制。当前：{{currentWords}} 字",
+      "fileTooLarge": "文件过大（您计划的最大 {{limit}}MB）。文件大小：{{size}}MB",
+      "loadedImageForScanning": "已加载图像 {{name}} 进行扫描",
+      "couldntReadImage": "无法读取图像文件",
+      "loadedDocumentForAnalysis": "已加载文档 {{name}} 进行分析",
+      "couldntReadDocument": "无法读取文档文件",
+      "loadedFile": "已加载 {{name}}",
+      "couldntReadFile": "无法读取文件",
+      "configErrorExtractImageText": "配置错误 - 无法提取图像文本",
+      "textExtractedFromImage": "从图像中提取文本并设置为输入",
+      "failedToExtractImageText": "从图像中提取文本失败",
+      "noTextFoundInImage": "图像中未找到文本",
+      "voiceRecognitionUnsupported": "此浏览器不支持语音识别",
+      "voiceRecognitionFailed": "语音识别失败。请重试。"
     },
-    "errors": {
-      "oauthFailed": "{{provider}} 登录失败。请重试。",
-      "providerNotConfigured": "{{provider}} 登录未配置。请改用邮箱/密码。",
-      "missingFields": "请输入邮箱和密码。",
-      "passwordTooShort": "密码必须至少6个字符。",
-      "generic": "身份验证失败。请重试。"
-    }
+    "imageScanHint": "已附加图像进行扫描。点击提取以扫描文本，或发送以要求 AI 进行解释。",
+    "documentAnalysisHint": "已附加文档进行分析。发送以要求 AI 分析它。",
+    "voiceTranscriptHint": "已录制语音记录。发送以要求 AI 分析它。"
+  },
+  "transactions": {
+    "title": "Credit Transactions",
+    "subtitle": "Recent activity by credit type",
+    "noTransactions": "No credit transactions yet.",
+    "loadMore": "Load more",
+    "fetchError": "Unable to load transaction history."
+  },
+  "notFound": {
+    "subtitle": "哎呀！页面未找到",
+    "returnHome": "返回主页"
+  },
+  "sidebar": {
+    "tagline": "智能学习中心",
+    "taglineAmount": "{{amount}} 积分"
   },
   "common": {
     "loading": "加载中...",
     "error": "出错了。请重试。",
     "success": "成功！",
     "cancel": "取消",
-    "ok": "确定"
+    "ok": "确定",
+    "refresh": "刷新",
+    "loadMore": "加载更多"
   }
 }

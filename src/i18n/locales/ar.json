@@ -5,13 +5,165 @@
     "description": "أداة تعلم مدعومة بالذكاء الاصطناعي. حوّل الأسئلة والنصوص والوثائق إلى حلول منظمة وبحوث وملاحظات."
   },
   "navigation": {
-    "tutor": "المدرس",
+    "tutor": "اسأل",
     "research": "البحث",
     "history": "التاريخ",
     "subscription": "الاشتراك",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "credits": "رصيد"
+  },
+  "history": {
+    "title": "سجل الدردشة",
+    "subtitle": "عرض وإدارة محادثات الذكاء الاصطناعي السابقة",
+    "searchPlaceholder": "ابحث في السجل الخاص بك...",
+    "filters": {
+      "all": "الكل",
+      "ask": "اسأل",
+      "research": "بحث"
+    },
+    "back": "العودة إلى السجل",
+    "downloadPdf": "تحميل PDF",
+    "clearAll": "حذف الكل",
+    "attachedCode": "الكود المرفق",
+    "codeSnippet": "مقتطف الكود {{index}}{{language}}",
+    "dates": {
+      "yesterday": "أمس"
+    },
+    "empty": {
+      "noActivities": "لا توجد أنشطة بعد",
+      "noResults": "لا توجد نتائج مطابقة",
+      "startPrompt": "ابدأ بطرح الأسئلة لبناء سجلك!",
+      "adjustFilters": "حاول تعديل البحث أو المرشحات"
+    },
+    "mode": {
+      "tutor": "اسأل",
+      "ask": "اسأل",
+      "research": "بحث",
+      "problem": "مشكلة",
+      "simplify": "تبسيط",
+      "hints": "تلميحات",
+      "rewrites": "إعادة الكتابة"
+    }
+  },
+  "subscription": {
+    "title": "اختر خطتك",
+    "subtitle": "اختر خطة الاشتراك المثالية لرحلة التعلم بالذكاء الاصطناعي",
+    "plans": {
+      "popular": "الأكثر شعبية",
+      "button": {
+        "startTrial": "ابدأ النسخة التجريبية المجانية",
+        "getPlan": "احصل على {{plan}}"
+      },
+      "features": {
+        "askLevels": "اسأل (أساسي، متوسط، أعلى)",
+        "askAllLevels": "اسأل (جميع المستويات)",
+        "researchFundamental": "بحث (أساسي فقط)",
+        "researchAllButAdvanced": "بحث (أساسي، متوسط، أعلى)",
+        "researchAllLevels": "بحث (جميع المستويات)",
+        "allCitationStyles": "جميع أنماط الاستشهاد"
+      },
+      "limitations": {
+        "askAdvancedRequiresPremium": "اسأل متقدم يتطلب الإصدار المميز",
+        "researchIntermediatePremium": "البحث المتوسط+ يتطلب الإصدار المميز بدون رصيد إضافي",
+        "researchAdvancedUltraOnly": "البحث المتقدم للإصدار الفائق فقط",
+        "researchAdvancedRequiresPremium": "البحث المتقدم يتطلب الإصدار المميز",
+        "noAiImageGeneration": "بدون توليد صور الذكاء الاصطناعي",
+        "creditsConsumedWithUsage": "يتم استهلاك الرصيد مع الاستخدام"
+      },
+      "faq": {
+        "noSetupFees": "لا توجد رسوم إعداد",
+        "cancelAnytime": "يمكنك الإلغاء في أي وقت",
+        "emailSupport": "دعم البريد الإلكتروني",
+        "tagline": "مبني لـ xplainfy.net — شروحات ذكية والبحث المتقدم والإنتاجية المدعومة بالذكاء الاصطناعي."
+      }
+    },
+    "comparison": {
+      "title": "قارن جميع الميزات",
+      "subtitle": "انظر بالضبط ما تحصل عليه مع كل خطة",
+      "footer": "تتضمن جميع الخطط شروحات الذكاء الاصطناعي الأساسية والمساعدة الأساسية. قم بالترقية في أي وقت لفتح المزيد من الإمكانيات.",
+      "dailyCredits": "الرصيد اليومي",
+      "totalCredits": "الرصيد الإجمالي",
+      "askFundamental": "اسأل أساسي",
+      "askIntermediate": "اسأل متوسط",
+      "askHigher": "اسأل أعلى",
+      "askAdvanced": "اسأل متقدم",
+      "researchFundamental": "بحث أساسي",
+      "researchIntermediate": "بحث متوسط",
+      "researchHigher": "بحث أعلى",
+      "researchAdvanced": "بحث متقدم",
+      "fileUploadSize": "حجم تحميل الملف",
+      "maxInputWords": "أقصى كلمات الإدخال",
+      "citationStyles": "أنماط الاستشهاد",
+      "citationStylesBasic": "الكل (APA و MLA و IEEE و AMA)",
+      "aiIllustrations": "رسوم التوضيح بالذكاء الاصطناعي",
+      "advancedModels": "النماذج المتقدمة",
+      "imageGeneration": "توليد الصور",
+      "tooltips": {
+        "dailyCredits": "يتم تضمين الرصيد اليومي المجاني",
+        "totalCredits": "إجمالي الرصيد المتاح",
+        "askFundamental": "الوصول إلى مستوى اسأل الأساسي",
+        "askIntermediate": "الوصول إلى مستوى اسأل المتوسط",
+        "askHigher": "الوصول إلى مستوى اسأل الأعلى",
+        "askAdvanced": "الوصول إلى مستوى اسأل المتقدم",
+        "researchFundamental": "الوصول إلى مستوى البحث الأساسي",
+        "researchIntermediate": "الوصول إلى مستوى البحث المتوسط",
+        "researchHigher": "الوصول إلى مستوى البحث الأعلى",
+        "researchAdvanced": "الوصول إلى مستوى البحث المتقدم",
+        "fileUploadSize": "أقصى حجم ملف لكل تحميل",
+        "maxInputWords": "أقصى عدد كلمات الإدخال",
+        "citationStyles": "تنسيقات الاستشهاد المتاحة",
+        "aiIllustrations": "توليد رسوم التوضيح بالذكاء الاصطناعي في الردود",
+        "advancedModels": "GPT-5.5 للمهام المعقدة",
+        "imageGeneration": "توليد الصور باستخدام GPT Image 2"
+      }
+    },
+    "credits": "رصيد",
+    "billing": {
+      "monthly": "شهري",
+      "yearly": "سنوي"
+    }
+  },
+  "payment": {
+    "title": "إكمال الدفع",
+    "description": "الاشتراك في {{plan}} مقابل {{price}}/{{period}}",
+    "cardName": "اسم صاحب البطاقة",
+    "cardNamePlaceholder": "أحمد محمد",
+    "cardNumber": "رقم البطاقة",
+    "expiry": "تاريخ الانتهاء",
+    "cvc": "CVC",
+    "secure": "معلومات الدفع الخاصة بك آمنة ومشفرة",
+    "processing": "جاري المعالجة...",
+    "pay": "ادفع {{amount}}",
+    "success": {
+      "subscription": "تم الاشتراك في {{plan}} بنجاح!",
+      "credits": "تم شراء {{credits}} رصيد بنجاح!",
+      "trial": "تم بدء {{plan}} بنجاح!",
+      "initiated": "تم بدء الدفع. ستتلقى تأكيداً بعد الانتهاء."
+    },
+    "errors": {
+      "missingFields": "يرجى ملء جميع حقول الدفع",
+      "missingPhone": "يرجى إدخال رقم الهاتف المحمول",
+      "failed": "فشل الدفع. يرجى المحاولة مرة أخرى."
+    },
+    "rateLoading": "جاري جلب سعر الصرف...",
+    "rateUnavailable": "سعر الصرف غير متاح",
+    "rateFallbackSuffix": " (بديل)",
+    "operator": "المشغل",
+    "chooseOperator": "اختر المشغل",
+    "operatorMtn": "MTN Mobile Money",
+    "operatorAirtel": "Airtel Money",
+    "phoneNumber": "رقم الهاتف",
+    "phonePlaceholder": "07XXXXXXXX أو +2567XXXXXXXX",
+    "mobileMoneyNotice": "سيتم معالجة الدفع عبر الأموال المحمولة ({{operator}}). سيتم تحصيل المبلغ المعادل بالشلن الأوغندي كما هو موضح أعلاه."
   },
   "profile": {
+    "editProfile": "تعديل الملف الشخصي",
+    "fullNameLabel": "الاسم الكامل",
+    "fullNamePlaceholder": "أدخل اسمك الكامل",
+    "avatarUrlLabel": "رابط الصورة الشخصية",
+    "avatarUrlPlaceholder": "https://example.com/avatar.jpg",
+    "saveChanges": "حفظ التغييرات",
+    "cancelEdit": "إلغاء",
     "title": "الملف الشخصي والإعدادات",
     "subtitle": "قم بتكوين كيفية تفكير Xplainfy وتخزين البيانات.",
     "privacy": {
@@ -39,12 +191,36 @@
     },
     "signedInAs": "مسجل الدخول كـ",
     "user": "مستخدم",
-    "signOut": "تسجيل الخروج",
+    "signOut": {
+      "title": "تسجيل الخروج",
+      "description": "هل أنت متأكد من تسجيل الخروج؟ ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى حسابك.",
+      "confirm": "تسجيل الخروج"
+    },
     "credits": {
       "title": "الاعتمادات",
       "description": "اعتماداتك المتاحة للتفاعلات مع الذكاء الاصطناعي",
       "available": "اعتماد متاح",
-      "usage": "كل رد من الذكاء الاصطناعي يكلف اعتماد واحد"
+      "usage": "كل رد من الذكاء الاصطناعي يكلف اعتماد واحد",
+      "paidFreeDaily": "{{paid}} مدفوع + {{free}} يومي مجاني",
+      "freeDailyRemaining": "رصيد يومي مجاني متبقي",
+      "getMoreCredits": "احصل على المزيد من الاعتمادات",
+      "totalLabel": "إجمالي رصيد الاعتمادات",
+      "paidLabel": "اعتمادات مدفوعة",
+      "remainingDailyFree": "رصيد يومي مجاني متبقي",
+      "premiumSource": "مصدر بريميوم",
+      "activeStatus": "نشط",
+      "inactiveStatus": "غير نشط",
+      "dailyUsage": "استخدام الرصيد اليومي المجاني",
+      "usedLabel": "/10 مستخدم",
+      "freeLeft": "متبقي مجاني",
+      "unlimitedLabel": "رصيد غير محدود",
+      "paidLabel": "{{paid}} اعتماد مدفوع",
+      "dailyAutoGrant": "يتم منح الرصيد اليومي المجاني تلقائياً من Supabase وتتبعه هنا حسب الاستخدام.",
+      "bonusLabel": "رصيد مكافأة",
+      "subscriptionCredits": "اعتمادات الاشتراك",
+      "premiumAccess": "وصول بريميوم",
+      "creditAccess": "وصول رصيد",
+      "freeAccount": "حساب مجاني"
     },
     "subscription": {
       "title": "خطط الاشتراك",
@@ -54,6 +230,11 @@
         "yearly": "سنوياً",
         "save": "وفر 17%"
       },
+      "creditsLabel": "الاعتمادات",
+      "creditsAmount": "{{credits}} اعتماد",
+      "freeDailyCreditsLabel": "رصيد يومي مجاني متبقي",
+      "freeDailyCreditsValue": "رصيد يومي مجاني متبقي: {{remaining}}",
+      "dailyCreditsReset": "يتم إعادة تعيين الرصيد اليومي المجاني كل يوم.",
       "credits": "اعتمادات",
       "plans": {
         "popular": "الأكثر شعبية",
@@ -95,9 +276,13 @@
         },
         "subscribe": "اشترك في {{plan}}"
       },
+      "managePlan": "إدارة الخطة",
+      "proActive": "✨ خطة Pro نشطة",
+      "freePlan": "الخطة المجانية",
       "description": "إدارة خطة اشتراكك وفوترتك",
       "expires": "ينتهي",
       "upgrade": "ترقية",
+      "paidPlanActive": "Active",
       "upgradeComingSoon": "خيارات الترقية قريباً!",
       "viewPlans": "عرض الخطط",
       "footer": "جميع الخطط تشمل وصولاً غير محدود إلى منصة التعلم لدينا. يمكن الإلغاء في أي وقت."
@@ -112,9 +297,65 @@
       "cvc": "رمز CVC",
       "secure": "معلومات الدفع الخاصة بك آمنة ومشفرة",
       "processing": "جاري المعالجة...",
-      "pay": "ادفع {{amount}}"
+      "pay": "ادفع {{amount}}",
+      "success": {
+        "subscription": "تم الاشتراك في {{plan}} بنجاح!",
+        "credits": "تم شراء {{credits}} رصيد بنجاح!",
+        "trial": "تم بدء {{plan}} بنجاح!"
+      },
+      "errors": {
+        "missingFields": "يرجى ملء جميع حقول الدفع",
+        "failed": "فشل الدفع. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "feedback": {
+      "title": "ملاحظاتك تهمنا",
+      "description": "شاركنا رأيك أو أبلغ عن مشكلة لمساعدتنا في تحسين Xplainfy.",
+      "button": "إرسال ملاحظات"
     },
     "footer": "Xplainfy · أي شيء مفسر"
+  },
+  "feedback": {
+    "title": "أرسل لنا ملاحظاتك",
+    "subtitle": "ساعدنا في تحسين تجربتك. ملاحظاتك ذات قيمة وتساعد في تشكيل مستقبل Xplainfy.",
+    "type": "نوع الملاحظات",
+    "typeOptions": {
+      "bugReport": "تقرير خطأ",
+      "featureRequest": "طلب ميزة",
+      "generalFeedback": "ملاحظات عامة",
+      "performanceIssue": "مشكلة في الأداء"
+    },
+    "input": {
+      "title": "العنوان",
+      "titlePlaceholder": "ملخص موجز لملاحظاتك",
+      "description": "الوصف",
+      "descriptionPlaceholder": "يرجى تقديم معلومات مفصلة عن ملاحظاتك..."
+    },
+    "rating": {
+      "question": "كيف تقيم تجربتك؟",
+      "messages": {
+        "excellent": "🌟 ممتاز! نحن مسرورون!",
+        "good": "😊 جيد! نحن على المسار الصحيح.",
+        "okay": "👍 حسناً - هناك مجال للتحسين.",
+        "notGreat": "😐 ليس رائعاً - سنعمل عليه.",
+        "veryPoor": "😔 سيء جداً - سنصلح هذا."
+      }
+    },
+    "attachment": {
+      "prompt": "انقر للتحميل أو اسحب وأفلت",
+      "hint": "الصور أو PDF أو السجلات (بحد أقصى 5 MB)"
+    },
+    "submitting": "جاري الإرسال...",
+    "submit": "إرسال الملاحظات",
+    "messages": {
+      "fileTooLarge": "يجب أن يكون حجم الملف أقل من 5 MB",
+      "attachmentUploaded": "تم تحميل المرفق بنجاح",
+      "attachmentUploadFailed": "فشل تحميل المرفق",
+      "missingFields": "يرجى ملء جميع الحقول المطلوبة",
+      "success": "شكراً على ملاحظاتك!",
+      "submitFailed": "فشل إرسال الملاحظات",
+      "submitError": "حدث خطأ أثناء إرسال الملاحظات"
+    }
   },
   "workspace": {
     "thinking": "يفكر…",
@@ -152,14 +393,71 @@
     "engineering": "هندسي",
     "lecturer": "محاضر",
     "scientific": "علمي",
-     "creative": "إبداعي",
-     "depth": "عمق الشرح",
-     "depthDescription": "اختر مستوى تفصيل الشرح.",
-     "beginner": "مبتدئ",
-     "intermediate": "متوسط",
-     "higher": "عالي",
-     "advanced": "متقدم",
-     "renderingContent": "جاري معالجة المحتوى..."
+    "creative": "إبداعي",
+    "fundamentalLabel": "أساسي",
+    "chooseCategory": "اختر التخصص",
+    "chooseLevel": "اختر المستوى",
+    "chooseCitationStyle": "اختر نمط الاستشهاد",
+    "depth": "أساس وشرح",
+    "depthDescription": "اختر مستوى تفصيل الشرح.",
+    "beginner": "أساسي",
+    "intermediate": "متوسط",
+    "higher": "عالي",
+    "advanced": "متقدم",
+    "renderingContent": "جاري معالجة المحتوى...",
+    "previous": "السابق",
+    "next": "التالي",
+    "codeCopied": "تم نسخ الكود!",
+    "codeCopyFailed": "فشل نسخ الكود",
+    "processing": "قيد المعالجة",
+    "done": "تم",
+    "part": "الجزء {{part}}",
+    "beingProcessed": "{{title}} قيد المعالجة",
+    "buildingTutorial": "جاري بناء برنامجك التعليمي",
+    "researchingTopic": "جاري بحث موضوعك",
+    "pdfDownloaded": "تم تنزيل PDF بنجاح",
+    "pdfGenerateFailed": "فشل إنشاء PDF",
+    "pdfDownloadFailed": "فشل تنزيل المستند",
+    "pdfTitles": {
+      "tutor": "درس تعليمي",
+      "research": "تقرير بحثي",
+      "problem": "حل المشكلة",
+      "default": "المستند"
+    },
+    "premiumRequired": {
+      "title": "ميزة بريميوم مطلوبة",
+      "message": "هذه الميزة تتطلب اشتراك بريميوم للوصول إلى جميع القدرات المتقدمة. قم بترقية خطتك لفتح الإمكانات الكاملة لـ Xplainfy."
+    },
+    "prompt": {
+      "attachedCode": "يرجى تحليل مقتطفات الكود المرفقة.",
+      "scanImage": "يرجى مسح الصورة المرفقة والإجابة على السؤال.",
+      "analyzeDocument": "يرجى تحليل المستند المرفق والإجابة على السؤال.",
+      "analyzeVoiceTranscript": "يرجى تحليل النص الصوتي المسجل والإجابة على السؤال."
+    },
+    "messages": {
+      "codeSnippetAdded": "تمت إضافة مقتطف الكود",
+      "noVoiceCaptured": "لم يتم تسجيل أي صوت. يرجى المحاولة مرة أخرى.",
+      "responseEnded": "انتهت الاستجابة. يمكنك بدء استعلام جديد.",
+      "unableToVerifyCredits": "تعذر التحقق من الاعتمادات. يرجى تسجيل الدخول مرة أخرى.",
+      "zeroCredits": "ليس لديك أي اعتمادات حالياً. قم بزيارة صفحة الاشتراك للحصول على المزيد من الاعتمادات.",
+      "inputExceedsWordLimit": "تجاوز الإدخال حد الكلمات البالغ {{maxWords}} words لخطتك. الحالي: {{currentWords}} كلمات",
+      "fileTooLarge": "الملف كبير جداً (الحد الأقصى {{limit}} ميجابايت لخطتك). حجم الملف: {{size}} ميجابايت",
+      "loadedImageForScanning": "تم تحميل الصورة {{name}} للمسح",
+      "couldntReadImage": "تعذر قراءة ملف الصورة",
+      "loadedDocumentForAnalysis": "تم تحميل المستند {{name}} للتحليل",
+      "couldntReadDocument": "تعذر قراءة ملف المستند",
+      "loadedFile": "تم تحميل {{name}}",
+      "couldntReadFile": "تعذر قراءة الملف",
+      "configErrorExtractImageText": "خطأ في التكوين - لا يمكن استخراج نص الصورة",
+      "textExtractedFromImage": "استخراج النص من الصورة وتعيينه كإدخال",
+      "failedToExtractImageText": "فشل استخراج النص من الصورة",
+      "noTextFoundInImage": "لم يتم العثور على نص في الصورة",
+      "voiceRecognitionUnsupported": "التعرف على الصوت غير مدعوم في هذا المتصفح",
+      "voiceRecognitionFailed": "فشل التعرف على الصوت. يرجى المحاولة مرة أخرى."
+    },
+    "imageScanHint": "تم إرفاق صورة للمسح. انقر على استخراج لمسح النص أو أرسل لطلب من الذكاء الاصطناعي تفسير الصورة.",
+    "documentAnalysisHint": "تم إرفاق مستند للتحليل. أرسل لطلب من الذكاء الاصطناعي تحليله.",
+    "voiceTranscriptHint": "تم تسجيل نص صوتي. أرسل لطلب من الذكاء الاصطناعي تحليله."
   },
   "tutor": {
     "title": "المدرس الذكي",
@@ -208,11 +506,28 @@
       "generic": "فشل المصادقة. يرجى المحاولة مرة أخرى."
     }
   },
+  "transactions": {
+    "title": "Credit Transactions",
+    "subtitle": "Recent activity by credit type",
+    "noTransactions": "No credit transactions yet.",
+    "loadMore": "Load more",
+    "fetchError": "Unable to load transaction history."
+  },
+  "sidebar": {
+    "tagline": "مركز التعلم الذكي",
+    "taglineAmount": "{{amount}} رصيد"
+  },
+  "notFound": {
+    "subtitle": "آه! لم يتم العثور على الصفحة",
+    "returnHome": "العودة إلى الصفحة الرئيسية"
+  },
   "common": {
     "loading": "جارٍ التحميل...",
     "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     "success": "نجح!",
     "cancel": "إلغاء",
-    "ok": "موافق"
+    "ok": "موافق",
+    "refresh": "تحديث",
+    "loadMore": "تحميل المزيد"
   }
 }

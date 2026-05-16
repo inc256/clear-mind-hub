@@ -14,13 +14,108 @@
   },
   "history": {
     "title": "Chat History",
-    "subtitle": "View and manage your previous AI conversations"
+    "subtitle": "View and manage your previous AI conversations",
+    "searchPlaceholder": "Search your history...",
+    "filters": {
+      "all": "All",
+      "ask": "Ask",
+      "research": "Research"
+    },
+    "back": "Back to History",
+    "downloadPdf": "Download PDF",
+    "clearAll": "Clear All",
+    "attachedCode": "Attached Code",
+    "codeSnippet": "Code Snippet {{index}}{{language}}",
+    "dates": {
+      "yesterday": "Yesterday"
+    },
+    "empty": {
+      "noActivities": "No activities yet",
+      "noResults": "No matching results",
+      "startPrompt": "Start asking questions to build your history!",
+      "adjustFilters": "Try adjusting your search or filters"
+    },
+    "mode": {
+      "tutor": "Ask",
+      "ask": "Ask",
+      "research": "Research",
+      "problem": "Problem",
+      "simplify": "Simplify",
+      "hints": "Hints",
+      "rewrites": "Rewrites"
+    }
   },
   "subscription": {
     "title": "Choose Your Plan",
     "subtitle": "Select the perfect subscription plan for your AI learning journey",
     "plans": {
-      "popular": "Most Popular"
+      "popular": "Most Popular",
+      "button": {
+        "startTrial": "Start Free Trial",
+        "getPlan": "Get {{plan}}"
+      },
+      "features": {
+        "askLevels": "Ask (Fundamental, Intermediate, Higher)",
+        "askAllLevels": "Ask (All Levels)",
+        "researchFundamental": "Research (Fundamental only)",
+        "researchAllButAdvanced": "Research (Fundamental, Intermediate, Higher)",
+        "researchAllLevels": "Research (All Levels)",
+        "allCitationStyles": "All citation styles"
+      },
+      "limitations": {
+        "askAdvancedRequiresPremium": "Ask Advanced requires premium",
+        "researchIntermediatePremium": "Research Intermediate+ requires premium without extra credits",
+        "researchAdvancedUltraOnly": "Research Advanced is Ultra-only",
+        "researchAdvancedRequiresPremium": "Research Advanced requires premium",
+        "noAiImageGeneration": "No AI image generation",
+        "creditsConsumedWithUsage": "Credits are consumed with usage"
+      },
+      "faq": {
+        "noSetupFees": "No setup fees",
+        "cancelAnytime": "Cancel anytime",
+        "emailSupport": "Email support",
+        "tagline": "Built for xplainfy.net — Intelligent explanations, advanced research, and AI-powered productivity."
+      }
+    },
+    "comparison": {
+      "title": "Compare All Features",
+      "subtitle": "See exactly what you get with each plan",
+      "footer": "All plans include core AI explanations and basic assistance. Upgrade anytime to unlock more power.",
+      "dailyCredits": "Daily Credits",
+      "totalCredits": "Total Credits",
+      "askFundamental": "Ask Fundamental",
+      "askIntermediate": "Ask Intermediate",
+      "askHigher": "Ask Higher",
+      "askAdvanced": "Ask Advanced",
+      "researchFundamental": "Research Fundamental",
+      "researchIntermediate": "Research Intermediate",
+      "researchHigher": "Research Higher",
+      "researchAdvanced": "Research Advanced",
+      "fileUploadSize": "File Upload Size",
+      "maxInputWords": "Max Input Words",
+      "citationStyles": "Citation Styles",
+      "citationStylesBasic": "All (APA, MLA, IEEE, AMA)",
+      "aiIllustrations": "AI Illustrations",
+      "advancedModels": "Advanced Models",
+      "imageGeneration": "Image Generation",
+      "tooltips": {
+        "dailyCredits": "Free daily credits included",
+        "totalCredits": "Total available credits",
+        "askFundamental": "Access to Ask Fundamental level",
+        "askIntermediate": "Access to Ask Intermediate level",
+        "askHigher": "Access to Ask Higher level",
+        "askAdvanced": "Access to Ask Advanced level",
+        "researchFundamental": "Access to Research Fundamental level",
+        "researchIntermediate": "Access to Research Intermediate level",
+        "researchHigher": "Access to Research Higher level",
+        "researchAdvanced": "Access to Research Advanced level",
+        "fileUploadSize": "Maximum file size per upload",
+        "maxInputWords": "Maximum input word count",
+        "citationStyles": "Available citation formats",
+        "aiIllustrations": "Generate AI illustrations in responses",
+        "advancedModels": "GPT-5.5 for complex tasks",
+        "imageGeneration": "Generate images with GPT Image 2"
+      }
     },
     "credits": "credits",
     "billing": {
@@ -42,12 +137,24 @@
     "success": {
       "subscription": "Successfully subscribed to {{plan}}!",
       "credits": "Successfully purchased {{credits}} credits!",
-      "trial": "Successfully started {{plan}}!"
+      "trial": "Successfully started {{plan}}!",
+      "initiated": "Payment initiated. You will receive a confirmation once completed."
     },
     "errors": {
       "missingFields": "Please fill in all payment fields",
+      "missingPhone": "Please enter a mobile number",
       "failed": "Payment failed. Please try again."
-    }
+    },
+    "rateLoading": "Fetching exchange rate...",
+    "rateUnavailable": "Exchange rate unavailable",
+    "rateFallbackSuffix": " (fallback)",
+    "operator": "Operator",
+    "chooseOperator": "Choose operator",
+    "operatorMtn": "MTN Mobile Money",
+    "operatorAirtel": "Airtel Money",
+    "phoneNumber": "Phone number",
+    "phonePlaceholder": "07XXXXXXXX or +2567XXXXXXXX",
+    "mobileMoneyNotice": "Payment will be processed via mobile money ({{operator}}). You will be charged the equivalent amount in UGX shown above."
   },
   "profile": {
     "title": "Profile & Settings",
@@ -77,12 +184,46 @@
     },
     "signedInAs": "Signed in as",
     "user": "User",
-    "signOut": "Sign out",
+    "signOut": {
+      "title": "Sign Out",
+      "description": "Are you sure you want to sign out? You'll need to sign in again to access your account.",
+      "confirm": "Sign Out"
+    },
+    "messages": {
+      "signOutFailed": "Failed to sign out. Please try again."
+    },
+    "editProfile": "Edit Profile",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "avatarUrlLabel": "Avatar URL",
+    "avatarUrlPlaceholder": "https://example.com/avatar.jpg",
+    "saveChanges": "Save Changes",
+    "cancelEdit": "Cancel",
     "credits": {
       "title": "Credits",
       "description": "Your available credits for AI interactions",
       "available": "credits available",
-      "usage": "Each AI response costs 1 credit"
+      "usage": "Each AI response costs 1 credit",
+      "paidFreeDaily": "{{paid}} paid + {{free}} free daily",
+      "freeDailyRemaining": "Free daily credits remaining",
+      "getMoreCredits": "Get More Credits",
+      "totalLabel": "Total Credit Balance",
+      "paidLabel": "Paid credits",
+      "remainingDailyFree": "Remaining daily free",
+      "premiumSource": "Premium source",
+      "activeStatus": "Active",
+      "inactiveStatus": "Inactive",
+      "dailyUsage": "Daily free credit usage",
+      "usedLabel": "/10 used",
+      "freeLeft": "free left",
+      "unlimitedLabel": "Unlimited credits",
+      "paidLabel": "{{paid}} paid credits",
+      "dailyAutoGrant": "Daily free credits are granted automatically by Supabase and tracked here by usage.",
+      "bonusLabel": "Bonus credited",
+      "subscriptionCredits": "Subscription credits",
+      "premiumAccess": "Premium Access",
+      "creditAccess": "Credit Access",
+      "freeAccount": "Free Account"
     },
     "subscription": {
       "title": "Subscription Plans",
@@ -133,9 +274,13 @@
         },
         "subscribe": "Subscribe to {{plan}}"
       },
+      "managePlan": "Manage Plan",
+      "proActive": "✨ Pro plan active",
+      "freePlan": "Free plan",
       "description": "Manage your subscription plan and billing",
       "expires": "Expires",
       "upgrade": "Upgrade",
+      "paidPlanActive": "Active",
       "upgradeComingSoon": "Upgrade options coming soon!",
       "viewPlans": "View Plans",
       "footer": "All plans include unlimited access to our learning platform. Cancel anytime."
@@ -161,7 +306,54 @@
         "failed": "Payment failed. Please try again."
       }
     },
+    "feedback": {
+      "title": "Your feedback matters",
+      "description": "Share your thoughts or report an issue to help us improve Xplainfy.",
+      "button": "Send Feedback"
+    },
     "footer": "Xplainfy · Anything explained"
+  },
+  "feedback": {
+    "title": "Send Us Your Feedback",
+    "subtitle": "Help us improve your experience. Your feedback is valuable and helps shape the future of Xplainfy.",
+    "type": "Feedback Type",
+    "typeOptions": {
+      "bugReport": "Bug Report",
+      "featureRequest": "Feature Request",
+      "generalFeedback": "General Feedback",
+      "performanceIssue": "Performance Issue"
+    },
+    "input": {
+      "title": "Title",
+      "titlePlaceholder": "Brief summary of your feedback",
+      "description": "Description",
+      "descriptionPlaceholder": "Please provide detailed information about your feedback..."
+    },
+    "rating": {
+      "question": "How would you rate your experience?",
+      "messages": {
+        "excellent": "🌟 Excellent! We're thrilled!",
+        "good": "😊 Good! We're on the right track.",
+        "okay": "👍 Okay - room for improvement.",
+        "notGreat": "😐 Not great - we'll work on it.",
+        "veryPoor": "😔 Very poor - we'll fix this."
+      }
+    },
+    "attachment": {
+      "prompt": "Click to upload or drag and drop",
+      "hint": "Images, PDF, or logs (Max 5MB)"
+    },
+    "submitting": "Submitting...",
+    "submit": "Submit Feedback",
+    "messages": {
+      "fileTooLarge": "File size must be less than 5MB",
+      "attachmentUploaded": "Attachment uploaded successfully",
+      "attachmentUploadFailed": "Failed to upload attachment",
+      "missingFields": "Please fill in all required fields",
+      "success": "Thank you for your feedback!",
+      "submitFailed": "Failed to submit feedback",
+      "submitError": "An error occurred while submitting feedback"
+    }
   },
   "workspace": {
     "thinking": "Thinking…",
@@ -179,6 +371,29 @@
     "nextStep": "Next Step",
     "generateQuiz": "Generate Quiz",
     "backToLesson": "Back to Lesson",
+    "previous": "Previous",
+    "next": "Next",
+    "codeCopied": "Code copied!",
+    "codeCopyFailed": "Failed to copy code",
+    "processing": "Processing",
+    "done": "Done",
+    "part": "Part {{part}}",
+    "beingProcessed": "{{title}} being processed",
+    "buildingTutorial": "Building your tutorial",
+    "researchingTopic": "Researching your topic",
+    "pdfDownloaded": "PDF downloaded successfully",
+    "pdfGenerateFailed": "Failed to generate PDF",
+    "pdfDownloadFailed": "Failed to download document",
+    "pdfTitles": {
+      "tutor": "Tutorial",
+      "research": "Research Report",
+      "problem": "Problem Solution",
+      "default": "Document"
+    },
+    "premiumRequired": {
+      "title": "Premium Feature Required",
+      "message": "This feature requires a premium subscription to access all advanced capabilities. Upgrade your plan to unlock the full potential of Xplainfy."
+    },
     "practiceQuestions": "Try Practice Questions",
     "practiceQuestionsTitle": "Practice Questions",
     "selectCorrectAnswer": "Select the correct answer:",
@@ -200,13 +415,51 @@
     "lecturer": "Lecturer",
     "scientific": "Scientific",
     "creative": "Creative",
-     "depth": "Explanation Depth",
-     "depthDescription": "Choose how detailed the explanations should be.",
-     "beginner": "Beginner",
-     "intermediate": "Intermediate",
-     "higher": "Higher",
-     "advanced": "Advanced",
-    "renderingContent": "Rendering content..."
+    "depth": "Explanation Depth",
+    "depthDescription": "Choose how detailed the explanations should be.",
+    "beginner": "Fundamental",
+    "intermediate": "Intermediate",
+    "higher": "Higher",
+    "advanced": "Advanced",
+    "fundamentalLabel": "Fundamental",
+    "chooseCategory": "Choose Category",
+    "chooseLevel": "Choose Level",
+    "chooseCitationStyle": "Choose Citation Style",
+    "formSectionLabels": {
+      "category": "Choose Category",
+      "level": "Choose Level"
+    },
+    "renderingContent": "Rendering content...",
+    "prompt": {
+      "attachedCode": "Please analyze the attached code snippets.",
+      "scanImage": "Please scan the attached image and answer the question.",
+      "analyzeDocument": "Please analyze the attached document and answer the question.",
+      "analyzeVoiceTranscript": "Please analyze the voice transcript and answer the question."
+    },
+    "messages": {
+      "codeSnippetAdded": "Code snippet added",
+      "noVoiceCaptured": "No voice was captured. Please try again.",
+      "responseEnded": "Response ended. You can start a new query.",
+      "unableToVerifyCredits": "Unable to verify credits. Please sign in again.",
+      "zeroCredits": "You have zero credits right now. Visit the subscription page to get more credits.",
+      "inputExceedsWordLimit": "Input exceeds {{maxWords}} word limit for your plan. Current: {{currentWords}} words",
+      "fileTooLarge": "File too large (max {{limit}}MB for your plan). File size: {{size}}MB",
+      "loadedImageForScanning": "Loaded image {{name}} for scanning",
+      "couldntReadImage": "Couldn't read image file",
+      "loadedDocumentForAnalysis": "Loaded document {{name}} for analysis",
+      "couldntReadDocument": "Couldn't read document file",
+      "loadedFile": "Loaded {{name}}",
+      "couldntReadFile": "Couldn't read file",
+      "configErrorExtractImageText": "Configuration error - cannot extract image text",
+      "textExtractedFromImage": "Text extracted from image and set as input",
+      "failedToExtractImageText": "Failed to extract text from image",
+      "noTextFoundInImage": "No text found in image",
+      "voiceRecognitionUnsupported": "Voice recognition not supported in this browser",
+      "voiceRecognitionFailed": "Voice recognition failed. Please try again."
+    },
+    "imageScanHint": "Image attached for scanning. Click extract to scan text or send to ask the AI to interpret it.",
+    "documentAnalysisHint": "Document attached for analysis. Send to ask the AI to analyze it.",
+    "voiceTranscriptHint": "Voice transcript recorded. Send to ask the AI to analyze it."
   },
   "tutor": {
     "title": "AI Tutor",
@@ -255,11 +508,28 @@
       "generic": "Authentication failed. Please try again."
     }
   },
+  "transactions": {
+    "title": "Credit Transactions",
+    "subtitle": "Recent activity by credit type",
+    "noTransactions": "No credit transactions yet.",
+    "loadMore": "Load more",
+    "fetchError": "Unable to load transaction history."
+  },
+  "notFound": {
+    "subtitle": "Oops! Page not found",
+    "returnHome": "Return to Home"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Something went wrong. Please try again.",
     "success": "Success!",
     "cancel": "Cancel",
-    "ok": "OK"
+    "ok": "OK",
+    "refresh": "Refresh",
+    "loadMore": "Load more"
+  },
+  "sidebar": {
+    "tagline": "Smart learning hub",
+    "taglineAmount": "{{amount}} Credits"
   }
 }

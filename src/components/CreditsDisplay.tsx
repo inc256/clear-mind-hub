@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { useAuth } from "@/store/auth";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Sparkles, ShieldCheck, Gift, ArrowUpRight } from "lucide-react";
 
 export function CreditsDisplay() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const {
     profile,
     loading,
@@ -20,15 +22,15 @@ export function CreditsDisplay() {
 
   const statusLabel = useMemo(() => {
     if (creditBreakdown.purchased > 0 || creditBreakdown.subscription > 0) {
-      return "Premium Access";
+      return t('profile.credits.premiumAccess');
     }
 
     if (creditBreakdown.bonus > 0 || creditBreakdown.trial > 0 || remainingDailyCredits > 0) {
-      return "Credit Access";
+      return t('profile.credits.creditAccess');
     }
 
-    return "Free Account";
-  }, [creditBreakdown, remainingDailyCredits]);
+    return t('profile.credits.freeAccount');
+  }, [creditBreakdown, remainingDailyCredits, t]);
 
   if (loading) {
     return (
@@ -57,7 +59,7 @@ export function CreditsDisplay() {
     <div className="rounded-3xl border border-border/70 bg-card p-6 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Total Credit Balance</p>
+          <p className="text-sm font-medium text-muted-foreground">{t('profile.credits.totalLabel')}</p>
           <div className="mt-2 flex items-center gap-3">
             <p className="text-4xl font-semibold tracking-tight text-foreground">
               {availableCredits}
@@ -71,26 +73,26 @@ export function CreditsDisplay() {
 
         <Button variant="secondary" onClick={refreshCredits} className="gap-2">
           <ArrowUpRight size={16} />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Paid credits</span>
+            <span>{t('profile.credits.paidLabel')}</span>
             <span>{creditBreakdown.currentCredits}</span>
           </div>
           <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-            <span>Remaining daily free</span>
+            <span>{t('profile.credits.remainingDailyFree')}</span>
             <span>{remainingDailyCredits}/10</span>
           </div>
         </div>
 
         <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Premium source</span>
-            <span>{premiumAccess ? "Active" : "Inactive"}</span>
+            <span>{t('profile.credits.premiumSource')}</span>
+            <span>{premiumAccess ? t('profile.credits.activeStatus') : t('profile.credits.inactiveStatus')}</span>
           </div>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Premium access is granted when purchased, bonus, subscription, or trial credits are present.
@@ -101,13 +103,13 @@ export function CreditsDisplay() {
       <div className="mt-6 rounded-2xl border border-border/60 bg-background/80 p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Daily free credit usage</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('profile.credits.dailyUsage')}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {profile?.daily_free_credits_used ?? 0}/10 used
+              {profile?.daily_free_credits_used ?? 0}{t('profile.credits.usedLabel')}
             </p>
           </div>
           <div className="text-xs font-semibold text-foreground">
-            {remainingDailyCredits} free left
+            {remainingDailyCredits} {t('profile.credits.freeLeft')}
           </div>
         </div>
 
@@ -117,7 +119,7 @@ export function CreditsDisplay() {
         />
 
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          Daily free credits are granted automatically by Supabase and tracked here by usage.
+          {t('profile.credits.dailyAutoGrant')}
         </p>
       </div>
 
@@ -125,7 +127,7 @@ export function CreditsDisplay() {
         <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Gift size={16} />
-            Bonus credited
+            {t('profile.credits.bonusLabel')}
           </div>
           <p className="mt-3 text-3xl font-semibold">{creditBreakdown.bonus}</p>
         </div>
@@ -133,7 +135,7 @@ export function CreditsDisplay() {
         <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <ShieldCheck size={16} />
-            Subscription credits
+            {t('profile.credits.subscriptionCredits')}
           </div>
           <p className="mt-3 text-3xl font-semibold">{creditBreakdown.subscription}</p>
         </div>

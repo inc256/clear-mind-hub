@@ -39,21 +39,21 @@ export function CreditNavIndicator({ compact = false }: CreditNavIndicatorProps)
 
   const badgeLabel = auth.user
     ? loading
-      ? "Loading…"
+      ? t('common.loading')
       : hasPremiumSubscription
-      ? "Unlimited"
+      ? t('profile.creditsStatus.unlimited')
       : compact
       ? `${availableCredits}`
       : `${t('navigation.credits')}: ${availableCredits}`
-    : "Sign in";
+    : t('profile.creditsStatus.signIn');
 
   const subLabel = hasPremiumSubscription
-    ? "Premium access"
+    ? t('profile.creditsStatus.premiumAccess')
     : loading
-    ? "Loading credits"
+    ? t('profile.creditsStatus.loading')
     : freeStatus.remaining > 0
-    ? `${freeStatus.remaining} free daily left`
-    : `${profile?.credits ?? 0} paid credits`;
+    ? t('profile.creditsStatus.freeRemaining', { remaining: freeStatus.remaining })
+    : t('profile.creditsStatus.paidBalance', { credits: profile?.credits ?? 0 });
 
   if (!auth.user) return null;
 

@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound.tsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/store/auth";
 import { useUserProfile } from "@/store/userProfile";
+import LanguageWatcher from "@/components/LanguageWatcher";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <LanguageWatcher />
         <Toaster />
         <Sonner />
         <BrowserRouter>

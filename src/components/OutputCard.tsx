@@ -26,7 +26,7 @@ const StyledActionButton = ({
   className, 
   children, 
   ...props 
-}: React.ComponentProps<typeof Button> & { 
+}: Omit<React.ComponentProps<typeof Button>, "variant"> & { 
   variant?: "primary" | "secondary" | "ghost" | "danger" 
 }) => {
   const variantClasses = {
@@ -569,6 +569,7 @@ function SmartProgressBar({
   loading: boolean; isBatched: boolean; batchTotal: number; batchCurrent: number;
   batchLabel: string; mode: string; depth?: string; currentStepName?: string;
 }) {
+  const { t } = useTranslation();
   const [fakeProgress, setFakeProgress] = useState(0);
   const [dotCount,     setDotCount]     = useState(1);
   const fakeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -601,20 +602,20 @@ function SmartProgressBar({
   const dots = ".".repeat(dotCount);
   
   const getTutorStageLabel = (stepName?: string): string => {
-    if (stepName) return `${stepName} being processed`;
-    return "Building your tutorial";
+    if (stepName) return t('workspace.beingProcessed', { title: stepName });
+    return t('workspace.buildingTutorial');
   };
   
   const modeLabel: Record<string, string> = {
     tutor: getTutorStageLabel(currentStepName),
-    problem: "Solving the problem", 
-    simplify: "Simplifying",
-    hints: "Generating hints", 
-    rewrites: "Rewriting",
-    research: (depth === "beginner" || depth === "intermediate")
-      ? (currentStepName ? `${currentStepName} being processed` : "Researching your topic") : "",
+    problem: t('workspace.status.problem'),
+    simplify: t('workspace.status.simplify'),
+    hints: t('workspace.status.hints'),
+    rewrites: t('workspace.status.rewrites'),
+    research: (depth === "fundamental" || depth === "intermediate")
+      ? (currentStepName ? t('workspace.beingProcessed', { title: currentStepName }) : t('workspace.researchingTopic')) : "",
   };
-  const label = modeLabel[mode] || "Processing";
+  const label = modeLabel[mode] || t('workspace.processing');
 
   if (isBatched) {
     return (
@@ -630,7 +631,7 @@ function SmartProgressBar({
                 {done ? <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   : active ? <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                   : <span className="w-1.5 h-1.5 rounded-full bg-current opacity-30" />}
-                Part {i + 1}
+                {t('workspace.part', { part: i + 1 })}
               </div>
             );
           })}
@@ -638,7 +639,7 @@ function SmartProgressBar({
         {batchLabel && (
           <p className="text-xs text-slate-400 flex items-center gap-1.5">
             <Loader2 size={11} className="animate-spin shrink-0" />
-            <span className="truncate">{batchLabel.replace(/^Batch \d+ — /, "")} being processed{dots}</span>
+            <span className="truncate">{t('workspace.beingProcessed', { title: batchLabel.replace(/^Batch \d+ — /, "") })}{dots}</span>
           </p>
         )}
         <div className="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -657,7 +658,7 @@ function SmartProgressBar({
           <Loader2 size={11} className="animate-spin shrink-0" />{label}{dots}
         </p>
         <span className="text-[11px] text-slate-500 tabular-nums">
-          {fakeProgress < 100 ? `${Math.round(fakeProgress)}%` : "Done"}
+          {fakeProgress < 100 ? `${Math.round(fakeProgress)}%` : t('workspace.done')}
         </span>
       </div>
       <div className="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -683,6 +684,7 @@ function SectionNav({ sections, currentIndex, onGoTo, isStreaming }: {
   sections: ParsedSection[]; currentIndex: number;
   onGoTo: (i: number) => void; isStreaming?: boolean;
 }) {
+  const { t } = useTranslation();
   if (sections.length <= 1) return null;
   
   return (
@@ -708,11 +710,11 @@ function SectionNav({ sections, currentIndex, onGoTo, isStreaming }: {
       <div className="flex gap-3">
         <StyledActionButton onClick={() => { hapticLight(); onGoTo(Math.max(0, currentIndex - 1)); }}
           disabled={currentIndex === 0} variant="secondary" className="flex-1">
-          <ChevronLeft size={15} className="mr-1.5" /> Previous
+          <ChevronLeft size={15} className="mr-1.5" /> {t('workspace.previous')}
         </StyledActionButton>
         <StyledActionButton onClick={() => { hapticLight(); onGoTo(Math.min(sections.length - 1, currentIndex + 1)); }}
           disabled={currentIndex >= sections.length - 1} variant="primary" className="flex-1">
-          Next <ChevronRight size={15} className="ml-1.5" />
+          {t('workspace.next')} <ChevronRight size={15} className="ml-1.5" />
         </StyledActionButton>
       </div>
       <p className="text-[11px] text-center text-slate-500">
@@ -780,31 +782,8 @@ const removeEmptyFormulasSectionForDisplay = (content: string): string => {
 // Markdown components
 // ─────────────────────────────────────────────────────────────────────────────
 
-const markdownComponents = {
-  table: MarkdownTable, thead: MarkdownTableHead, tbody: MarkdownTableBody, tr: MarkdownTableRow,
-  td: ({ children, ...props }: any) => <MarkdownTableCell {...props}>{children}</MarkdownTableCell>,
-  th: ({ children, ...props }: any) => <MarkdownTableCell isHeader {...props}>{children}</MarkdownTableCell>,
-  code: ({ node, inline, className, children, ...props }: any) => {
-    const match = /language-(\w+)/.exec(className || "");
-    const language = match ? match[1] : "";
-    const codeString = String(children).replace(/\n$/, "");
-    if (inline) return <code className={`${className} bg-slate-800 px-1.5 py-0.5 rounded-md text-slate-300`} {...props}>{children}</code>;
-    return (
-      <div className="relative group my-4">
-        <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border border-white/10 rounded-t-lg">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{language || "code"}</span>
-          <button className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-transparent border-none text-slate-400 hover:text-white"
-            onClick={async () => { try { await navigator.clipboard.writeText(codeString); toast.success("Code copied!"); } catch { toast.error("Failed to copy code"); } }}>
-            <Copy className="w-3 h-3 mr-1 inline" /> Copy
-          </button>
-        </div>
-        <SyntaxHighlighter style={oneDark} language={language} PreTag="div" className="!mt-0 !rounded-t-none" {...props}>
-          {codeString}
-        </SyntaxHighlighter>
-      </div>
-    );
-  },
-};
+// Markdown renderer is initialized inside the OutputCard component so translations are available.
+const markdownComponents = undefined as any;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OutputCard Component
@@ -817,6 +796,32 @@ export function OutputCard({
   batchTotal = 0, batchCurrent = 0, batchLabel = "", isBatched = false, depth,
 }: OutputCardProps) {
   const { t } = useTranslation();
+
+  const markdownComponents = useMemo(() => ({
+    table: MarkdownTable, thead: MarkdownTableHead, tbody: MarkdownTableBody, tr: MarkdownTableRow,
+    td: ({ children, ...props }: any) => <MarkdownTableCell {...props}>{children}</MarkdownTableCell>,
+    th: ({ children, ...props }: any) => <MarkdownTableCell isHeader {...props}>{children}</MarkdownTableCell>,
+    code: ({ node, inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || "");
+      const language = match ? match[1] : "";
+      const codeString = String(children).replace(/\n$/, "");
+      if (inline) return <code className={`${className} bg-slate-800 px-1.5 py-0.5 rounded-md text-slate-300`} {...props}>{children}</code>;
+      return (
+        <div className="relative group my-4">
+          <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border border-white/10 rounded-t-lg">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{language || "code"}</span>
+            <button className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs bg-transparent border-none text-slate-400 hover:text-white"
+              onClick={async () => { try { await navigator.clipboard.writeText(codeString); toast.success(t('workspace.codeCopied')); } catch { toast.error(t('workspace.codeCopyFailed')); } }}>
+              <Copy className="w-3 h-3 mr-1 inline" /> {t('workspace.copy')}
+            </button>
+          </div>
+          <SyntaxHighlighter style={oneDark} language={language} PreTag="div" className="!mt-0 !rounded-t-none" {...props}>
+            {codeString}
+          </SyntaxHighlighter>
+        </div>
+      );
+    },
+  }), [t]);
 
   const [selectedAnswer, setSelectedAnswer]   = useState<string | null>(null);
   const [speaking,       setSpeaking]         = useState(false);
@@ -936,12 +941,12 @@ export function OutputCard({
     setSelectedAnswer(letter);
     const opts = parseMultipleChoice(steps[currentStep]?.content || "");
     const sel  = opts.find(o => o.letter === letter);
-    if (sel?.correct) { toast.success("Correct! Well done!"); hapticSuccess(); }
-    else { const c = opts.find(o => o.correct); toast.error(`Wrong. The correct answer is ${c?.letter}) ${c?.text}`); hapticLight(); }
+    if (sel?.correct) { toast.success(t('workspace.correct')); hapticSuccess(); }
+    else { const c = opts.find(o => o.correct); toast.error(`${t('workspace.wrong')} ${c?.letter}) ${c?.text}`); hapticLight(); }
   };
   
   const handleSpeak = () => {
-    if (!("speechSynthesis" in window)) { toast.error("Text-to-speech not supported"); return; }
+    if (!("speechSynthesis" in window)) { toast.error(t('workspace.messages.textToSpeechUnsupported')); return; }
     if (speaking) { speechSynthesis.cancel(); setSpeaking(false); return; }
     if (!cleanedContent.trim()) return;
     analytics.speakButtonClicked();
@@ -949,7 +954,7 @@ export function OutputCard({
     u.rate = 0.9; u.pitch = 1;
     u.onstart = () => setSpeaking(true);
     u.onend   = () => setSpeaking(false);
-    u.onerror = () => { setSpeaking(false); toast.error("Speech synthesis failed"); };
+    u.onerror = () => { setSpeaking(false); toast.error(t('workspace.messages.speechFailed')); };
     speechSynthesis.speak(u);
   };
   
@@ -957,11 +962,15 @@ export function OutputCard({
     try {
       analytics.downloadButtonClicked(mode as string);
       setIsDownloading(true);
-      const titles: Record<string,string> = { tutor: "Tutorial", research: "Research Report", problem: "Problem Solution" };
-      const title = steps[0]?.title || titles[mode as string] || "Document";
+      const titles: Record<string,string> = {
+        tutor: t('workspace.pdfTitles.tutor'),
+        research: t('workspace.pdfTitles.research'),
+        problem: t('workspace.pdfTitles.problem'),
+      };
+      const title = steps[0]?.title || titles[mode as string] || t('workspace.pdfTitles.default');
       const ok = await generatePDF(title, steps, mode as string);
-      if (ok) { toast.success("PDF downloaded successfully"); hapticSuccess(); } else toast.error("Failed to generate PDF");
-    } catch { toast.error("Failed to download document"); }
+      if (ok) { toast.success(t('workspace.pdfDownloaded')); hapticSuccess(); } else toast.error(t('workspace.pdfGenerateFailed'));
+    } catch { toast.error(t('workspace.pdfDownloadFailed')); }
     finally { setIsDownloading(false); }
   }, [steps, mode]);
 
@@ -1126,7 +1135,7 @@ export function OutputCard({
           {showSectionNav && (
             <SectionNav sections={researchSections} currentIndex={currentSectionIndex}
               onGoTo={i => { hapticLight(); setCurrentSectionIndex(i); }}
-              isStreaming={loading && !researchSections[currentIndex]?.isComplete} />
+              isStreaming={loading && !researchSections[currentSectionIndex]?.isComplete} />
           )}
         </>
       )}
@@ -1135,7 +1144,7 @@ export function OutputCard({
       {!loading && steps.length > 1 && !showingPractice && !showSectionNav && (
         <div className="flex justify-center gap-3 mt-6 pt-4 border-t border-white/10">
           <StyledActionButton onClick={() => { hapticLight(); onPrevious(); }} disabled={currentStep === 0} variant="secondary" className="flex-1">
-            <ChevronLeft size={16} className="mr-2" /> Previous
+            <ChevronLeft size={16} className="mr-2" /> {t('workspace.previous')}
           </StyledActionButton>
           <StyledActionButton onClick={() => { hapticLight(); onNext(); }} disabled={currentStep === steps.length - 1} variant="primary" className="flex-1">
             {t("workspace.nextStep")} <ChevronRight size={16} className="ml-2" />
@@ -1153,7 +1162,7 @@ export function OutputCard({
                 disabled={i === currentStep}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0
                   ${i === currentStep ? "bg-primary text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}>
-                Part {i + 1}
+                {t('workspace.part', { part: i + 1 })}
               </button>
             ))}
           </div>

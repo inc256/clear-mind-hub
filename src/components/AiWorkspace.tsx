@@ -86,7 +86,7 @@ const StyledDropdownMenuItem = ({ className, children, ...props }: React.Compone
 );
 
 // Styled button variants matching sidebar aesthetic
-const StyledButton = ({ variant, className, children, ...props }: React.ComponentProps<typeof Button> & { variant?: "primary" | "secondary" | "ghost" | "outline" }) => {
+const StyledButton = ({ variant, className, children, ...props }: Omit<React.ComponentProps<typeof Button>, "variant"> & { variant?: "primary" | "secondary" | "ghost" | "outline" }) => {
   const variantClasses = {
     primary: "bg-primary hover:bg-primary/80 text-white shadow-lg hover:shadow-primary/25 transition-all duration-200",
     secondary: "bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-white/10 hover:border-white/20",
@@ -143,7 +143,7 @@ const getMindsetOptions = (t: any) => [
 
 const getDepthOptions = (t: any, mode: AiMode, subscriptions: any[], citationStyle?: string, hasPaidSubscription?: boolean, totalCredits?: number) => {
   const allOptions = [
-    { value: "fundamental", label: "Fundamental" },
+    { value: "fundamental", label: t("workspace.fundamentalLabel") },
     { value: "intermediate", label: t("workspace.intermediate") },
     { value: "higher", label: t("workspace.higher") },
     { value: "advanced", label: t("workspace.advanced") },
@@ -292,7 +292,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
 
     const profileState = state.profile;
     if (!profileState) {
-      toast.error("Unable to verify credits. Please sign in again.");
+      toast.error(t('workspace.messages.unableToVerifyCredits'));
       return false;
     }
 
@@ -305,7 +305,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         : `You need ${costInfo.cost} credits to run this feature. Your account has ${profileState.credits ?? 0} paid credits and no free daily credits left.`;
       setInsufficientCreditsMessage(message);
       if (total === 0) {
-        toast.error("You have zero credits right now. Visit the subscription page to get more credits.");
+        toast.error(t('workspace.messages.zeroCredits'));
       }
       setShowInsufficientCreditsDialog(true);
       return false;
@@ -358,7 +358,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     const wordCount = totalInput.split(/\s+/).filter(w => w.length > 0).length;
     
     if (wordCount > maxWords) {
-      toast.error(`Input exceeds ${maxWords} word limit for your plan. Current: ${wordCount} words`);
+      toast.error(t('workspace.messages.inputExceedsWordLimit', { maxWords, currentWords: wordCount }));
       return;
     }
 
@@ -375,16 +375,14 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     const prompt = text.trim().length > 0
       ? text
       : codeSnippets.length > 0
-        ? "Please analyze the attached code snippets."
+        ? t('workspace.prompt.attachedCode')
         : imageData
-        ? "Please scan the attached image and answer the question."
+        ? t('workspace.prompt.scanImage')
         : documentData
-        ? "Please analyze the attached document and answer the question."
+        ? t('workspace.prompt.analyzeDocument')
         : voiceTranscript.trim()
-        ? "Please analyze the voice transcript and answer the question."
+        ? t('workspace.prompt.analyzeVoiceTranscript')
         : "";
-
-    lastInputRef.current = prompt;
     setOutput("");
     setSteps([]);
     setCurrentStep(0);
@@ -501,7 +499,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
 
       setCodeSnippets(prev => [...prev, newSnippet]);
       hapticLight();
-      toast.success("Code snippet added");
+      toast.success(t('workspace.messages.codeSnippetAdded'));
     }
   };
 
@@ -523,7 +521,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     const uploadLimitBytes = uploadLimitMB * 1_000_000;
 
     if (file.size > uploadLimitBytes) {
-      toast.error(`File too large (max ${uploadLimitMB}MB for your plan). File size: ${(file.size / 1_000_000).toFixed(2)}MB`);
+      toast.error(t('workspace.messages.fileTooLarge', { limit: uploadLimitMB, size: (file.size / 1_000_000).toFixed(2) }));
       return;
     }
 
@@ -537,12 +535,12 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
             setImageData(result);
             setImageMimeType(file.type);
             setImageName(file.name);
-            setInput((prev) => prev || "Please scan this image and answer the question.");
-            toast.success(`Loaded image ${file.name} for scanning`);
+            setInput((prev) => prev || t('workspace.prompt.scanImage'));
+            toast.success(t('workspace.messages.loadedImageForScanning', { name: file.name }));
           }
         };
         reader.onerror = () => {
-          toast.error("Couldn't read image file");
+          toast.error(t('workspace.messages.couldntReadImage'));
         };
         reader.readAsDataURL(file);
       } catch {
@@ -561,12 +559,12 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
             setDocumentData(result);
             setDocumentMimeType(file.type);
             setDocumentName(file.name);
-            setInput((prev) => prev || "Please analyze this document and answer the question.");
-            toast.success(`Loaded document ${file.name} for analysis`);
+            setInput((prev) => prev || t('workspace.prompt.analyzeDocument'));
+            toast.success(t('workspace.messages.loadedDocumentForAnalysis', { name: file.name }));
           }
         };
         reader.onerror = () => {
-          toast.error("Couldn't read document file");
+          toast.error(t('workspace.messages.couldntReadDocument'));
         };
         reader.readAsDataURL(file);
       } catch {
@@ -578,9 +576,9 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     try {
       const text = await file.text();
       setInput(text.slice(0, 18000));
-      toast.success(`Loaded ${file.name}`);
+      toast.success(t('workspace.messages.loadedFile', { name: file.name }));
     } catch {
-      toast.error("Couldn't read file");
+      toast.error(t('workspace.messages.couldntReadFile'));
     }
   };
 
@@ -593,7 +591,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
       const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!SUPABASE_FN_URL || !SUPABASE_ANON_KEY) {
-        toast.error("Configuration error - cannot extract image text");
+        toast.error(t('workspace.messages.configErrorExtractImageText'));
         return;
       }
 
@@ -646,13 +644,13 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
       if (extractedText.trim()) {
         setExtractedImageText(extractedText.trim());
         setInput(extractedText.trim());
-        toast.success("Text extracted from image and set as input");
+        toast.success(t('workspace.messages.textExtractedFromImage'));
       } else {
-        toast.info("No text found in image");
+        toast.info(t('workspace.messages.noTextFoundInImage'));
       }
     } catch (err) {
       console.error("[extractImageText] error:", err);
-      toast.error("Failed to extract text from image");
+      toast.error(t('workspace.messages.failedToExtractImageText'));
     } finally {
       setExtractingImageText(false);
     }
@@ -660,7 +658,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
 
   const startVoiceRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast.error("Voice recognition not supported in this browser");
+      toast.error(t('workspace.messages.voiceRecognitionUnsupported'));
       return;
     }
 
@@ -673,7 +671,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     }).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      toast.error("Voice recognition not supported in this browser");
+      toast.error(t('workspace.messages.voiceRecognitionUnsupported'));
       return;
     }
 
@@ -712,7 +710,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
       setIsRecording(false);
       setRecordingVisualizer([]);
       recognitionRef.current = null;
-      toast.error("Voice recognition failed. Please try again.");
+      toast.error(t('workspace.messages.voiceRecognitionFailed'));
     };
 
     recognition.onend = () => {
@@ -740,7 +738,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
     if (transcript) {
       await run(transcript);
     } else {
-      toast.error("No voice was captured. Please try again.");
+      toast.error(t('workspace.messages.noVoiceCaptured'));
     }
   };
 
@@ -753,7 +751,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
   const handleEndResponse = () => {
     hapticLight();
     reset();
-    toast.success("Response ended. You can start a new query.");
+    toast.success(t('workspace.messages.responseEnded'));
   };
 
   return (
@@ -764,9 +762,9 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         <div className="rounded-2xl p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30 backdrop-blur-sm border border-white/10 shadow-xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-semibold text-primary/80 block mb-2 uppercase tracking-wider">
-                Choose Category
-              </label>
+                <label className="text-sm font-semibold text-primary/80 block mb-2 uppercase tracking-wider">
+                 {t('workspace.chooseCategory')}
+                </label>
               <Select
                 value={selectedMindset}
                 onValueChange={(value) => {
@@ -788,7 +786,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
             </div>
             <div>
               <label className="text-sm font-semibold text-primary/80 block mb-2 uppercase tracking-wider">
-                Choose Level
+                {t('workspace.chooseLevel')}
               </label>
               <Select value={selectedDepth} onValueChange={(value) => {
                 setSelectedDepth(value);
@@ -825,7 +823,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="text-sm font-semibold text-primary/80 block mb-2 uppercase tracking-wider">
-                Choose Level
+                {t('workspace.chooseLevel')}
               </label>
               <Select value={selectedDepth} onValueChange={(value) => {
                 setSelectedDepth(value);
@@ -851,7 +849,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
             </div>
             <div>
               <label className="text-sm font-semibold text-primary/80 block mb-3 uppercase tracking-wider">
-                Choose Citation Style
+                {t('workspace.chooseCitationStyle')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {getAvailableCitationStyles(subscriptions).map((style) => {
@@ -1043,7 +1041,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
               target.style.height = Math.min(target.scrollHeight, 140) + "px";
             }}
             onPaste={handlePaste}
-            placeholder={mode === 'tutor' ? 'Ask me anything....' : placeholder}
+            placeholder={mode === 'tutor' ? t('tutor.placeholder') : placeholder}
             className="min-h-[60px] max-h-[140px] resize-none border-0 bg-transparent text-base text-slate-200 shadow-none focus-visible:ring-0 px-2 placeholder:text-slate-500"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -1093,7 +1091,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                   </div>
                 </div>
                 <p className="mt-2 text-xs text-slate-400">
-                  Image attached for scanning. Click extract to scan text or send to ask the AI to interpret it.
+                  {t('workspace.imageScanHint')}
                 </p>
                 {extractedImageText && (
                   <div className="mt-2 p-2 rounded-lg bg-slate-900/50 border border-white/5">
@@ -1130,7 +1128,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                   </Button>
                 </div>
                 <p className="mt-2 text-xs text-slate-400">
-                  Document attached for analysis. Send to ask the AI to analyze it.
+                  {t('workspace.documentAnalysisHint')}
                 </p>
               </div>
             </div>
@@ -1160,7 +1158,7 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
                 {voiceTranscript}
               </div>
               <p className="mt-2 text-xs text-slate-400">
-                Voice transcript recorded. Send to ask the AI to analyze it.
+                {t('workspace.voiceTranscriptHint')}
               </p>
             </div>
           )}
@@ -1287,7 +1285,6 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
         onPrevious={() => setCurrentStep((prev) => prev - 1)}
         loading={loading}
         onRegenerate={lastInputRef.current ? () => run(lastInputRef.current) : undefined}
-        onNewQuery={reset}
         onEndResponse={handleEndResponse}
         mode={mode}
       />
@@ -1298,13 +1295,12 @@ export function AiWorkspace({ mode, title, subtitle, placeholder, acceptFile }: 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Crown className="text-yellow-500" size={20} />
-              Premium Feature Required
+              {t('workspace.premiumRequired.title')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-slate-400">
-              This feature requires a premium subscription to access all advanced capabilities.
-              Upgrade your plan to unlock the full potential of Xplainfy.
+              {t('workspace.premiumRequired.message')}
             </p>
             <div className="flex gap-2">
               <StyledButton
